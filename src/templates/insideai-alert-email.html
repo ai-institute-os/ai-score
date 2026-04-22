@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="da" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>InsideAI Alarm — {{COMPANY_NAME}}</title>
+<!--
+  INSIDEAI ALARM E-MAIL SKABELON
+  ================================
+  Tilpas følgende variabler:
+    {{COMPANY_NAME}}      — modtagers virksomhedsnavn
+    {{ALARM_HEADLINE}}    — kort, kontant konsekvens (1 sætning, max 80 tegn)
+    {{ALARM_CONTEXT}}     — hvad sker der præcist (2-3 sætninger)
+    {{ALARM_ACTION}}      — hvad bør I overveje (1-2 sætninger)
+    {{ALARM_URGENCY}}     — "HOJ" / "MIDDEL" / "LAV" (styre badge-farve)
+    {{ALARM_DATE}}        — dato og tidspunkt for alarm
+    {{AI_SYSTEM}}         — hvilket AI-system alarmen vedrører
+    {{CONTACT_URL}}       — link til rapport / dashboard
+    {{CONTACT_EMAIL}}     — afsenders kontaktmail
+    {{UNSUBSCRIBE_URL}}   — afmeld-link (juridisk påkrævet)
+
+  URGENCY-farver (rediger .urgency-badge baggrund):
+    HOJ    → #b91c1c (rød)
+    MIDDEL → #b45309 (amber)
+    LAV    → #1d4ed8 (blå)
+-->
+<style type="text/css">
+  /* ── Reset ──────────────────────────────────────── */
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  body { margin: 0 !important; padding: 0 !important; background-color: #f1f5f9; }
+  * { box-sizing: border-box; }
+
+  /* ── Responsive ─────────────────────────────────── */
+  @media screen and (max-width: 600px) {
+    .email-container { width: 100% !important; }
+    .mobile-padding   { padding: 24px 20px !important; }
+    .mobile-headline  { font-size: 22px !important; line-height: 1.25 !important; }
+    .hide-mobile      { display: none !important; }
+    .action-box       { padding: 20px 20px !important; }
+    .footer-cols td   { display: block !important; width: 100% !important; text-align: center !important; padding-bottom: 12px !important; }
+  }
+</style>
+</head>
+
+<body style="margin:0; padding:0; background-color:#f1f5f9;">
+
+<!-- ──────────────────────────────────────────────────────────
+     OUTER WRAPPER
+─────────────────────────────────────────────────────────── -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f1f5f9;">
+<tr><td align="center" style="padding: 28px 16px;">
+
+  <!-- Email container -->
+  <table role="presentation" class="email-container" cellspacing="0" cellpadding="0" border="0"
+         width="580" style="max-width:580px; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 2px 16px rgba(0,0,0,.1);">
+
+
+    <!-- ══════════════════════════════════════════════
+         HEADER STRIPE — Alarm type + branding
+    ═══════════════════════════════════════════════ -->
+    <tr>
+      <td style="background:#0f1f3d; padding:16px 32px;" class="mobile-padding">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.5);">
+              InsideAI · AI-Positionsalarm
+            </td>
+            <td align="right">
+              <!--
+                URGENCY BADGE
+                Skift baggrundfarve baseret på {{ALARM_URGENCY}}:
+                  HOJ    → #b91c1c
+                  MIDDEL → #b45309
+                  LAV    → #1d4ed8
+              -->
+              <span style="display:inline-block; background:#b91c1c; color:#ffffff; font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:9px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:4px 12px; border-radius:99px;">
+                {{ALARM_URGENCY}} PRIORITET
+              </span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+
+    <!-- ══════════════════════════════════════════════
+         HEADLINE — LEAD WITH CONSEQUENCE
+         This is the most important element. The reader
+         must understand the impact before reading anything else.
+    ═══════════════════════════════════════════════ -->
+    <tr>
+      <td style="padding:32px 32px 0;" class="mobile-padding">
+
+        <!-- Eyebrow label -->
+        <p style="margin:0 0 10px; font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#b91c1c;">
+          Det sker med jeres AI-position nu
+        </p>
+
+        <!-- Consequence headline — large, bold, unavoidable -->
+        <h1 class="mobile-headline" style="margin:0 0 20px; font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:26px; font-weight:800; line-height:1.2; letter-spacing:-.02em; color:#0f172a;">
+          {{ALARM_HEADLINE}}
+        </h1>
+
+        <!-- Visual divider with arrow — signals "consequence → action" -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:20px;">
+          <tr>
+            <td style="border-top:2px solid #fee2e2; vertical-align:middle;">&nbsp;</td>
+            <td style="padding:0 10px; vertical-align:middle; white-space:nowrap;">
+              <span style="font-size:18px; color:#b91c1c; font-weight:700; line-height:1;">→</span>
+            </td>
+            <td style="font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:13px; font-weight:600; color:#b91c1c; vertical-align:middle; white-space:nowrap;">
+              hvad I bør overveje
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+
+
+    <!-- ══════════════════════════════════════════════
+         CONTEXT BLOCK — what is actually happening
+    ═══════════════════════════════════════════════ -->
+    <tr>
+      <td style="padding:0 32px 24px;" class="mobile-padding">
+
+        <p style="margin:0 0 12px; font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:15px; line-height:1.65; color:#334155;">
+          {{ALARM_CONTEXT}}
+        </p>
+
+        <!-- AI system chip -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:11px; font-weight:600; color:#475569; background:#f1f5f9; border:1px solid #e2e8f0; padding:3px 10px; border-radius:4px;">
+              AI-system: {{AI_SYSTEM}}
+            </td>
+            <td width="8">&nbsp;</td>
+            <td style="font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:11px; font-weight:600; color:#475569; background:#f1f5f9; border:1px solid #e2e8f0; padding:3px 10px; border-radius:4px;">
+              {{ALARM_DATE}}
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+
+
+    <!-- ══════════════════════════════════════════════
+         ACTION BOX — what to consider
+         High-contrast block — the call to action
+    ═══════════════════════════════════════════════ -->
+    <tr>
+      <td style="padding:0 32px 28px;" class="mobile-padding">
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="action-box"
+               style="background:#fff7ed; border:1.5px solid #fdba74; border-radius:6px; padding:20px 24px;">
+          <tr>
+            <td>
+              <p style="margin:0 0 6px; font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#c2410c;">
+                Hvad I bør overveje
+              </p>
+              <p style="margin:0; font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:15px; line-height:1.6; color:#431407; font-weight:500;">
+                {{ALARM_ACTION}}
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+
+
+    <!-- ══════════════════════════════════════════════
+         CTA BUTTON — link to full report
+    ═══════════════════════════════════════════════ -->
+    <tr>
+      <td align="center" style="padding:0 32px 32px;" class="mobile-padding">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="border-radius:6px; background:#0f1f3d; text-align:center;">
+              <a href="{{CONTACT_URL}}"
+                 style="display:inline-block; font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:13px; font-weight:700; color:#ffffff; text-decoration:none; padding:14px 32px; letter-spacing:.03em;">
+                Se fuld AI-positionsrapport
+              </a>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:12px 0 0; font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:11px; color:#94a3b8; text-align:center;">
+          Adgang via jeres InsideAI dashboard · kræver login
+        </p>
+      </td>
+    </tr>
+
+
+    <!-- ══════════════════════════════════════════════
+         SEPARATOR
+    ═══════════════════════════════════════════════ -->
+    <tr>
+      <td style="padding:0 32px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr><td style="border-top:1px solid #e2e8f0; height:1px; font-size:0; line-height:0;">&nbsp;</td></tr>
+        </table>
+      </td>
+    </tr>
+
+
+    <!-- ══════════════════════════════════════════════
+         FOOTER
+    ═══════════════════════════════════════════════ -->
+    <tr>
+      <td style="padding:20px 32px 24px;" class="mobile-padding">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="footer-cols">
+          <tr>
+            <td valign="top" style="font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:11px; color:#94a3b8; line-height:1.6;">
+              <strong style="color:#64748b; font-weight:700;">InsideAI · AIScore</strong><br>
+              Alarm til {{COMPANY_NAME}}<br>
+              <a href="mailto:{{CONTACT_EMAIL}}" style="color:#64748b; text-decoration:none;">{{CONTACT_EMAIL}}</a>
+            </td>
+            <td valign="top" align="right" style="font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:10px; color:#94a3b8; line-height:1.8;">
+              <a href="{{CONTACT_URL}}" style="color:#64748b; text-decoration:none;">Dashboard</a>
+              &nbsp;·&nbsp;
+              <a href="{{UNSUBSCRIBE_URL}}" style="color:#94a3b8; text-decoration:none;">Afmeld alarmer</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+  </table>
+  <!-- /Email container -->
+
+</td></tr>
+</table>
+<!-- /Outer wrapper -->
+
+</body>
+</html>

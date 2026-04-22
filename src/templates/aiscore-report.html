@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIScore Rapport – {{COMPANY_NAME}}</title>
+<style>
+  /* ────────────────────────────────────────────────
+     SYSTEM & RESET
+  ─────────────────────────────────────────────────*/
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:        #0f1f3d;
+    --navy-mid:    #1a3461;
+    --accent:      #2563eb;
+    --accent-light:#dbeafe;
+    --chosen:      #15803d;
+    --chosen-bg:   #dcfce7;
+    --mentioned:   #1d4ed8;
+    --mentioned-bg:#dbeafe;
+    --neutral:     #64748b;
+    --border:      #e2e8f0;
+    --bg:          #f8fafc;
+    --white:       #ffffff;
+    --text:        #0f172a;
+    --text-mid:    #334155;
+    --text-light:  #64748b;
+    --danger:      #b91c1c;
+    --danger-bg:   #fee2e2;
+    --warn-bg:     #fef9c3;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--white);
+  }
+
+  /* ────────────────────────────────────────────────
+     PAGE STRUCTURE (print)
+  ─────────────────────────────────────────────────*/
+  @page {
+    size: A4;
+    margin: 18mm 16mm 22mm 16mm;
+  }
+
+  @media print {
+    .page-break-before { page-break-before: always; }
+    .no-break { page-break-inside: avoid; }
+    .cover { page-break-after: always; }
+  }
+
+  /* screen simulation of A4 */
+  @media screen {
+    body { background: #cbd5e1; padding: 24px; }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      background: var(--white);
+      margin: 0 auto 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.18);
+      padding: 18mm 16mm 22mm;
+    }
+  }
+
+  /* ────────────────────────────────────────────────
+     COVER PAGE
+  ─────────────────────────────────────────────────*/
+  .cover {
+    background: var(--navy);
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 257mm;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -80px;
+    width: 340px; height: 340px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.12;
+  }
+
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -60px;
+    width: 220px; height: 220px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.08;
+  }
+
+  .cover-header {
+    padding: 14mm 16mm 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .brand-mark {
+    font-size: 11pt;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.55);
+  }
+
+  .report-type-badge {
+    font-size: 8pt;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: var(--white);
+    padding: 3px 10px;
+    border-radius: 3px;
+  }
+
+  .cover-body {
+    padding: 0 16mm;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .cover-eyebrow {
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.45);
+    margin-bottom: 12px;
+  }
+
+  .cover-company {
+    font-size: 36pt;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    color: var(--white);
+    margin-bottom: 16px;
+    word-break: break-word;
+  }
+
+  .cover-divider {
+    width: 56px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  .cover-subtitle {
+    font-size: 13pt;
+    font-weight: 400;
+    color: rgba(255,255,255,.65);
+    max-width: 380px;
+    line-height: 1.5;
+  }
+
+  .cover-footer {
+    padding: 0 16mm 14mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid rgba(255,255,255,.1);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+
+  .cover-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cover-meta-label {
+    font-size: 7.5pt;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.35);
+  }
+
+  .cover-meta-value {
+    font-size: 10pt;
+    font-weight: 500;
+    color: rgba(255,255,255,.8);
+  }
+
+  .confidential-badge {
+    font-size: 7.5pt;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.3);
+    border: 1px solid rgba(255,255,255,.15);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  /* ────────────────────────────────────────────────
+     INNER PAGE CHROME (header/footer)
+  ─────────────────────────────────────────────────*/
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--navy);
+    margin-bottom: 24px;
+  }
+
+  .page-header-brand {
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--navy);
+  }
+
+  .page-header-company {
+    font-size: 8.5pt;
+    color: var(--text-light);
+  }
+
+  .page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    margin-top: 24px;
+    font-size: 8pt;
+    color: var(--text-light);
+  }
+
+  /* ────────────────────────────────────────────────
+     SECTION HEADINGS
+  ─────────────────────────────────────────────────*/
+  .section-eyebrow {
+    font-size: 7.5pt;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  h1.section-title {
+    font-size: 20pt;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+
+  h2.section-title {
+    font-size: 14pt;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  h3.block-title {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .section-intro {
+    font-size: 10.5pt;
+    color: var(--text-mid);
+    max-width: 520px;
+    margin-bottom: 20px;
+    line-height: 1.65;
+  }
+
+  hr.section-rule {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  /* ────────────────────────────────────────────────
+     NÆVNT / VALGT — CORE DISTINCTION
+  ─────────────────────────────────────────────────*/
+  .distinction-legend {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .distinction-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .pill-chosen {
+    background: var(--chosen-bg);
+    color: var(--chosen);
+    border: 1.5px solid var(--chosen);
+  }
+
+  .pill-mentioned {
+    background: var(--mentioned-bg);
+    color: var(--mentioned);
+    border: 1.5px solid var(--mentioned);
+  }
+
+  .distinction-pill::before {
+    content: '';
+    display: block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .pill-chosen::before { background: var(--chosen); }
+  .pill-mentioned::before { background: var(--mentioned); }
+
+  .distinction-explanation {
+    background: var(--warn-bg);
+    border-left: 3px solid #ca8a04;
+    padding: 10px 14px;
+    border-radius: 0 4px 4px 0;
+    font-size: 9pt;
+    color: #713f12;
+    margin-bottom: 20px;
+  }
+
+  /* ────────────────────────────────────────────────
+     AI SYSTEM TABLE (main comparison view)
+  ─────────────────────────────────────────────────*/
+  .ai-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin-bottom: 20px;
+  }
+
+  .ai-table thead tr {
+    background: var(--navy);
+    color: var(--white);
+  }
+
+  .ai-table thead th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .ai-table thead th:first-child { border-radius: 4px 0 0 0; }
+  .ai-table thead th:last-child  { border-radius: 0 4px 0 0; }
+
+  .ai-table tbody tr {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ai-table tbody tr:nth-child(even) {
+    background: var(--bg);
+  }
+
+  .ai-table tbody td {
+    padding: 9px 12px;
+    vertical-align: middle;
+  }
+
+  .ai-name {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .ai-vendor {
+    font-size: 8pt;
+    color: var(--text-light);
+  }
+
+  .status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+
+  .tag-chosen {
+    background: var(--chosen-bg);
+    color: var(--chosen);
+  }
+
+  .tag-mentioned {
+    background: var(--mentioned-bg);
+    color: var(--mentioned);
+  }
+
+  .tag-not-mentioned {
+    background: #f1f5f9;
+    color: var(--neutral);
+  }
+
+  .status-tag::before {
+    content: '';
+    display: block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  .tag-chosen::before    { background: var(--chosen); }
+  .tag-mentioned::before { background: var(--mentioned); }
+  .tag-not-mentioned::before { background: #94a3b8; }
+
+  .perception-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .perception-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .perception-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+  }
+
+  .perception-fill.high   { background: var(--chosen);    width: var(--pct); }
+  .perception-fill.medium { background: var(--accent);     width: var(--pct); }
+  .perception-fill.low    { background: #94a3b8;           width: var(--pct); }
+
+  .perception-label {
+    font-size: 8pt;
+    font-weight: 600;
+    color: var(--text-light);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* ────────────────────────────────────────────────
+     STRENGTHS / WEAKNESSES
+  ─────────────────────────────────────────────────*/
+  .sw-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .sw-card {
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+
+  .sw-card-strengths {
+    background: var(--chosen-bg);
+    border: 1px solid #86efac;
+  }
+
+  .sw-card-weaknesses {
+    background: var(--danger-bg);
+    border: 1px solid #fca5a5;
+  }
+
+  .sw-card-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+  }
+
+  .sw-icon {
+    font-size: 14pt;
+    line-height: 1;
+  }
+
+  .sw-card-title {
+    font-size: 9.5pt;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .sw-card-strengths .sw-card-title { color: var(--chosen); }
+  .sw-card-weaknesses .sw-card-title { color: var(--danger); }
+
+  .sw-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sw-list li {
+    font-size: 9pt;
+    line-height: 1.5;
+    display: flex;
+    gap: 7px;
+    align-items: flex-start;
+  }
+
+  .sw-list li::before {
+    content: '–';
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .sw-card-strengths .sw-list li::before { color: var(--chosen); }
+  .sw-card-weaknesses .sw-list li::before { color: var(--danger); }
+
+  /* ────────────────────────────────────────────────
+     PERCEPTION DETAIL CARD
+  ─────────────────────────────────────────────────*/
+  .detail-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .detail-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detail-card-body {
+    padding: 12px 14px;
+    font-size: 9.5pt;
+    color: var(--text-mid);
+    line-height: 1.6;
+  }
+
+  .detail-card-meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .meta-chip {
+    font-size: 8pt;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 3px;
+    color: var(--text-light);
+  }
+
+  /* ────────────────────────────────────────────────
+     SCORE SUMMARY BLOCK
+  ─────────────────────────────────────────────────*/
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .score-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    text-align: center;
+    background: var(--bg);
+  }
+
+  .score-number {
+    font-size: 28pt;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+
+  .score-label {
+    font-size: 8pt;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .score-card.highlight {
+    background: var(--navy);
+    border-color: var(--navy);
+  }
+
+  .score-card.highlight .score-number,
+  .score-card.highlight .score-label { color: var(--white); }
+
+  .score-card.highlight .score-label { color: rgba(255,255,255,.6); }
+
+  /* ────────────────────────────────────────────────
+     CALLOUT / NOTE BOX
+  ─────────────────────────────────────────────────*/
+  .callout {
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 9.5pt;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  .callout-info {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    color: #1e3a8a;
+  }
+
+  .callout-warn {
+    background: var(--warn-bg);
+    border-left: 3px solid #ca8a04;
+    color: #713f12;
+  }
+
+  .callout strong { font-weight: 700; }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SIDE 1 — FORSIDE
+══════════════════════════════════════ -->
+<div class="page cover">
+  <div class="cover-header">
+    <div class="brand-mark">AIScore</div>
+    <div class="report-type-badge">AI-Positionsanalyse</div>
+  </div>
+
+  <div class="cover-body">
+    <div class="cover-eyebrow">Analyserapport</div>
+    <div class="cover-company">{{COMPANY_NAME}}</div>
+    <div class="cover-divider"></div>
+    <div class="cover-subtitle">
+      Kortlægning af jeres AI-systemers markedsperception,
+      synlighed og strategiske position.
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Analysedato</span>
+      <span class="cover-meta-value">{{ANALYSIS_DATE}}</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Udarbejdet af</span>
+      <span class="cover-meta-value">AIScore · InsideAI</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Fortrolighed</span>
+      <span class="confidential-badge">Fortroligt</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SIDE 2 — OVERBLIK & NØGLETAL
+══════════════════════════════════════ -->
+<div class="page page-break-before">
+  <div class="page-header">
+    <div class="page-header-brand">AIScore · AI-Positionsanalyse</div>
+    <div class="page-header-company">{{COMPANY_NAME}} · {{ANALYSIS_DATE}}</div>
+  </div>
+
+  <div class="section-eyebrow">Overblik</div>
+  <h1 class="section-title">Jeres AI-position på et øjeblik</h1>
+  <p class="section-intro">
+    Denne analyse kortlægger, hvordan AI-systemer opfatter og præsenterer
+    {{COMPANY_NAME}} i relevante kontekster. Tallene afspejler AI-synlighed,
+    ikke søgerangering.
+  </p>
+
+  <div class="score-grid">
+    <div class="score-card highlight">
+      <div class="score-number">{{OVERALL_SCORE}}</div>
+      <div class="score-label">Samlet AIScore</div>
+    </div>
+    <div class="score-card">
+      <div class="score-number">{{SYSTEMS_ANALYZED}}</div>
+      <div class="score-label">AI-systemer analyseret</div>
+    </div>
+    <div class="score-card">
+      <div class="score-number">{{QUERIES_RUN}}</div>
+      <div class="score-label">Forespørgsler kørt</div>
+    </div>
+  </div>
+
+  <!-- NÆVNT / VALGT — Forklaring -->
+  <hr class="section-rule">
+  <h2 class="section-title">NÆVNT vs. VALGT — sådan læser du rapporten</h2>
+  <div class="distinction-legend">
+    <span class="distinction-pill pill-chosen">Valgt</span>
+    <span class="distinction-pill pill-mentioned">Nævnt</span>
+  </div>
+  <div class="distinction-explanation">
+    <strong>VALGT</strong> betyder, at AI-systemet aktivt anbefalede eller valgte jeres løsning
+    som svar på en konkret forespørgsel. <strong>NÆVNT</strong> betyder, at systemet nævnte jer
+    i kontekst uden at vælge jer frem for alternativer. Skellet er afgørende: kun VALGT
+    driver reelle salgsmuligheder.
+  </div>
+
+  <div class="page-footer">
+    <span>AIScore · Fortroligt</span>
+    <span>Side 2</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SIDE 3 — AI-SYSTEMSOVERSIGT
+══════════════════════════════════════ -->
+<div class="page page-break-before">
+  <div class="page-header">
+    <div class="page-header-brand">AIScore · AI-Positionsanalyse</div>
+    <div class="page-header-company">{{COMPANY_NAME}} · {{ANALYSIS_DATE}}</div>
+  </div>
+
+  <div class="section-eyebrow">Systemanalyse</div>
+  <h2 class="section-title">Hvilke AI-systemer ser jer — og hvordan?</h2>
+  <p class="section-intro">
+    Tabellen viser alle analyserede AI-systemer, jeres synlighedsstatus i hvert
+    og en indikator for perceptionsintensiteten.
+  </p>
+
+  <table class="ai-table no-break">
+    <thead>
+      <tr>
+        <th>AI-system</th>
+        <th>Udbyder</th>
+        <th>Status</th>
+        <th>Perceptionsintensitet</th>
+        <th>Kontekst</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- ROW TEMPLATE: copy and repeat per AI system -->
+      <tr>
+        <td>
+          <div class="ai-name">ChatGPT</div>
+        </td>
+        <td><span class="ai-vendor">OpenAI</span></td>
+        <td>
+          <span class="status-tag tag-chosen">Valgt</span>
+        </td>
+        <td>
+          <div class="perception-bar-wrap">
+            <div class="perception-bar">
+              <div class="perception-fill high" style="--pct: 82%"></div>
+            </div>
+            <span class="perception-label">82%</span>
+          </div>
+        </td>
+        <td style="font-size:8.5pt; color:var(--text-mid)">Primær AI-anbefaling i kategori</td>
+      </tr>
+
+      <tr>
+        <td>
+          <div class="ai-name">Gemini</div>
+        </td>
+        <td><span class="ai-vendor">Google</span></td>
+        <td>
+          <span class="status-tag tag-mentioned">Nævnt</span>
+        </td>
+        <td>
+          <div class="perception-bar-wrap">
+            <div class="perception-bar">
+              <div class="perception-fill medium" style="--pct: 54%"></div>
+            </div>
+            <span class="perception-label">54%</span>
+          </div>
+        </td>
+        <td style="font-size:8.5pt; color:var(--text-mid)">Nævnt som alternativ i 54% af svar</td>
+      </tr>
+
+      <tr>
+        <td>
+          <div class="ai-name">Claude</div>
+        </td>
+        <td><span class="ai-vendor">Anthropic</span></td>
+        <td>
+          <span class="status-tag tag-mentioned">Nævnt</span>
+        </td>
+        <td>
+          <div class="perception-bar-wrap">
+            <div class="perception-bar">
+              <div class="perception-fill medium" style="--pct: 38%"></div>
+            </div>
+            <span class="perception-label">38%</span>
+          </div>
+        </td>
+        <td style="font-size:8.5pt; color:var(--text-mid)">Lav prioritering i erhvervskontekst</td>
+      </tr>
+
+      <tr>
+        <td>
+          <div class="ai-name">Perplexity</div>
+        </td>
+        <td><span class="ai-vendor">Perplexity AI</span></td>
+        <td>
+          <span class="status-tag tag-not-mentioned">Ikke nævnt</span>
+        </td>
+        <td>
+          <div class="perception-bar-wrap">
+            <div class="perception-bar">
+              <div class="perception-fill low" style="--pct: 0%"></div>
+            </div>
+            <span class="perception-label">0%</span>
+          </div>
+        </td>
+        <td style="font-size:8.5pt; color:var(--text-mid)">Ikke registreret i analyseperioden</td>
+      </tr>
+
+      <tr>
+        <td>
+          <div class="ai-name">Copilot</div>
+        </td>
+        <td><span class="ai-vendor">Microsoft</span></td>
+        <td>
+          <span class="status-tag tag-chosen">Valgt</span>
+        </td>
+        <td>
+          <div class="perception-bar-wrap">
+            <div class="perception-bar">
+              <div class="perception-fill high" style="--pct: 71%"></div>
+            </div>
+            <span class="perception-label">71%</span>
+          </div>
+        </td>
+        <td style="font-size:8.5pt; color:var(--text-mid)">Stærk i enterprise-forespørgsler</td>
+      </tr>
+      <!-- /ROW TEMPLATE -->
+
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <strong>Hvordan beregnes perceptionsintensiteten?</strong> Værdien angiver, i hvilken
+    procentdel af de relevante forespørgsler dette AI-system nævnte eller valgte jeres
+    virksomhed. 100% = konsekvent synlig. 0% = ikke registreret.
+  </div>
+
+  <div class="page-footer">
+    <span>AIScore · Fortroligt</span>
+    <span>Side 3</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SIDE 4 — DETALJERET PERCEPTION
+══════════════════════════════════════ -->
+<div class="page page-break-before">
+  <div class="page-header">
+    <div class="page-header-brand">AIScore · AI-Positionsanalyse</div>
+    <div class="page-header-company">{{COMPANY_NAME}} · {{ANALYSIS_DATE}}</div>
+  </div>
+
+  <div class="section-eyebrow">Perceptionsdetaljer</div>
+  <h2 class="section-title">Hvad siger AI-systemerne præcist?</h2>
+  <p class="section-intro">
+    Uddrag fra faktiske AI-svar, der illustrerer, hvordan {{COMPANY_NAME}}
+    beskrives i den automatiserede rådgivning.
+  </p>
+
+  <!-- DETAIL CARD TEMPLATE: repeat per AI system -->
+  <div class="detail-card no-break">
+    <div class="detail-card-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-weight:700; font-size:10pt;">ChatGPT</span>
+        <span class="ai-vendor">OpenAI</span>
+      </div>
+      <span class="status-tag tag-chosen">Valgt</span>
+    </div>
+    <div class="detail-card-body">
+      <p>
+        "Til [relevant kategori] anbefaler jeg at overveje <strong>{{COMPANY_NAME}}</strong> —
+        de tilbyder [beskrivelse hentet fra AI-svar]. Særligt stærke på [styrkeområde],
+        og de er velkendte i [målgruppe/sektor]-segmentet."
+      </p>
+      <div class="detail-card-meta">
+        <span class="meta-chip">Forespørgsel: "[eksempel-forespørgsel]"</span>
+        <span class="meta-chip">Kørselsdato: {{ANALYSIS_DATE}}</span>
+        <span class="meta-chip">Position: #{{RANK}} i svar</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-card no-break">
+    <div class="detail-card-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-weight:700; font-size:10pt;">Gemini</span>
+        <span class="ai-vendor">Google</span>
+      </div>
+      <span class="status-tag tag-mentioned">Nævnt</span>
+    </div>
+    <div class="detail-card-body">
+      <p>
+        "Der er flere muligheder her — herunder <strong>{{COMPANY_NAME}}</strong> og
+        [konkurrent A]. [Konkurrent A] er dog mere udbredt til [use case],
+        mens {{COMPANY_NAME}} er et godt valg hvis [betingelse]."
+      </p>
+      <div class="detail-card-meta">
+        <span class="meta-chip">Forespørgsel: "[eksempel-forespørgsel]"</span>
+        <span class="meta-chip">Kørselsdato: {{ANALYSIS_DATE}}</span>
+        <span class="meta-chip">Position: #{{RANK}} i svar</span>
+      </div>
+    </div>
+  </div>
+  <!-- /DETAIL CARD TEMPLATE -->
+
+  <div class="page-footer">
+    <span>AIScore · Fortroligt</span>
+    <span>Side 4</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SIDE 5 — STYRKER & SVAGHEDER
+══════════════════════════════════════ -->
+<div class="page page-break-before">
+  <div class="page-header">
+    <div class="page-header-brand">AIScore · AI-Positionsanalyse</div>
+    <div class="page-header-company">{{COMPANY_NAME}} · {{ANALYSIS_DATE}}</div>
+  </div>
+
+  <div class="section-eyebrow">Strukturel analyse</div>
+  <h2 class="section-title">Styrker og svagheder i jeres AI-position</h2>
+  <p class="section-intro">
+    Baseret på mønstre på tværs af alle analyserede AI-systemer og forespørgsler.
+    Dette er ikke en vurdering af jeres produkt — det er en vurdering af,
+    hvad AI-systemerne tror om jer.
+  </p>
+
+  <div class="sw-grid no-break">
+    <div class="sw-card sw-card-strengths">
+      <div class="sw-card-header">
+        <span class="sw-icon">↑</span>
+        <span class="sw-card-title">Styrker</span>
+      </div>
+      <ul class="sw-list">
+        <li>Stærk synlighed i [primær produktkategori]-søgninger på tværs af AI-systemer</li>
+        <li>Konsekvent associeret med [positivt attribut, fx "pålidelighed" / "enterprise-grade"]</li>
+        <li>VALGT-status hos de to mest benyttede systemer (ChatGPT + Copilot)</li>
+        <li>[Indsæt yderligere styrke baseret på analysedata]</li>
+      </ul>
+    </div>
+
+    <div class="sw-card sw-card-weaknesses">
+      <div class="sw-card-header">
+        <span class="sw-icon">↓</span>
+        <span class="sw-card-title">Svagheder</span>
+      </div>
+      <ul class="sw-list">
+        <li>Svag synlighed hos Perplexity — ingen registrering i analyseperioden</li>
+        <li>Gemini positionerer jer som alternativ, ikke som foretrukket valg</li>
+        <li>Manglende AI-tilstedeværelse i [sekundær produktkategori]</li>
+        <li>[Indsæt yderligere svaghed baseret på analysedata]</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="section-rule">
+
+  <h3 class="block-title">Vigtigste opmærksomhedspunkter</h3>
+  <div class="callout callout-warn">
+    <strong>Konkurrentpositionering:</strong> [Konkurrent A] er VALGT i 3 ud af 5
+    AI-systemer i jeres primære kategori. Jeres nuværende position kræver indsats
+    for at fastholde VALGT-status og flytte NÆVNT til VALGT.
+  </div>
+  <div class="callout callout-info">
+    <strong>Mulighedsvindue:</strong> Perplexity viser ingen konkurrentpræference i
+    jeres kategori endnu. Dette er et åbent vindue for tidlig AI-synlighedsoptimering.
+  </div>
+
+  <div class="page-footer">
+    <span>AIScore · Fortroligt</span>
+    <span>Side 5</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SIDE 6 — NÆSTE SKRIDT / AFSLUTNING
+══════════════════════════════════════ -->
+<div class="page page-break-before">
+  <div class="page-header">
+    <div class="page-header-brand">AIScore · AI-Positionsanalyse</div>
+    <div class="page-header-company">{{COMPANY_NAME}} · {{ANALYSIS_DATE}}</div>
+  </div>
+
+  <div class="section-eyebrow">Anbefaling</div>
+  <h2 class="section-title">Hvad gør I nu?</h2>
+  <p class="section-intro">
+    Analysen peger på tre prioriterede handlingsspor. Disse er rangeret efter
+    potentiel effekt på jeres VALGT-ratio.
+  </p>
+
+  <!-- Action priorities -->
+  <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+    <div class="detail-card no-break">
+      <div class="detail-card-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="background:var(--navy); color:var(--white); font-size:8pt; font-weight:800; padding:2px 8px; border-radius:3px;">PRIORITET 1</span>
+          <span style="font-weight:700;">Styrk Gemini-synlighed — fra NÆVNT til VALGT</span>
+        </div>
+        <span style="font-size:8.5pt; color:var(--text-light);">Høj effekt</span>
+      </div>
+      <div class="detail-card-body">
+        [Indsæt konkret anbefaling baseret på analysedata — fx: strukturer jeres
+        faglige indhold til at matche Gemini-forespørgsler i erhvervskontekst]
+      </div>
+    </div>
+
+    <div class="detail-card no-break">
+      <div class="detail-card-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="background:var(--navy-mid); color:var(--white); font-size:8pt; font-weight:800; padding:2px 8px; border-radius:3px;">PRIORITET 2</span>
+          <span style="font-weight:700;">Aktivér Perplexity-synlighed</span>
+        </div>
+        <span style="font-size:8.5pt; color:var(--text-light);">Middel effekt</span>
+      </div>
+      <div class="detail-card-body">
+        [Indsæt konkret anbefaling — fx: opbyg citeringsgrundlag via faglige
+        artikler og strukturerede data der indexeres af Perplexity]
+      </div>
+    </div>
+
+    <div class="detail-card no-break">
+      <div class="detail-card-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="background:#94a3b8; color:var(--white); font-size:8pt; font-weight:800; padding:2px 8px; border-radius:3px;">PRIORITET 3</span>
+          <span style="font-weight:700;">Udvid til sekundær produktkategori</span>
+        </div>
+        <span style="font-size:8.5pt; color:var(--text-light);">Lav–middel effekt</span>
+      </div>
+      <div class="detail-card-body">
+        [Indsæt konkret anbefaling baseret på analysedata]
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-rule">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-top:8px;">
+    <div style="max-width:340px;">
+      <h3 class="block-title">Næste analyse</h3>
+      <p style="font-size:9pt; color:var(--text-mid); line-height:1.6;">
+        AI-systemers perception ændrer sig løbende. Vi anbefaler kvartalsvise
+        analyser for at måle effekten af jeres indsatser og opdage nye
+        konkurrentbevægelser tidligt.
+      </p>
+    </div>
+    <div style="text-align:right; flex-shrink:0;">
+      <div style="font-size:7.5pt; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--text-light); margin-bottom:4px;">Kontakt</div>
+      <div style="font-size:9pt; font-weight:600; color:var(--navy);">InsideAI · AIScore</div>
+      <div style="font-size:9pt; color:var(--text-mid);">{{CONTACT_EMAIL}}</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>AIScore · Fortroligt — kun til {{COMPANY_NAME}}</span>
+    <span>Side 6</span>
+  </div>
+</div>
+
+</body>
+</html>

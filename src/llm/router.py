@@ -1,0 +1,231 @@
+"""
+Async prompt router — fans out to all configured providers in parallel,
+applies per-provider rate limiting, and writes results to PostgreSQL.
+"""
+
+import asyncio
+import uuid
+from datetime import datetime
+from decimal import Decimal
+from typing import Optional
+import structlog
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.llm.providers import REGISTRY, ProviderConfig, LLMResult
+from src.llm.cache import PromptCache, prompt_hash
+from src.llm.rate_limiter import RateLimiter
+from src.db.models import LLMResponse, PromptRequest, TenantProviderConfig
+from src.scoring.calculator import ScoreCalculator
+from src.scoring.change_detector import detect_and_create_alert
+
+log = structlog.get_logger()
+
+
+class PromptRouter:
+    def __init__(self, cache: PromptCache, rate_limiter: RateLimiter) -> None:
+        self.cache = cache
+        self.rate_limiter = rate_limiter
+        self._scorer = ScoreCalculator()
+
+    async def _resolve_config(
+        self,
+        provider_name: str,
+        tenant_configs: list[TenantProviderConfig],
+        fallback_settings,
+    ) -> Optional[ProviderConfig]:
+        """Merge tenant DB config with environment fallbacks."""
+        tenant_cfg = next(
+            (c for c in tenant_configs if c.provider == provider_name and c.is_active),
+            None,
+        )
+        if tenant_cfg:
+            return ProviderConfig(
+                api_key=tenant_cfg.api_key or "",
+                extra=dict(tenant_cfg.extra_config or {}),
+            )
+        # Env fallback
+        fallbacks = {
+            "openai": fallback_settings.openai_api_key,
+            "gemini": fallback_settings.google_api_key,
+            "perplexity": fallback_settings.perplexity_api_key,
+            "copilot": fallback_settings.azure_openai_api_key,
+        }
+        key = fallbacks.get(provider_name, "")
+        if not key:
+            return None
+        extra = {}
+        if provider_name == "copilot":
+            extra = {
+                "azure_endpoint": fallback_settings.azure_openai_endpoint,
+                "azure_deployment": fallback_settings.azure_openai_deployment,
+                "azure_api_version": fallback_settings.azure_openai_api_version,
+                "bing_search_api_key": fallback_settings.bing_search_api_key,
+            }
+        return ProviderConfig(api_key=key, extra=extra)
+
+    async def _call_provider(
+        self,
+        provider_name: str,
+        prompt: str,
+        config: ProviderConfig,
+        tenant_id: str,
+        request_id: uuid.UUID,
+    ) -> LLMResult:
+        provider = REGISTRY[provider_name]
+
+        # Check cache first
+        cached_text = await self.cache.get(tenant_id, provider_name, prompt)
+        if cached_text is not None:
+            log.info("cache.hit", provider=provider_name, tenant_id=tenant_id)
+            return LLMResult(
+                provider=provider_name,
+                model=config.extra.get("model", provider.default_model),
+                prompt=prompt,
+                response_text=cached_text,
+                error=None,
+                latency_ms=0,
+                tokens_used=None,
+                prompt_tokens=None,
+                completion_tokens=None,
+                request_id=request_id,
+                cached=True,
+            )
+
+        # Rate-limit before calling
+        await self.rate_limiter.acquire(provider_name)
+
+        result = await provider.complete(prompt, config)
+        result.request_id = request_id
+
+        # Populate cache on success
+        if result.response_text and not result.error:
+            await self.cache.set(tenant_id, provider_name, prompt, result.response_text)
+
+        return result
+
+    async def _persist(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        request_id: uuid.UUID,
+        result: LLMResult,
+        score: Optional[float] = None,
+    ) -> None:
+        row = LLMResponse(
+            tenant_id=tenant_id,
+            prompt=result.prompt,
+            prompt_hash=prompt_hash(result.prompt),
+            provider=result.provider,
+            model=result.model,
+            response_text=result.response_text,
+            error=result.error,
+            score=Decimal(str(round(score, 2))) if score is not None else None,
+            latency_ms=result.latency_ms,
+            tokens_used=result.tokens_used,
+            prompt_tokens=result.prompt_tokens,
+            completion_tokens=result.completion_tokens,
+            timestamp=datetime.utcnow(),
+            request_id=request_id,
+            cached=result.cached,
+        )
+        session.add(row)
+
+    async def route(
+        self,
+        prompt: str,
+        tenant_id: uuid.UUID,
+        tenant_configs: list[TenantProviderConfig],
+        session: AsyncSession,
+        settings,
+        providers: Optional[list[str]] = None,
+        scoring_keyword: Optional[str] = None,
+    ) -> list[LLMResult]:
+        """
+        Fan out prompt to all (or selected) providers in parallel.
+        Returns results for all providers; errors are recorded, not raised.
+        Scores each response and runs change detection when scoring_keyword is provided.
+        """
+        request_id = uuid.uuid4()
+        active_providers = providers or list(REGISTRY.keys())
+
+        # Create prompt request record
+        pr = PromptRequest(
+            tenant_id=tenant_id,
+            prompt=prompt,
+            prompt_hash=prompt_hash(prompt),
+            status="pending",
+        )
+        session.add(pr)
+        await session.flush()
+
+        async def _run(name: str) -> LLMResult:
+            cfg = await self._resolve_config(name, tenant_configs, settings)
+            if cfg is None:
+                log.info("router.provider_skipped", provider=name, reason="no_config")
+                return LLMResult(
+                    provider=name,
+                    model="unknown",
+                    prompt=prompt,
+                    response_text=None,
+                    error="No API key configured for this provider",
+                    latency_ms=0,
+                    tokens_used=None,
+                    prompt_tokens=None,
+                    completion_tokens=None,
+                    request_id=request_id,
+                )
+            try:
+                return await self._call_provider(name, prompt, cfg, str(tenant_id), request_id)
+            except Exception as exc:
+                log.error("router.provider_error", provider=name, error=str(exc))
+                return LLMResult(
+                    provider=name,
+                    model=cfg.extra.get("model", REGISTRY[name].default_model),
+                    prompt=prompt,
+                    response_text=None,
+                    error=str(exc),
+                    latency_ms=0,
+                    tokens_used=None,
+                    prompt_tokens=None,
+                    completion_tokens=None,
+                    request_id=request_id,
+                )
+
+        results = await asyncio.gather(*[_run(p) for p in active_providers])
+
+        # Compute scores in-memory (queries committed DB history, not this session)
+        provider_scores: dict[str, Optional[float]] = {}
+        for result in results:
+            raw = self._scorer.calculate(result, keyword=scoring_keyword)
+            provider_scores[result.provider] = raw if raw > 0 else None
+
+        # Persist results with scores
+        for result in results:
+            await self._persist(
+                session, tenant_id, request_id, result,
+                score=provider_scores[result.provider],
+            )
+
+        # Change detection — runs before commit so alerts land in the same transaction
+        window_days = getattr(settings, "scoring_window_days", 7)
+        threshold = getattr(settings, "scoring_alert_threshold", 10.0)
+        for result in results:
+            score = provider_scores.get(result.provider)
+            if score is not None and score > 0:
+                await detect_and_create_alert(
+                    session=session,
+                    tenant_id=tenant_id,
+                    provider=result.provider,
+                    current_score=score,
+                    window_days=window_days,
+                    threshold=threshold,
+                )
+
+        # Update request status
+        errors = [r for r in results if r.error]
+        pr.status = "error" if len(errors) == len(results) else (
+            "partial" if errors else "complete"
+        )
+
+        await session.commit()
+        return list(results)
