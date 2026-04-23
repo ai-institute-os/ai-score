@@ -53,6 +53,10 @@ async def test_router_fans_out_to_all_providers(router):
     session.flush = AsyncMock()
     session.commit = AsyncMock()
     session.add = MagicMock()
+    # Return no DB history so change_detector exits early (no alert)
+    _db_result = MagicMock()
+    _db_result.scalar_one_or_none.return_value = None
+    session.execute = AsyncMock(return_value=_db_result)
 
     settings = MagicMock(
         openai_api_key="sk-test",
@@ -63,6 +67,8 @@ async def test_router_fans_out_to_all_providers(router):
         azure_openai_deployment="gpt-4o",
         azure_openai_api_version="2024-05-01-preview",
         bing_search_api_key="bing-test",
+        scoring_window_days=7,
+        scoring_alert_threshold=10.0,
     )
 
     stub_results = {

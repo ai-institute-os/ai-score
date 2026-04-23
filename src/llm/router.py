@@ -3,11 +3,13 @@ Async prompt router — fans out to all configured providers in parallel,
 applies per-provider rate limiting, and writes results to PostgreSQL.
 """
 
+from __future__ import annotations
+
 import asyncio
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,15 +17,16 @@ from src.llm.providers import REGISTRY, ProviderConfig, LLMResult
 from src.llm.cache import PromptCache, prompt_hash
 from src.llm.rate_limiter import RateLimiter
 from src.db.models import LLMResponse, PromptRequest, TenantProviderConfig
-from src.scoring.calculator import AIScore, ScoreCalculator
-from src.scoring.aggregator import aggregate_scores
-from src.scoring.change_detector import detect_and_create_alert
+
+if TYPE_CHECKING:
+    from src.scoring.calculator import AIScore
 
 log = structlog.get_logger()
 
 
 class PromptRouter:
     def __init__(self, cache: PromptCache, rate_limiter: RateLimiter) -> None:
+        from src.scoring.calculator import ScoreCalculator
         self.cache = cache
         self.rate_limiter = rate_limiter
         self._scorer = ScoreCalculator()
@@ -196,6 +199,10 @@ class PromptRouter:
                 )
 
         results = await asyncio.gather(*[_run(p) for p in active_providers])
+
+        from src.scoring.calculator import AIScore
+        from src.scoring.aggregator import aggregate_scores
+        from src.scoring.change_detector import detect_and_create_alert
 
         # Compute structured AIScores in-memory
         provider_aiscores: dict[str, Optional[AIScore]] = {}
