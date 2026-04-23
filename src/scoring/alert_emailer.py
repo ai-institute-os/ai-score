@@ -1,10 +1,15 @@
 """
 Renders the InsideAI alert email template with score change data.
+
+Design rule: alerts must NEVER mention raw scores.
+They must express business consequence: selection rate change and estimated revenue impact.
+
 Template variables and design are documented in src/templates/insideai-alert-email.html.
 """
 
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 _TEMPLATE_PATH = Path(__file__).parent.parent / "templates" / "insideai-alert-email.html"
 
@@ -14,6 +19,66 @@ _URGENCY_COLORS = {
     "LAV": "#1d4ed8",
 }
 
+# Maximum scoring dimension for valgt (selection context), used for rate conversion
+_VALGT_MAX = 30.0
+
+
+def _selection_rate_description(score_before: float, score_after: float) -> str:
+    """
+    Converts score delta into a plain-language selection rate description.
+    Uses the total score as a proxy for selection frequency.
+
+    Avoids mentioning raw numbers — describes relative change in human terms.
+    """
+    if score_before <= 0:
+        return "sjældnere end tidligere"
+
+    ratio = score_after / score_before
+
+    if ratio <= 0.25:
+        return "kun en fjerdedel så ofte som tidligere"
+    if ratio <= 0.40:
+        return "mindre end halvt så ofte som tidligere"
+    if ratio <= 0.60:
+        return "cirka halvt så ofte som tidligere"
+    if ratio <= 0.75:
+        return "betydeligt sjældnere end tidligere"
+    if ratio <= 0.90:
+        return "noget sjældnere end tidligere"
+    if ratio <= 1.10:
+        return "på nogenlunde samme niveau som tidligere"
+    if ratio <= 1.33:
+        return "noget hyppigere end tidligere"
+    if ratio <= 1.75:
+        return "betydeligt hyppigere end tidligere"
+    return "langt hyppigere end tidligere"
+
+
+def _revenue_impact_text(
+    score_before: float,
+    score_after: float,
+    monthly_revenue_estimate: Optional[float],
+) -> str:
+    """
+    Converts score change to estimated monthly revenue impact.
+    Returns empty string if no revenue estimate is configured.
+    """
+    if not monthly_revenue_estimate or monthly_revenue_estimate <= 0 or score_before <= 0:
+        return ""
+
+    share_before = score_before / 100.0
+    share_after = score_after / 100.0
+    delta_share = share_after - share_before
+    revenue_delta = delta_share * monthly_revenue_estimate
+
+    if abs(revenue_delta) < 100:
+        return ""
+
+    amount = abs(int(round(revenue_delta / 100) * 100))
+    if revenue_delta < 0:
+        return f" Det estimeres til et potentielt tab på {amount:,} kr. månedligt.".replace(",", ".")
+    return f" Det estimeres at svare til {amount:,} kr. i ekstra omsætning månedligt.".replace(",", ".")
+
 
 def render_alert_email(
     company_name: str,
@@ -22,6 +87,7 @@ def render_alert_email(
     score_after: float,
     delta: float,
     triggered_at: datetime,
+    monthly_revenue_estimate: Optional[float] = None,
     contact_url: str = "#",
     contact_email: str = "alert@insideai.dk",
     unsubscribe_url: str = "#",
@@ -29,13 +95,18 @@ def render_alert_email(
     """
     Returns the rendered HTML string for an InsideAI score-change alert email.
 
+    Consequence formulation (design rule):
+      - NEVER mention raw scores
+      - Express change as selection rate shift in plain language
+      - Include revenue impact estimate when monthly_revenue_estimate is configured
+
     urgency is derived from abs(delta):
       >= 20  → HOJ   (red)
       >= 10  → MIDDEL (amber)
       < 10   → LAV   (blue)
     """
     abs_delta = abs(delta)
-    direction = "faldet" if delta < 0 else "steget"
+    direction_verb = "faldet" if delta < 0 else "steget"
 
     if abs_delta >= 20:
         urgency = "HOJ"
@@ -43,6 +114,9 @@ def render_alert_email(
         urgency = "MIDDEL"
     else:
         urgency = "LAV"
+
+    selection_desc = _selection_rate_description(score_before, score_after)
+    revenue_text = _revenue_impact_text(score_before, score_after, monthly_revenue_estimate)
 
     template = _TEMPLATE_PATH.read_text(encoding="utf-8")
 
@@ -53,13 +127,13 @@ def render_alert_email(
     replacements = {
         "{{COMPANY_NAME}}": company_name,
         "{{ALARM_HEADLINE}}": (
-            f"Jeres AI-score hos {provider.title()} er {direction} med {abs_delta:.1f} point"
+            f"{company_name} vælges nu {selection_desc} hos {provider.title()}"
         ),
         "{{ALARM_CONTEXT}}": (
-            f"InsideAI har registreret en statistisk signifikant ændring i "
-            f"{company_name}s synlighed hos {provider.title()}. "
-            f"Scoren er {direction} fra {score_before:.1f} til {score_after:.1f} — "
-            f"en ændring på {delta:+.1f} point ift. det rullende 7-dages gennemsnit."
+            f"InsideAI har registreret en ændring i, hvor ofte {company_name} "
+            f"vælges og anbefales af {provider.title()}. "
+            f"Synligheden er {direction_verb} — I fremstår nu {selection_desc} i AI-svar."
+            f"{revenue_text}"
         ),
         "{{ALARM_ACTION}}": (
             "Overvej at analysere de seneste AI-svar og justere jeres content-strategi. "

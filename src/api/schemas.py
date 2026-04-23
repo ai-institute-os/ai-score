@@ -6,6 +6,16 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class AIScoreDimensions(BaseModel):
+    """Structured AIScore dimensions for a single provider response."""
+
+    naevnt: float = Field(description="Brand mentioned in response (0–30)")
+    valgt: float = Field(description="Brand in selection/recommendation context (0–30)")
+    valgbarhed: float = Field(description="How early/prominently the brand appears (0–25)")
+    konkurrenceposition: float = Field(description="Sentiment around the brand (0–15)")
+    total: float = Field(description="Aggregated AIScore (0–100)")
+
+
 class PromptRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=32_000)
     providers: Optional[list[str]] = Field(
@@ -45,6 +55,7 @@ class LLMResponseRecord(BaseModel):
     response_text: Optional[str]
     error: Optional[str]
     score: Optional[Decimal]
+    score_dimensions: Optional[AIScoreDimensions] = None
     latency_ms: Optional[int]
     tokens_used: Optional[int]
     timestamp: datetime
@@ -57,12 +68,17 @@ class LLMResponseRecord(BaseModel):
 class TenantCreate(BaseModel):
     name: str
     slug: str
+    monthly_revenue_estimate: Optional[Decimal] = Field(
+        default=None,
+        description="Monthly revenue estimate in DKK — used to convert score changes into revenue impact in alerts",
+    )
 
 
 class TenantResponse(BaseModel):
     id: uuid.UUID
     name: str
     slug: str
+    monthly_revenue_estimate: Optional[Decimal] = None
     created_at: datetime
 
     class Config:
@@ -90,10 +106,22 @@ class ProviderScore(BaseModel):
     provider: str
     model: Optional[str]
     score: Optional[Decimal]
+    score_dimensions: Optional[AIScoreDimensions] = None
     timestamp: datetime
 
     class Config:
         from_attributes = True
+
+
+class AggregatedAIScoreResponse(BaseModel):
+    """Cross-provider weighted AIScore aggregate for a tenant."""
+
+    naevnt: float
+    valgt: float
+    valgbarhed: float
+    konkurrenceposition: float
+    total: float
+    providers: dict[str, AIScoreDimensions]
 
 
 class AlertRecord(BaseModel):

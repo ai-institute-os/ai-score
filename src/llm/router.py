@@ -15,7 +15,8 @@ from src.llm.providers import REGISTRY, ProviderConfig, LLMResult
 from src.llm.cache import PromptCache, prompt_hash
 from src.llm.rate_limiter import RateLimiter
 from src.db.models import LLMResponse, PromptRequest, TenantProviderConfig
-from src.scoring.calculator import ScoreCalculator
+from src.scoring.calculator import AIScore, ScoreCalculator
+from src.scoring.aggregator import aggregate_scores
 from src.scoring.change_detector import detect_and_create_alert
 
 log = structlog.get_logger()
@@ -109,8 +110,10 @@ class PromptRouter:
         tenant_id: uuid.UUID,
         request_id: uuid.UUID,
         result: LLMResult,
-        score: Optional[float] = None,
+        aiscore: Optional[AIScore] = None,
     ) -> None:
+        score_total = Decimal(str(round(aiscore.total, 2))) if aiscore is not None else None
+        score_dims = aiscore.as_dict() if aiscore is not None else None
         row = LLMResponse(
             tenant_id=tenant_id,
             prompt=result.prompt,
@@ -119,7 +122,8 @@ class PromptRouter:
             model=result.model,
             response_text=result.response_text,
             error=result.error,
-            score=Decimal(str(round(score, 2))) if score is not None else None,
+            score=score_total,
+            score_dimensions=score_dims,
             latency_ms=result.latency_ms,
             tokens_used=result.tokens_used,
             prompt_tokens=result.prompt_tokens,
@@ -193,30 +197,44 @@ class PromptRouter:
 
         results = await asyncio.gather(*[_run(p) for p in active_providers])
 
-        # Compute scores in-memory (queries committed DB history, not this session)
-        provider_scores: dict[str, Optional[float]] = {}
+        # Compute structured AIScores in-memory
+        provider_aiscores: dict[str, Optional[AIScore]] = {}
         for result in results:
-            raw = self._scorer.calculate(result, keyword=scoring_keyword)
-            provider_scores[result.provider] = raw if raw > 0 else None
+            aiscore = self._scorer.calculate(result, keyword=scoring_keyword)
+            provider_aiscores[result.provider] = aiscore if aiscore.total > 0 else None
 
-        # Persist results with scores
+        # Cross-provider weighted aggregation (stored on request for downstream reporting)
+        scored_map = {p: s for p, s in provider_aiscores.items() if s is not None}
+        aggregated = aggregate_scores(scored_map) if scored_map else None
+        if aggregated:
+            log.info(
+                "router.aggregated_aiscore",
+                tenant_id=str(tenant_id),
+                total=aggregated.total,
+                naevnt=aggregated.naevnt,
+                valgt=aggregated.valgt,
+                valgbarhed=aggregated.valgbarhed,
+                konkurrenceposition=aggregated.konkurrenceposition,
+            )
+
+        # Persist results with structured scores
         for result in results:
             await self._persist(
                 session, tenant_id, request_id, result,
-                score=provider_scores[result.provider],
+                aiscore=provider_aiscores[result.provider],
             )
 
         # Change detection — runs before commit so alerts land in the same transaction
         window_days = getattr(settings, "scoring_window_days", 7)
         threshold = getattr(settings, "scoring_alert_threshold", 10.0)
         for result in results:
-            score = provider_scores.get(result.provider)
-            if score is not None and score > 0:
+            aiscore = provider_aiscores.get(result.provider)
+            if aiscore is not None and aiscore.total > 0:
                 await detect_and_create_alert(
                     session=session,
                     tenant_id=tenant_id,
                     provider=result.provider,
-                    current_score=score,
+                    current_score=aiscore.total,
                     window_days=window_days,
                     threshold=threshold,
                 )

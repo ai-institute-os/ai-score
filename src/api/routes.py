@@ -13,9 +13,11 @@ from src.api.schemas import (
     ProviderConfigCreate, ProviderConfigResponse,
     LLMResponseRecord,
     ProviderScore, AlertRecord, RecalculateResponse,
+    AIScoreDimensions, AggregatedAIScoreResponse,
 )
 from src.llm.providers import REGISTRY
-from src.scoring.calculator import ScoreCalculator
+from src.scoring.calculator import AIScore, ScoreCalculator
+from src.scoring.aggregator import aggregate_scores
 
 router = APIRouter()
 
@@ -29,7 +31,11 @@ async def create_tenant(body: TenantCreate, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(Tenant).where(Tenant.slug == body.slug))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Tenant slug already exists")
-    tenant = Tenant(name=body.name, slug=body.slug)
+    tenant = Tenant(
+        name=body.name,
+        slug=body.slug,
+        monthly_revenue_estimate=body.monthly_revenue_estimate,
+    )
     db.add(tenant)
     await db.commit()
     await db.refresh(tenant)
@@ -200,9 +206,69 @@ async def get_scores(
     result = await db.execute(q)
     rows = list(result.scalars().all())
     return [
-        ProviderScore(provider=r.provider, model=r.model, score=r.score, timestamp=r.timestamp)
+        ProviderScore(
+            provider=r.provider,
+            model=r.model,
+            score=r.score,
+            score_dimensions=AIScoreDimensions(**r.score_dimensions) if r.score_dimensions else None,
+            timestamp=r.timestamp,
+        )
         for r in rows
     ]
+
+
+@router.get("/tenants/{tenant_id}/aiscore", response_model=AggregatedAIScoreResponse)
+async def get_aggregated_aiscore(
+    tenant_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Weighted aggregate AIScore across all providers for this tenant."""
+    tenant = await _get_tenant_or_404(tenant_id, db)
+
+    subq = (
+        select(
+            LLMResponse.provider,
+            func.max(LLMResponse.timestamp).label("latest_ts"),
+        )
+        .where(
+            LLMResponse.tenant_id == tenant_id,
+            LLMResponse.score_dimensions.is_not(None),
+        )
+        .group_by(LLMResponse.provider)
+        .subquery()
+    )
+    q = (
+        select(LLMResponse)
+        .join(
+            subq,
+            (LLMResponse.provider == subq.c.provider)
+            & (LLMResponse.timestamp == subq.c.latest_ts),
+        )
+        .where(LLMResponse.tenant_id == tenant_id)
+    )
+    result = await db.execute(q)
+    rows = list(result.scalars().all())
+
+    if not rows:
+        raise HTTPException(status_code=404, detail="No scored responses found for this tenant")
+
+    provider_aiscores = {
+        r.provider: AIScore(**r.score_dimensions)
+        for r in rows
+        if r.score_dimensions
+    }
+    aggregated = aggregate_scores(provider_aiscores)
+    if not aggregated:
+        raise HTTPException(status_code=404, detail="No scored providers found")
+
+    return AggregatedAIScoreResponse(
+        naevnt=aggregated.naevnt,
+        valgt=aggregated.valgt,
+        valgbarhed=aggregated.valgbarhed,
+        konkurrenceposition=aggregated.konkurrenceposition,
+        total=aggregated.total,
+        providers={p: AIScoreDimensions(**s.as_dict()) for p, s in aggregated.providers.items()},
+    )
 
 
 @router.get("/tenants/{tenant_id}/alerts", response_model=list[AlertRecord])
@@ -266,9 +332,10 @@ async def recalculate_scores(
             prompt_tokens=row.prompt_tokens,
             completion_tokens=row.completion_tokens,
         )
-        score = calculator.calculate(mock, keyword=tenant.name)
-        if score > 0:
-            row.score = Decimal(str(round(score, 2)))
+        aiscore = calculator.calculate(mock, keyword=tenant.name)
+        if aiscore.total > 0:
+            row.score = Decimal(str(round(aiscore.total, 2)))
+            row.score_dimensions = aiscore.as_dict()
 
     await db.commit()
     scored_count = sum(1 for r in rows if r.score is not None)

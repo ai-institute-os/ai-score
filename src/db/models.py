@@ -27,6 +27,8 @@ class Tenant(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String, nullable=False)
     slug: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    # Optional monthly revenue estimate (DKK) used to convert score changes into revenue impact
+    monthly_revenue_estimate: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -61,6 +63,8 @@ class LLMResponse(Base):
     response_text: Mapped[Optional[str]] = mapped_column(Text)
     error: Mapped[Optional[str]] = mapped_column(Text)
     score: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
+    # Structured AIScore dimensions stored as JSON for queryability without schema migration per dimension
+    score_dimensions: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     latency_ms: Mapped[Optional[int]] = mapped_column(Integer)
     tokens_used: Mapped[Optional[int]] = mapped_column(Integer)
     prompt_tokens: Mapped[Optional[int]] = mapped_column(Integer)
