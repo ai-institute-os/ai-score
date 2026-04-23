@@ -36,7 +36,7 @@ def cache():
 def rate_limiter():
     rl = RateLimiter(
         redis_url="redis://localhost:19999/99",
-        defaults={"openai": 60, "gemini": 60, "perplexity": 20, "copilot": 30},
+        defaults={"openai": 60, "gemini": 60, "perplexity": 20, "claude": 50},
     )
     return rl
 
@@ -62,11 +62,7 @@ async def test_router_fans_out_to_all_providers(router):
         openai_api_key="sk-test",
         google_api_key="g-test",
         perplexity_api_key="pp-test",
-        azure_openai_api_key="az-test",
-        azure_openai_endpoint="https://test.openai.azure.com",
-        azure_openai_deployment="gpt-4o",
-        azure_openai_api_version="2024-05-01-preview",
-        bing_search_api_key="bing-test",
+        anthropic_api_key="sk-ant-test",
         scoring_window_days=7,
         scoring_alert_threshold=10.0,
     )
@@ -75,21 +71,21 @@ async def test_router_fans_out_to_all_providers(router):
         "openai": _make_result("openai"),
         "gemini": _make_result("gemini"),
         "perplexity": _make_result("perplexity"),
-        "copilot": _make_result("copilot"),
+        "claude": _make_result("claude"),
     }
 
     async def fake_complete(prompt, config):
         return stub_results[provider_name]
 
     with patch("src.llm.router.REGISTRY") as mock_reg:
-        for name in ["openai", "gemini", "perplexity", "copilot"]:
+        for name in ["openai", "gemini", "perplexity", "claude"]:
             provider_name = name
             p = MagicMock()
             p.default_model = "test-model"
             p.complete = AsyncMock(return_value=stub_results[name])
             mock_reg.__contains__ = lambda self, k: True
-            mock_reg.__iter__ = lambda self: iter(["openai", "gemini", "perplexity", "copilot"])
-            mock_reg.keys = MagicMock(return_value=["openai", "gemini", "perplexity", "copilot"])
+            mock_reg.__iter__ = lambda self: iter(["openai", "gemini", "perplexity", "claude"])
+            mock_reg.keys = MagicMock(return_value=["openai", "gemini", "perplexity", "claude"])
             mock_reg.__getitem__ = lambda self, k: p
 
         results = await router.route(
@@ -98,7 +94,7 @@ async def test_router_fans_out_to_all_providers(router):
             tenant_configs=[],
             session=session,
             settings=settings,
-            providers=["openai", "gemini", "perplexity", "copilot"],
+            providers=["openai", "gemini", "perplexity", "claude"],
         )
 
     assert len(results) == 4
@@ -116,11 +112,7 @@ async def test_router_returns_error_result_on_provider_exception(router):
         openai_api_key="sk-test",
         google_api_key="",
         perplexity_api_key="",
-        azure_openai_api_key="",
-        azure_openai_endpoint="",
-        azure_openai_deployment="gpt-4o",
-        azure_openai_api_version="2024-05-01-preview",
-        bing_search_api_key="",
+        anthropic_api_key="",
     )
 
     broken_provider = MagicMock()

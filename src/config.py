@@ -13,17 +13,13 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     google_api_key: str = ""
     perplexity_api_key: str = ""
-    azure_openai_api_key: str = ""
-    azure_openai_endpoint: str = ""
-    azure_openai_deployment: str = "gpt-4o"
-    azure_openai_api_version: str = "2024-05-01-preview"
-    bing_search_api_key: str = ""
+    anthropic_api_key: str = ""
 
     # Rate limits (requests per minute)
     rate_limit_openai: int = 60
     rate_limit_gemini: int = 60
     rate_limit_perplexity: int = 20
-    rate_limit_copilot: int = 30
+    rate_limit_claude: int = 50
 
     cache_ttl_seconds: int = 300
 

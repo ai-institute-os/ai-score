@@ -8,7 +8,7 @@ Provider weights reflect relative market reach and query volume:
   openai      30%  — highest volume, GPT models dominant in enterprise tools
   perplexity  30%  — search-adjacent AI with high purchase-intent context
   gemini      25%  — growing Google ecosystem reach
-  copilot     15%  — Microsoft enterprise niche
+  claude      15%  — Anthropic Claude, strong reasoning and enterprise adoption
 """
 
 import dataclasses
@@ -20,7 +20,7 @@ _PROVIDER_WEIGHTS: dict[str, float] = {
     "openai": 0.30,
     "perplexity": 0.30,
     "gemini": 0.25,
-    "copilot": 0.15,
+    "claude": 0.15,
 }
 
 _DEFAULT_WEIGHT = 0.25  # fallback for unknown providers

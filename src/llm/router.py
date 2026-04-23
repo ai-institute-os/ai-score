@@ -52,20 +52,12 @@ class PromptRouter:
             "openai": fallback_settings.openai_api_key,
             "gemini": fallback_settings.google_api_key,
             "perplexity": fallback_settings.perplexity_api_key,
-            "copilot": fallback_settings.azure_openai_api_key,
+            "claude": fallback_settings.anthropic_api_key,
         }
         key = fallbacks.get(provider_name, "")
         if not key:
             return None
-        extra = {}
-        if provider_name == "copilot":
-            extra = {
-                "azure_endpoint": fallback_settings.azure_openai_endpoint,
-                "azure_deployment": fallback_settings.azure_openai_deployment,
-                "azure_api_version": fallback_settings.azure_openai_api_version,
-                "bing_search_api_key": fallback_settings.bing_search_api_key,
-            }
-        return ProviderConfig(api_key=key, extra=extra)
+        return ProviderConfig(api_key=key, extra={})
 
     async def _call_provider(
         self,

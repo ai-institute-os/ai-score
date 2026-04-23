@@ -12,6 +12,7 @@ structlog==24.4.0
 python-dotenv==1.0.1
 openai==1.57.4
 google-generativeai==0.8.3
+anthropic>=0.40.0
 pytest==8.3.4
 pytest-asyncio==0.24.0
 httpx==0.28.1

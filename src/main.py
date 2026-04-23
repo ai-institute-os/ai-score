@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
             "openai": settings.rate_limit_openai,
             "gemini": settings.rate_limit_gemini,
             "perplexity": settings.rate_limit_perplexity,
-            "copilot": settings.rate_limit_copilot,
+            "claude": settings.rate_limit_claude,
         },
     )
     _router = PromptRouter(cache=cache, rate_limiter=rate_limiter)

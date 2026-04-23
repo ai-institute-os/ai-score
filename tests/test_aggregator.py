@@ -46,10 +46,10 @@ class TestAggregateScores:
         assert result.total == 100.0  # only openai contributed
 
     def test_higher_weight_provider_dominates(self):
-        # openai weight (0.30) > copilot weight (0.15)
+        # openai weight (0.30) > claude weight (0.15)
         scores = {
             "openai": _score(total=100.0),
-            "copilot": _score(total=0.1),  # effectively zero contribution
+            "claude": _score(total=0.1),  # effectively zero contribution
         }
         result = aggregate_scores(scores)
         assert result is not None

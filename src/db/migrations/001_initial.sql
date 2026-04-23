@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS tenants (
 CREATE TABLE IF NOT EXISTS tenant_provider_configs (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    provider        TEXT NOT NULL,   -- 'openai' | 'gemini' | 'perplexity' | 'copilot'
+    provider        TEXT NOT NULL,   -- 'openai' | 'gemini' | 'perplexity' | 'claude'
     api_key         TEXT,
     extra_config    JSONB NOT NULL DEFAULT '{}',   -- endpoint, deployment, etc.
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
