@@ -1,10 +1,14 @@
 import structlog
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from src.config import get_settings
 from src.llm import PromptRouter, PromptCache, RateLimiter
 from src.api.routes import router
+from src.api.apply_routes import router as apply_router
 
 log = structlog.get_logger()
 
@@ -44,3 +48,15 @@ app = FastAPI(
 )
 
 app.include_router(router, prefix="/api/v1")
+app.include_router(apply_router, prefix="/api/v1")
+
+# Serve static assets (apply form HTML)
+_static_dir = Path(__file__).parent / "static"
+if _static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+
+
+@app.get("/apply", include_in_schema=False)
+async def apply_form():
+    """Serve the customer pre-qualification apply form."""
+    return FileResponse(str(_static_dir / "apply.html"))

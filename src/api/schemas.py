@@ -140,3 +140,52 @@ class AlertRecord(BaseModel):
 class RecalculateResponse(BaseModel):
     updated: int
     message: str
+
+
+# ─────────────────────────────────────────────
+# Customer application (pre-qualification gate)
+# ─────────────────────────────────────────────
+
+class ApplicationCreate(BaseModel):
+    firmanavn: str = Field(..., min_length=1, max_length=255, description="Virksomhedens navn")
+    website: str = Field(..., min_length=1, max_length=500, description="Virksomhedens website")
+    kontaktperson: str = Field(..., min_length=1, max_length=255, description="Kontaktpersonens fulde navn")
+    email: str = Field(..., min_length=1, max_length=255, description="Kontakt-e-mail")
+    telefon: str = Field(..., min_length=1, max_length=50, description="Telefonnummer")
+    virksomhedsinfo: str = Field(..., min_length=10, max_length=5000, description="Kort beskrivelse af virksomheden og dens behov")
+
+
+class StateLogEntry(BaseModel):
+    id: uuid.UUID
+    from_status: Optional[str]
+    to_status: str
+    changed_by: Optional[str]
+    note: Optional[str]
+    changed_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ApplicationResponse(BaseModel):
+    id: uuid.UUID
+    firmanavn: str
+    website: str
+    kontaktperson: str
+    email: str
+    telefon: str
+    virksomhedsinfo: str
+    status: str
+    notes: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    state_logs: list[StateLogEntry] = []
+
+    class Config:
+        from_attributes = True
+
+
+class ApplicationStatusUpdate(BaseModel):
+    status: str = Field(..., description="New CRM status for the application")
+    note: Optional[str] = Field(default=None, description="Optional note explaining the transition")
+    changed_by: Optional[str] = Field(default=None, description="Admin identifier making the change")
