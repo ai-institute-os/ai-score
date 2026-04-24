@@ -1,0 +1,171 @@
+"""
+Async email sender using aiosmtplib.
+
+All outbound emails go through send_email(). Higher-level helpers (e.g.
+send_payment_link_email) build the HTML body and delegate here.
+"""
+
+import structlog
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Optional
+
+import aiosmtplib
+
+from src.config import get_settings
+
+log = structlog.get_logger()
+
+
+async def send_email(
+    to: str,
+    subject: str,
+    html_body: str,
+    text_body: Optional[str] = None,
+) -> None:
+    """Send an HTML email. Falls back gracefully when SMTP is not configured."""
+    settings = get_settings()
+
+    if not settings.smtp_username or not settings.smtp_password:
+        log.warning(
+            "email.skipped",
+            reason="SMTP credentials not configured",
+            to=to,
+            subject=subject,
+        )
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{settings.smtp_from_name} <{settings.smtp_from_email}>"
+    msg["To"] = to
+
+    if text_body:
+        msg.attach(MIMEText(text_body, "plain", "utf-8"))
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    try:
+        await aiosmtplib.send(
+            msg,
+            hostname=settings.smtp_host,
+            port=settings.smtp_port,
+            username=settings.smtp_username,
+            password=settings.smtp_password,
+            start_tls=True,
+        )
+        log.info("email.sent", to=to, subject=subject)
+    except Exception as exc:
+        log.error("email.failed", to=to, subject=subject, error=str(exc))
+        raise
+
+
+async def send_payment_link_email(
+    customer_email: str,
+    customer_name: str,
+    company_name: str,
+    payment_url: str,
+    amount_dkk: int,
+) -> None:
+    """Send the payment link to the customer so they can pay during the call."""
+    subject = f"Betal for din AIScore Rapport — {company_name}"
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h2 style="color:#1d4ed8;">Din AIScore Rapport er klar til betaling</h2>
+  <p>Hej {customer_name},</p>
+  <p>
+    Tak for din interesse i en AIScore Rapport for <strong>{company_name}</strong>.
+    Som aftalt kan du gennemføre betalingen direkte via linket nedenfor.
+  </p>
+  <p style="margin:32px 0;text-align:center;">
+    <a href="{payment_url}"
+       style="background:#1d4ed8;color:#fff;padding:14px 28px;border-radius:6px;
+              text-decoration:none;font-size:16px;font-weight:bold;">
+      Betal {amount_dkk:,} kr. nu
+    </a>
+  </p>
+  <p style="color:#6b7280;font-size:13px;">
+    Linket er gyldigt i 1 time. Betaling sker sikkert via Stripe.
+  </p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+  <p style="color:#6b7280;font-size:12px;">
+    AIScore &bull; aiscore.dk &bull; Har du spørgsmål? Skriv til os på
+    <a href="mailto:support@aiscore.dk">support@aiscore.dk</a>
+  </p>
+</body>
+</html>
+""".strip()
+
+    text_body = (
+        f"Hej {customer_name},\n\n"
+        f"Betal for din AIScore Rapport ({company_name}) her:\n{payment_url}\n\n"
+        f"Beløb: {amount_dkk:,} kr.  Linket udløber om 1 time.\n\n"
+        f"AIScore — support@aiscore.dk"
+    )
+
+    await send_email(
+        to=customer_email,
+        subject=subject,
+        html_body=html_body,
+        text_body=text_body,
+    )
+
+
+async def send_qc_escalation_email(
+    company_name: str,
+    application_id: str,
+    failure_count: int,
+    is_final_escalation: bool,
+    admin_note: Optional[str] = None,
+) -> None:
+    """
+    Alert research@aiscore.dk (and admin) when QC failures trigger escalation.
+
+    is_final_escalation=True means 3 post-manual failures → Dennis contacts customer → cancel.
+    """
+    settings = get_settings()
+
+    if is_final_escalation:
+        subject = f"[AIScore QC] ENDELIG ESKALERING — {company_name} rapport annulleres"
+        headline = "Rapport annulleres efter 3 yderligere QC-fejl"
+        body_text = (
+            f"Rapporten for <strong>{company_name}</strong> har fejlet QC "
+            f"{failure_count} gange efter manuel korrekt. "
+            f"Dennis skal kontakte kunden, og rapporten vil blive annulleret."
+        )
+        action = "Kontakt kunden og annuller rapporten."
+    else:
+        subject = f"[AIScore QC] Eskalering — {company_name} — {failure_count} QC-fejl"
+        headline = f"QC-fejl nr. {failure_count} — Manuel korrekt nødvendig"
+        body_text = (
+            f"Rapporten for <strong>{company_name}</strong> har automatisk fejlet "
+            f"QC {failure_count} gange. "
+            f"Dennis skal evaluere manuelt og indlæse den korrigerede version."
+        )
+        action = "Gennemgå rapporten og foretag manuel korrekt."
+
+    if admin_note:
+        body_text += f"<br><br><strong>Seneste QC-note:</strong> {admin_note}"
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h2 style="color:#b91c1c;">{headline}</h2>
+  <p>{body_text}</p>
+  <p><strong>Handling:</strong> {action}</p>
+  <p style="color:#6b7280;font-size:13px;">
+    Applikations-ID: {application_id}<br>
+    AIScore intern system
+  </p>
+</body>
+</html>
+""".strip()
+
+    recipients = [settings.qc_alert_email, settings.admin_email]
+    for recipient in recipients:
+        await send_email(to=recipient, subject=subject, html_body=html_body)

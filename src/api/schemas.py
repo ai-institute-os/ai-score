@@ -177,6 +177,12 @@ class ApplicationResponse(BaseModel):
     virksomhedsinfo: str
     status: str
     notes: Optional[str]
+    # Payment
+    payment_url: Optional[str] = None
+    stripe_session_id: Optional[str] = None
+    # QC loop
+    qc_failure_count: int = 0
+    has_been_escalated: bool = False
     created_at: datetime
     updated_at: datetime
     state_logs: list[StateLogEntry] = []
@@ -189,3 +195,26 @@ class ApplicationStatusUpdate(BaseModel):
     status: str = Field(..., description="New CRM status for the application")
     note: Optional[str] = Field(default=None, description="Optional note explaining the transition")
     changed_by: Optional[str] = Field(default=None, description="Admin identifier making the change")
+
+
+class GeneratePaymentLinkRequest(BaseModel):
+    amount_dkk: int = Field(..., gt=0, description="Amount in DKK to charge (e.g. 4995 for 4.995 kr.)")
+    send_email: bool = Field(default=True, description="Whether to send the payment link to the customer's email")
+
+
+class PaymentLinkResponse(BaseModel):
+    application_id: uuid.UUID
+    payment_url: str
+    stripe_session_id: str
+    amount_dkk: int
+    email_sent: bool
+
+
+class QCResultSubmit(BaseModel):
+    passed: bool = Field(..., description="True if QC passed, False if it failed")
+    notes: Optional[str] = Field(default=None, description="QC reviewer notes (required on failure)")
+
+
+class ManualCorrectionRequest(BaseModel):
+    note: Optional[str] = Field(default=None, description="Dennis' note on what was corrected")
+    changed_by: Optional[str] = Field(default="dennis", description="Who performed the correction")

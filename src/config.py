@@ -27,6 +27,24 @@ class Settings(BaseSettings):
     scoring_window_days: int = 7
     scoring_alert_threshold: float = 10.0
 
+    # Stripe (payment links)
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    payment_success_url: str = "https://aiscore.dk/payment/success"
+    payment_cancel_url: str = "https://aiscore.dk/payment/cancel"
+
+    # SMTP (outbound email)
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "noreply@aiscore.dk"
+    smtp_from_name: str = "AIScore"
+
+    # Internal alert recipients
+    qc_alert_email: str = "research@aiscore.dk"
+    admin_email: str = "dennis@aiscore.dk"
+
 
 @lru_cache
 def get_settings() -> Settings:
