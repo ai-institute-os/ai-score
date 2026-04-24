@@ -13,6 +13,10 @@ CREATE TYPE customer_application_status AS ENUM (
     'IN_PRODUCTION',
     'QC_REVIEW',
     'QC_PASSED',
+    'QC_FAILED',
+    'ESCALATED',
+    'RETRY',
+    'CANCELLED',
     'READY_FOR_REVIEW_CALL'
 );
 

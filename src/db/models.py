@@ -146,6 +146,14 @@ class CustomerApplication(Base):
         default=CustomerApplicationStatus.APPLIED,
     )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Payment link fields (populated when payment link is generated)
+    stripe_session_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    payment_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # QC loop tracking: counts failures in the current cycle; resets after manual correction
+    qc_failure_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # True after the first escalation (manual correction round); next 3 failures → CANCELLED
+    has_been_escalated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
