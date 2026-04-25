@@ -5,6 +5,7 @@ All outbound emails go through send_email(). Higher-level helpers (e.g.
 send_payment_link_email) build the HTML body and delegate here.
 """
 
+import html
 import structlog
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -68,6 +69,9 @@ async def send_payment_link_email(
 ) -> None:
     """Send the payment link to the customer so they can pay during the call."""
     subject = f"Betal for din AIScore Rapport — {company_name}"
+    safe_customer_name = html.escape(customer_name)
+    safe_company_name = html.escape(company_name)
+    safe_payment_url = html.escape(payment_url)
 
     html_body = f"""
 <!DOCTYPE html>
@@ -75,13 +79,13 @@ async def send_payment_link_email(
 <head><meta charset="utf-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
   <h2 style="color:#1d4ed8;">Din AIScore Rapport er klar til betaling</h2>
-  <p>Hej {customer_name},</p>
+  <p>Hej {safe_customer_name},</p>
   <p>
-    Tak for din interesse i en AIScore Rapport for <strong>{company_name}</strong>.
+    Tak for din interesse i en AIScore Rapport for <strong>{safe_company_name}</strong>.
     Som aftalt kan du gennemføre betalingen direkte via linket nedenfor.
   </p>
   <p style="margin:32px 0;text-align:center;">
-    <a href="{payment_url}"
+    <a href="{safe_payment_url}"
        style="background:#1d4ed8;color:#fff;padding:14px 28px;border-radius:6px;
               text-decoration:none;font-size:16px;font-weight:bold;">
       Betal {amount_dkk:,} kr. nu
@@ -127,12 +131,14 @@ async def send_qc_escalation_email(
     is_final_escalation=True means 3 post-manual failures → Dennis contacts customer → cancel.
     """
     settings = get_settings()
+    safe_company_name = html.escape(company_name)
+    safe_application_id = html.escape(application_id)
 
     if is_final_escalation:
         subject = f"[AIScore QC] ENDELIG ESKALERING — {company_name} rapport annulleres"
         headline = "Rapport annulleres efter 3 yderligere QC-fejl"
         body_text = (
-            f"Rapporten for <strong>{company_name}</strong> har fejlet QC "
+            f"Rapporten for <strong>{safe_company_name}</strong> har fejlet QC "
             f"{failure_count} gange efter manuel korrekt. "
             f"Dennis skal kontakte kunden, og rapporten vil blive annulleret."
         )
@@ -141,14 +147,14 @@ async def send_qc_escalation_email(
         subject = f"[AIScore QC] Eskalering — {company_name} — {failure_count} QC-fejl"
         headline = f"QC-fejl nr. {failure_count} — Manuel korrekt nødvendig"
         body_text = (
-            f"Rapporten for <strong>{company_name}</strong> har automatisk fejlet "
+            f"Rapporten for <strong>{safe_company_name}</strong> har automatisk fejlet "
             f"QC {failure_count} gange. "
             f"Dennis skal evaluere manuelt og indlæse den korrigerede version."
         )
         action = "Gennemgå rapporten og foretag manuel korrekt."
 
     if admin_note:
-        body_text += f"<br><br><strong>Seneste QC-note:</strong> {admin_note}"
+        body_text += f"<br><br><strong>Seneste QC-note:</strong> {html.escape(admin_note)}"
 
     html_body = f"""
 <!DOCTYPE html>
@@ -159,7 +165,7 @@ async def send_qc_escalation_email(
   <p>{body_text}</p>
   <p><strong>Handling:</strong> {action}</p>
   <p style="color:#6b7280;font-size:13px;">
-    Applikations-ID: {application_id}<br>
+    Applikations-ID: {safe_application_id}<br>
     AIScore intern system
   </p>
 </body>
@@ -180,18 +186,24 @@ async def send_subscription_confirmation_email(
 ) -> None:
     """Confirm a new AISelect subscription to the customer."""
     subject = f"Velkommen til AISelect {tier.capitalize()} — {company_name}"
-    period_line = f"<p>Dit abonnement fornyes automatisk d. <strong>{period_end}</strong>.</p>" if period_end else ""
+    safe_customer_name = html.escape(customer_name)
+    safe_company_name = html.escape(company_name)
+    safe_tier = html.escape(tier)
+    period_line = (
+        f"<p>Dit abonnement fornyes automatisk d. <strong>{html.escape(period_end)}</strong>.</p>"
+        if period_end else ""
+    )
 
     html_body = f"""
 <!DOCTYPE html>
 <html lang="da">
 <head><meta charset="utf-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
-  <h2 style="color:#1d4ed8;">Tak for dit abonnement på AISelect {tier.capitalize()}</h2>
-  <p>Hej {customer_name},</p>
+  <h2 style="color:#1d4ed8;">Tak for dit abonnement på AISelect {safe_tier.capitalize()}</h2>
+  <p>Hej {safe_customer_name},</p>
   <p>
-    Vi har modtaget din betaling og dit abonnement for <strong>{company_name}</strong>
-    er nu aktivt på pakken <strong>{tier.capitalize()}</strong>.
+    Vi har modtaget din betaling og dit abonnement for <strong>{safe_company_name}</strong>
+    er nu aktivt på pakken <strong>{safe_tier.capitalize()}</strong>.
   </p>
   {period_line}
   <p>Log ind på <a href="https://aiselect.dk">aiselect.dk</a> for at komme i gang.</p>
@@ -224,6 +236,10 @@ async def send_subscription_updated_email(
 ) -> None:
     """Notify customer when their AISelect subscription tier changes."""
     subject = f"Dit AISelect abonnement er opdateret — {company_name}"
+    safe_customer_name = html.escape(customer_name)
+    safe_company_name = html.escape(company_name)
+    safe_old_tier = html.escape(old_tier)
+    safe_new_tier = html.escape(new_tier)
 
     html_body = f"""
 <!DOCTYPE html>
@@ -231,10 +247,10 @@ async def send_subscription_updated_email(
 <head><meta charset="utf-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
   <h2 style="color:#1d4ed8;">Dit abonnement er blevet opdateret</h2>
-  <p>Hej {customer_name},</p>
+  <p>Hej {safe_customer_name},</p>
   <p>
-    Dit AISelect abonnement for <strong>{company_name}</strong> er skiftet
-    fra <strong>{old_tier.capitalize()}</strong> til <strong>{new_tier.capitalize()}</strong>.
+    Dit AISelect abonnement for <strong>{safe_company_name}</strong> er skiftet
+    fra <strong>{safe_old_tier.capitalize()}</strong> til <strong>{safe_new_tier.capitalize()}</strong>.
   </p>
   <p>Ændringen træder i kraft øjeblikkeligt. Log ind på
      <a href="https://aiselect.dk">aiselect.dk</a> for at se din opdaterede adgang.
@@ -267,8 +283,11 @@ async def send_subscription_cancelled_email(
 ) -> None:
     """Notify customer that their AISelect subscription has been cancelled."""
     subject = f"Dit AISelect abonnement er annulleret — {company_name}"
+    safe_customer_name = html.escape(customer_name)
+    safe_company_name = html.escape(company_name)
+    safe_tier = html.escape(tier)
     access_line = (
-        f"<p>Du har adgang til <strong>{tier.capitalize()}</strong>-funktioner frem til <strong>{period_end}</strong>.</p>"
+        f"<p>Du har adgang til <strong>{safe_tier.capitalize()}</strong>-funktioner frem til <strong>{html.escape(period_end)}</strong>.</p>"
         if period_end else ""
     )
 
@@ -278,10 +297,10 @@ async def send_subscription_cancelled_email(
 <head><meta charset="utf-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
   <h2 style="color:#b91c1c;">Dit abonnement er annulleret</h2>
-  <p>Hej {customer_name},</p>
+  <p>Hej {safe_customer_name},</p>
   <p>
-    Dit AISelect abonnement (<strong>{tier.capitalize()}</strong>) for
-    <strong>{company_name}</strong> er blevet annulleret.
+    Dit AISelect abonnement (<strong>{safe_tier.capitalize()}</strong>) for
+    <strong>{safe_company_name}</strong> er blevet annulleret.
   </p>
   {access_line}
   <p>
@@ -316,6 +335,9 @@ async def send_payment_failed_email(
 ) -> None:
     """Notify customer when an AISelect invoice payment fails."""
     subject = f"Betaling mislykkedes for dit AISelect abonnement — {company_name}"
+    safe_customer_name = html.escape(customer_name)
+    safe_company_name = html.escape(company_name)
+    safe_tier = html.escape(tier)
     amount_line = (
         f"<p>Beløb: <strong>{amount_dkk:,} kr.</strong></p>" if amount_dkk else ""
     )
@@ -326,10 +348,10 @@ async def send_payment_failed_email(
 <head><meta charset="utf-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
   <h2 style="color:#b91c1c;">Betaling mislykkedes</h2>
-  <p>Hej {customer_name},</p>
+  <p>Hej {safe_customer_name},</p>
   <p>
     Vi kunne ikke trække betalingen for dit AISelect abonnement
-    (<strong>{tier.capitalize()}</strong>) for <strong>{company_name}</strong>.
+    (<strong>{safe_tier.capitalize()}</strong>) for <strong>{safe_company_name}</strong>.
   </p>
   {amount_line}
   <p>
@@ -370,20 +392,24 @@ async def send_calendly_booking_email(
 ) -> None:
     """Notify admin when a Calendly meeting is booked or cancelled."""
     settings = get_settings()
+    safe_kontaktperson = html.escape(kontaktperson)
+    safe_company_name = html.escape(company_name)
+    safe_customer_email = html.escape(customer_email)
+    safe_event_uri = html.escape(event_uri)
 
     if canceled:
         subject = f"[AIScore Calendly] Møde aflyst — {company_name}"
         headline = "Møde aflyst"
         body_text = (
-            f"<strong>{kontaktperson}</strong> ({company_name}, {customer_email}) "
+            f"<strong>{safe_kontaktperson}</strong> ({safe_company_name}, {safe_customer_email}) "
             f"har aflyst deres Calendly-møde."
         )
     else:
         subject = f"[AIScore Calendly] Nyt møde booket — {company_name}"
         headline = "Nyt møde booket"
-        when_line = f"<br><strong>Tidspunkt:</strong> {scheduled_at}" if scheduled_at else ""
+        when_line = f"<br><strong>Tidspunkt:</strong> {html.escape(scheduled_at)}" if scheduled_at else ""
         body_text = (
-            f"<strong>{kontaktperson}</strong> ({company_name}, {customer_email}) "
+            f"<strong>{safe_kontaktperson}</strong> ({safe_company_name}, {safe_customer_email}) "
             f"har booket et Calendly-møde.{when_line}"
         )
 
@@ -395,7 +421,7 @@ async def send_calendly_booking_email(
   <h2 style="color:#1d4ed8;">{headline}</h2>
   <p>{body_text}</p>
   <p style="color:#6b7280;font-size:13px;">
-    Calendly event URI: {event_uri}<br>
+    Calendly event URI: {safe_event_uri}<br>
     AIScore intern system
   </p>
 </body>

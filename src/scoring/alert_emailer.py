@@ -7,6 +7,7 @@ They must express business consequence: selection rate change and estimated reve
 Template variables and design are documented in src/templates/insideai-alert-email.html.
 """
 
+import html as html_mod
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -118,6 +119,9 @@ def render_alert_email(
     selection_desc = _selection_rate_description(score_before, score_after)
     revenue_text = _revenue_impact_text(score_before, score_after, monthly_revenue_estimate)
 
+    safe_company_name = html_mod.escape(company_name)
+    safe_provider = html_mod.escape(provider.title())
+
     template = _TEMPLATE_PATH.read_text(encoding="utf-8")
 
     # Fix urgency badge color (template defaults to HOJ red — replace only first match)
@@ -125,13 +129,13 @@ def render_alert_email(
     template = template.replace("background:#b91c1c;", f"background:{color};", 1)
 
     replacements = {
-        "{{COMPANY_NAME}}": company_name,
+        "{{COMPANY_NAME}}": safe_company_name,
         "{{ALARM_HEADLINE}}": (
-            f"{company_name} vælges nu {selection_desc} hos {provider.title()}"
+            f"{safe_company_name} vælges nu {selection_desc} hos {safe_provider}"
         ),
         "{{ALARM_CONTEXT}}": (
-            f"InsideAI har registreret en ændring i, hvor ofte {company_name} "
-            f"vælges og anbefales af {provider.title()}. "
+            f"InsideAI har registreret en ændring i, hvor ofte {safe_company_name} "
+            f"vælges og anbefales af {safe_provider}. "
             f"Synligheden er {direction_verb} — I fremstår nu {selection_desc} i AI-svar."
             f"{revenue_text}"
         ),
@@ -141,10 +145,10 @@ def render_alert_email(
         ),
         "{{ALARM_URGENCY}}": urgency,
         "{{ALARM_DATE}}": triggered_at.strftime("%-d. %B %Y, %H:%M"),
-        "{{AI_SYSTEM}}": provider.title(),
-        "{{CONTACT_URL}}": contact_url,
-        "{{CONTACT_EMAIL}}": contact_email,
-        "{{UNSUBSCRIBE_URL}}": unsubscribe_url,
+        "{{AI_SYSTEM}}": safe_provider,
+        "{{CONTACT_URL}}": html_mod.escape(contact_url),
+        "{{CONTACT_EMAIL}}": html_mod.escape(contact_email),
+        "{{UNSUBSCRIBE_URL}}": html_mod.escape(unsubscribe_url),
     }
 
     for placeholder, value in replacements.items():
