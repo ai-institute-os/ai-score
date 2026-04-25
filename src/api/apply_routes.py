@@ -1,6 +1,9 @@
 import asyncio
+import hashlib
+import hmac as _hmac
+import secrets
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -12,11 +15,13 @@ from src.db import get_db
 from src.db.models import (
     CustomerApplication, CustomerApplicationStateLog, CustomerApplicationStatus, VALID_TRANSITIONS,
     AISelectSubscription, SubscriptionTier, SubscriptionStatus,
+    PasswordResetToken,
 )
 from src.api.schemas import (
     ApplicationCreate, ApplicationResponse, ApplicationStatusUpdate,
     GeneratePaymentLinkRequest, PaymentLinkResponse,
     QCResultSubmit, ManualCorrectionRequest,
+    ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
 )
 from src.api.auth import require_admin_key
 
@@ -659,9 +664,11 @@ def _verify_calendly_signature(payload: bytes, header: str, secret: str) -> bool
     Calendly signs webhooks with HMAC-SHA256.
     Header format: t=<timestamp>,v1=<hex_digest>
     Signed message: <timestamp>.<raw_body>
+    Rejects payloads older than 5 minutes to prevent replay attacks.
     """
     import hashlib
     import hmac
+    import time
 
     parts: dict[str, str] = {}
     for part in header.split(","):
@@ -671,6 +678,12 @@ def _verify_calendly_signature(payload: bytes, header: str, secret: str) -> bool
     timestamp = parts.get("t", "")
     v1 = parts.get("v1", "")
     if not timestamp or not v1:
+        return False
+
+    try:
+        if abs(int(time.time()) - int(timestamp)) > 300:
+            return False
+    except ValueError:
         return False
 
     signed = f"{timestamp}.".encode() + payload
