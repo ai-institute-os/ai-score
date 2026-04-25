@@ -1170,3 +1170,117 @@ async def reset_password(
     return PasswordResetResponse(
         message="Din adgangskode er nu opdateret. Du kan logge ind med din nye adgangskode."
     )
+
+
+# ─────────────────────────────────────────────
+# Public: rapport generation status (customer polling)
+# ─────────────────────────────────────────────
+
+# Statuses where scoring is actively running (maps to UI "generating" phase)
+_GENERATING_STATUSES = {
+    CustomerApplicationStatus.PAID,
+    CustomerApplicationStatus.IN_PRODUCTION,
+}
+
+# Statuses where scoring is done but QC/review is ongoing
+_REVIEWING_STATUSES = {
+    CustomerApplicationStatus.QC_REVIEW,
+    CustomerApplicationStatus.QC_FAILED,
+    CustomerApplicationStatus.RETRY,
+    CustomerApplicationStatus.ESCALATED,
+    CustomerApplicationStatus.QC_PASSED,
+}
+
+# Terminal success statuses — rapport is ready
+_DONE_STATUSES = {
+    CustomerApplicationStatus.READY_FOR_REVIEW_CALL,
+}
+
+# Providers in the order they are displayed in the UI
+_PROVIDERS = ["openai", "claude", "gemini", "perplexity"]
+
+
+def _providers_done_for_status(status: CustomerApplicationStatus) -> int:
+    """Return how many of the 4 provider steps to show as done for a given status."""
+    if status in _DONE_STATUSES or status in _REVIEWING_STATUSES:
+        return 4
+    if status == CustomerApplicationStatus.IN_PRODUCTION:
+        return 2
+    return 0
+
+
+@router.get("/report-status/{order_id}")
+@limiter.limit("30/minute")
+async def get_report_status(
+    request: Request,
+    order_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Public polling endpoint — customers call this every 5 s from the status page.
+    Returns phase, providers_done count and an optional download_url when ready.
+    """
+    result = await db.execute(
+        select(CustomerApplication).where(CustomerApplication.id == order_id)
+    )
+    app = result.scalar_one_or_none()
+
+    if app is None:
+        raise HTTPException(status_code=404, detail="Ordre ikke fundet")
+
+    status = app.status
+
+    if status in (CustomerApplicationStatus.CANCELLED, CustomerApplicationStatus.REJECTED):
+        return {
+            "order_id": str(order_id),
+            "status": status.value,
+            "phase": "error",
+            "providers_done": 0,
+            "providers_total": len(_PROVIDERS),
+            "message": "Din ordre er blevet annulleret. Kontakt venligst support@aiinstitute.dk.",
+            "download_url": None,
+        }
+
+    if status in _DONE_STATUSES:
+        return {
+            "order_id": str(order_id),
+            "status": status.value,
+            "phase": "done",
+            "providers_done": 4,
+            "providers_total": len(_PROVIDERS),
+            "message": "Rapport klar",
+            "download_url": None,
+        }
+
+    if status in _REVIEWING_STATUSES:
+        return {
+            "order_id": str(order_id),
+            "status": status.value,
+            "phase": "reviewing",
+            "providers_done": 4,
+            "providers_total": len(_PROVIDERS),
+            "message": "Scorer modtaget — kvalitetssikring pågår",
+            "download_url": None,
+        }
+
+    if status in _GENERATING_STATUSES:
+        return {
+            "order_id": str(order_id),
+            "status": status.value,
+            "phase": "generating",
+            "providers_done": _providers_done_for_status(status),
+            "providers_total": len(_PROVIDERS),
+            "message": "Analyserer jeres virksomhed",
+            "download_url": None,
+        }
+
+    # Early funnel statuses (APPLIED, UNDER_REVIEW, APPROVED, CALLED, AWAITING_PAYMENT)
+    return {
+        "order_id": str(order_id),
+        "status": status.value,
+        "phase": "waiting",
+        "providers_done": 0,
+        "providers_total": len(_PROVIDERS),
+        "message": "Betaling bekræftet — analyse starter snart",
+        "download_url": None,
+    }

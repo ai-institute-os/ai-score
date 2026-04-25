@@ -114,3 +114,12 @@ async def apply_form():
 async def admin_dashboard():
     """Serve the AIScore admin dashboard."""
     return FileResponse(str(_static_dir / "admin.html"))
+
+
+_templates_dir = Path(__file__).parent / "templates"
+
+
+@app.get("/report-status/{order_id}", include_in_schema=False)
+async def report_status_page(order_id: str):
+    """Customer-facing status page that live-polls rapport generation progress."""
+    return FileResponse(str(_templates_dir / "report_status.html"))
