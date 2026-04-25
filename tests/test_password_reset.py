@@ -167,6 +167,68 @@ async def test_forgot_password_known_email_sends_email():
 
 
 @pytest.mark.asyncio
+async def test_forgot_password_invalidates_existing_tokens():
+    """Second reset request must invalidate previous active tokens (used_at set)."""
+    from src.api.apply_routes import forgot_password
+    from src.api.schemas import ForgotPasswordRequest
+    from src.db.models import AISelectSubscription, SubscriptionTier, SubscriptionStatus
+    from sqlalchemy import update as sa_update
+    from src.db.models import PasswordResetToken
+
+    sub = AISelectSubscription(
+        customer_email="user@example.com",
+        company_name="TestCo",
+        tier=SubscriptionTier.STARTER,
+        status=SubscriptionStatus.ACTIVE,
+    )
+
+    invalidation_call_args = []
+
+    mock_db = AsyncMock()
+    sub_result = MagicMock()
+    sub_result.scalar_one_or_none.return_value = sub
+    update_result = MagicMock()
+
+    async def capture_execute(stmt, *args, **kwargs):
+        invalidation_call_args.append(stmt)
+        return sub_result
+
+    mock_db.execute = AsyncMock(side_effect=capture_execute)
+    mock_db.add = MagicMock()
+    mock_db.commit = AsyncMock()
+
+    body = ForgotPasswordRequest(email="user@example.com")
+
+    mock_send = AsyncMock()
+    fake_emailer = types.ModuleType("src.payments.emailer")
+    fake_emailer.send_password_reset_email = mock_send  # type: ignore[attr-defined]
+    fake_emailer.send_payment_link_email = AsyncMock()  # type: ignore[attr-defined]
+    fake_emailer.send_email = AsyncMock()  # type: ignore[attr-defined]
+    fake_stripe_client = types.ModuleType("src.payments.stripe_client")
+    fake_stripe_client.create_checkout_session = AsyncMock()  # type: ignore[attr-defined]
+    fake_stripe_client.construct_stripe_event = MagicMock()  # type: ignore[attr-defined]
+    fake_payments = types.ModuleType("src.payments")
+    fake_payments.send_email = AsyncMock()  # type: ignore[attr-defined]
+    fake_payments.send_payment_link_email = AsyncMock()  # type: ignore[attr-defined]
+
+    with patch.dict(sys.modules, {
+        "src.payments": fake_payments,
+        "src.payments.emailer": fake_emailer,
+        "src.payments.stripe_client": fake_stripe_client,
+    }):
+        await forgot_password(_make_request(), body, db=mock_db)
+
+    # execute should be called twice: once for the SELECT, once for the UPDATE
+    assert mock_db.execute.call_count == 2, (
+        f"Expected 2 execute calls (SELECT + UPDATE), got {mock_db.execute.call_count}"
+    )
+    # Second call must be the UPDATE invalidation
+    update_stmt = invalidation_call_args[1]
+    compiled = str(update_stmt.compile(compile_kwargs={"literal_binds": False}))
+    assert "password_reset_token" in compiled.lower() or "UPDATE" in str(update_stmt.__class__.__name__).upper()
+
+
+@pytest.mark.asyncio
 async def test_reset_password_invalid_token_raises_400():
     """An invalid or expired token should raise HTTP 400."""
     from fastapi import HTTPException

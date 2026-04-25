@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -1083,6 +1083,16 @@ async def forgot_password(
         raw_token = secrets.token_urlsafe(32)
         token_hash = _hash_token(raw_token)
         expires_at = datetime.now(timezone.utc) + timedelta(hours=_RESET_TOKEN_TTL_HOURS)
+
+        await db.execute(
+            update(PasswordResetToken)
+            .where(
+                PasswordResetToken.email == email,
+                PasswordResetToken.used_at.is_(None),
+                PasswordResetToken.expires_at > datetime.now(timezone.utc),
+            )
+            .values(used_at=datetime.now(timezone.utc))
+        )
 
         reset_token_row = PasswordResetToken(
             email=email,
