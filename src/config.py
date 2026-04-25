@@ -57,6 +57,15 @@ class Settings(BaseSettings):
     aiselect_price_pro: str = ""
     aiselect_price_enterprise: str = ""
 
+    # AISelect — base URL used to build password reset links
+    aiselect_base_url: str = "https://aiselect.dk"
+
+    # Runtime environment: "production" enables HTTPS redirect and strict headers
+    environment: str = "development"
+
+    # Comma-separated list of allowed hostnames for TrustedHostMiddleware
+    allowed_hosts: str = "localhost,127.0.0.1"
+
 
 @lru_cache
 def get_settings() -> Settings:

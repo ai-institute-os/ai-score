@@ -1,9 +1,12 @@
 import structlog
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.config import get_settings
 from src.llm import PromptRouter, PromptCache, RateLimiter
@@ -13,6 +16,30 @@ from src.api.apply_routes import router as apply_router
 log = structlog.get_logger()
 
 _router: PromptRouter | None = None
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "font-src 'self'; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'"
+        )
+        # Only add HSTS when served over HTTPS (avoid poisoning local dev)
+        if request.url.scheme == "https":
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
+            )
+        return response
 
 
 def get_router() -> PromptRouter:
@@ -46,6 +73,19 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+_settings = get_settings()
+
+# HTTPS redirect only in production — reverse proxy handles it in most deployments,
+# but this provides defence-in-depth when the app is exposed directly.
+if _settings.environment == "production":
+    app.add_middleware(HTTPSRedirectMiddleware)
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[h.strip() for h in _settings.allowed_hosts.split(",") if h.strip()],
+)
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(router, prefix="/api/v1")
 app.include_router(apply_router, prefix="/api/v1")
