@@ -194,11 +194,10 @@ class ApplicationResponse(BaseModel):
 class ApplicationStatusUpdate(BaseModel):
     status: str = Field(..., description="New CRM status for the application")
     note: Optional[str] = Field(default=None, description="Optional note explaining the transition")
-    changed_by: Optional[str] = Field(default=None, description="Admin identifier making the change")
 
 
 class GeneratePaymentLinkRequest(BaseModel):
-    amount_dkk: int = Field(..., gt=0, description="Amount in DKK to charge (e.g. 4995 for 4.995 kr.)")
+    amount_dkk: int = Field(..., gt=0, le=500000, description="Amount in DKK to charge (e.g. 4995 for 4.995 kr., max 500000 DKK)")
     send_email: bool = Field(default=True, description="Whether to send the payment link to the customer's email")
 
 
@@ -217,4 +216,20 @@ class QCResultSubmit(BaseModel):
 
 class ManualCorrectionRequest(BaseModel):
     note: Optional[str] = Field(default=None, description="Dennis' note on what was corrected")
-    changed_by: Optional[str] = Field(default="dennis", description="Who performed the correction")
+
+
+# ─────────────────────────────────────────────
+# AISelect password reset
+# ─────────────────────────────────────────────
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr = Field(..., description="Email address registered with AISelect")
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., min_length=1, description="Reset token from the email link")
+    new_password: str = Field(..., min_length=8, max_length=128, description="New password (min 8 characters)")
+
+
+class PasswordResetResponse(BaseModel):
+    message: str
