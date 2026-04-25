@@ -60,3 +60,9 @@ if _static_dir.exists():
 async def apply_form():
     """Serve the customer pre-qualification apply form."""
     return FileResponse(str(_static_dir / "apply.html"))
+
+
+@app.get("/admin", include_in_schema=False)
+async def admin_dashboard():
+    """Serve the AIScore admin dashboard."""
+    return FileResponse(str(_static_dir / "admin.html"))

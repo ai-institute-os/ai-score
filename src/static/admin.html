@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIScore Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #0071e3;
+      --blue-h:  #0077ed;
+      --green:   #34c759;
+      --red:     #ff3b30;
+      --orange:  #ff9500;
+      --amber:   #ffcc00;
+      --purple:  #af52de;
+      --teal:    #32ade6;
+      --indigo:  #5856d6;
+      --gray-6:  #6e6e73;
+      --gray-d:  #d2d2d7;
+      --gray-f:  #f5f5f7;
+      --black:   #1d1d1f;
+      --white:   #ffffff;
+      --surface: #f5f5f7;
+      --card:    #ffffff;
+      --nav-h:   56px;
+      --sidebar-w: 220px;
+      --radius:  14px;
+      --radius-sm: 8px;
+      --shadow:  0 2px 16px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--surface);
+      color: var(--black);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Navigation ──────────────────────────────── */
+    .topnav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: saturate(180%) blur(16px);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
+      border-bottom: 1px solid var(--gray-d);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      z-index: 100;
+    }
+
+    .topnav-logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    .topnav-sep { color: var(--gray-d); font-size: 1.2rem; }
+
+    .topnav-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--gray-6);
+    }
+
+    .topnav-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .topnav-badge {
+      background: var(--blue);
+      color: var(--white);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 20px;
+    }
+
+    /* ── Layout ──────────────────────────────────── */
+    .layout {
+      display: flex;
+      padding-top: var(--nav-h);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      position: fixed;
+      top: var(--nav-h);
+      left: 0;
+      bottom: 0;
+      background: var(--card);
+      border-right: 1px solid var(--gray-d);
+      padding: 1.25rem 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      padding: 0 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .sidebar-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--gray-6);
+      padding: 0.5rem 0.75rem 0.25rem;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--black);
+      text-decoration: none;
+      transition: background 0.12s;
+    }
+    .sidebar-item:hover { background: var(--gray-f); }
+    .sidebar-item.active { background: rgba(0,113,227,0.1); color: var(--blue); }
+    .sidebar-item .icon { font-size: 1rem; width: 1.25rem; text-align: center; }
+
+    .sidebar-count {
+      margin-left: auto;
+      background: var(--gray-f);
+      color: var(--gray-6);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 20px;
+      min-width: 22px;
+      text-align: center;
+    }
+    .sidebar-item.active .sidebar-count {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    /* ── Main content ─────────────────────────────── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 2rem 2rem 4rem;
+      min-width: 0;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 1.75rem;
+      gap: 1rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .page-header p {
+      color: var(--gray-6);
+      font-size: 0.875rem;
+      margin-top: 0.2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.12s, transform 0.08s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--blue); color: var(--white); }
+    .btn-primary:hover { background: var(--blue-h); }
+    .btn-ghost { background: var(--gray-f); color: var(--black); border: 1px solid var(--gray-d); }
+    .btn-ghost:hover { background: #ebebf0; }
+
+    /* ── KPI widgets ─────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--kpi-color, var(--blue));
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .kpi-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gray-6);
+      margin-bottom: 0.4rem;
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--black);
+      line-height: 1.1;
+    }
+
+    .kpi-sub {
+      font-size: 0.78rem;
+      color: var(--gray-6);
+      margin-top: 0.3rem;
+    }
+
+    .kpi-delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 20px;
+      margin-top: 0.4rem;
+    }
+    .kpi-delta.up   { background: rgba(52,199,89,0.12); color: var(--green); }
+    .kpi-delta.down { background: rgba(255,59,48,0.12); color: var(--red); }
+    .kpi-delta.neutral { background: var(--gray-f); color: var(--gray-6); }
+
+    .kpi-icon {
+      position: absolute;
+      top: 1rem; right: 1.25rem;
+      font-size: 1.5rem;
+      opacity: 0.12;
+    }
+
+    /* ── Toolbar ─────────────────────────────────── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--card);
+      border: 1.5px solid var(--gray-d);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      flex: 1;
+      max-width: 320px;
+      transition: border-color 0.15s;
+    }
+    .search-box:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.1); }
+    .search-box input { border: none; outline: none; background: none; font-size: 0.875rem; color: var(--black); width: 100%; font-family: inherit; }
+    .search-box input::placeholder { color: var(--gray-6); }
+    .search-icon { color: var(--gray-6); font-size: 0.9rem; }
+
+    .filter-bar {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--gray-d);
+      background: var(--card);
+      color: var(--gray-6);
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .filter-chip:hover { border-color: var(--blue); color: var(--blue); }
+    .filter-chip.active { background: var(--blue); border-color: var(--blue); color: var(--white); }
+
+    .toolbar-right { margin-left: auto; display: flex; gap: 0.5rem; }
+
+    /* ── Table ───────────────────────────────────── */
+    .table-wrap {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .table-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid var(--gray-f);
+    }
+
+    .table-meta-count {
+      font-size: 0.8rem;
+      color: var(--gray-6);
+    }
+
+    .table-meta-count strong { color: var(--black); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--gray-6);
+      padding: 0.65rem 1rem;
+      background: var(--gray-f);
+      border-bottom: 1px solid var(--gray-d);
+      white-space: nowrap;
+    }
+
+    thead th.sortable { cursor: pointer; }
+    thead th.sortable:hover { color: var(--blue); }
+    thead th .sort-icon { margin-left: 0.25rem; opacity: 0.5; }
+    thead th.sort-asc .sort-icon::after { content: ' ↑'; }
+    thead th.sort-desc .sort-icon::after { content: ' ↓'; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--gray-f);
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(0,113,227,0.03); }
+
+    td {
+      padding: 0.8rem 1rem;
+      font-size: 0.875rem;
+      vertical-align: middle;
+    }
+
+    .td-company { font-weight: 600; }
+
+    .td-sub {
+      font-size: 0.75rem;
+      color: var(--gray-6);
+      margin-top: 0.1rem;
+    }
+
+    .td-link {
+      color: var(--blue);
+      text-decoration: none;
+      font-size: 0.8rem;
+    }
+    .td-link:hover { text-decoration: underline; }
+
+    /* ── Status chips ────────────────────────────── */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .chip::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+
+    .chip-applied           { background: rgba(0,113,227,0.1);    color: #0051a3; }
+    .chip-under_review      { background: rgba(255,149,0,0.12);   color: #c06600; }
+    .chip-approved          { background: rgba(52,199,89,0.12);   color: #1a8a3c; }
+    .chip-rejected          { background: rgba(255,59,48,0.1);    color: #c0392b; }
+    .chip-called            { background: rgba(175,82,222,0.12);  color: #7d2fa0; }
+    .chip-awaiting_payment  { background: rgba(255,204,0,0.15);   color: #9a7600; }
+    .chip-paid              { background: rgba(48,209,88,0.12);   color: #1a7a3a; }
+    .chip-in_production     { background: rgba(88,86,214,0.1);    color: #3634a3; }
+    .chip-qc_review         { background: rgba(255,159,10,0.12);  color: #a05c00; }
+    .chip-qc_passed         { background: rgba(52,199,89,0.12);   color: #1a8a3c; }
+    .chip-qc_failed         { background: rgba(255,59,48,0.1);    color: #c0392b; }
+    .chip-escalated         { background: rgba(255,59,48,0.15);   color: #a01010; }
+    .chip-retry             { background: rgba(255,100,0,0.12);   color: #b04000; }
+    .chip-cancelled         { background: rgba(142,142,147,0.15); color: #555558; }
+    .chip-ready_for_review_call { background: rgba(50,173,230,0.12); color: #0a6a9a; }
+
+    /* ── Actions menu ────────────────────────────── */
+    .td-actions { white-space: nowrap; }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--gray-6);
+      font-size: 0.95rem;
+      transition: background 0.1s, color 0.1s;
+    }
+    .action-btn:hover { background: var(--gray-f); color: var(--black); }
+    .action-btn.blue:hover { background: rgba(0,113,227,0.1); color: var(--blue); }
+    .action-btn.red:hover  { background: rgba(255,59,48,0.1); color: var(--red); }
+
+    /* ── Modal ───────────────────────────────────── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+      max-width: 640px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      margin: 1rem;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 1.5rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--gray-f);
+    }
+
+    .modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .modal-header p  { font-size: 0.8rem; color: var(--gray-6); margin-top: 0.2rem; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: var(--gray-6);
+      padding: 0.2rem;
+      border-radius: 6px;
+      transition: background 0.1s;
+    }
+    .modal-close:hover { background: var(--gray-f); color: var(--black); }
+
+    .modal-body { padding: 1.25rem 1.5rem; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .detail-field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gray-6);
+      margin-bottom: 0.2rem;
+    }
+
+    .detail-field .value {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--black);
+      word-break: break-word;
+    }
+
+    .detail-field.full { grid-column: 1 / -1; }
+
+    .timeline {
+      margin-top: 1.25rem;
+      border-top: 1px solid var(--gray-f);
+      padding-top: 1rem;
+    }
+
+    .timeline-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gray-6);
+      margin-bottom: 0.75rem;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.65rem;
+      align-items: flex-start;
+    }
+
+    .timeline-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex-shrink: 0;
+      margin-top: 0.3rem;
+    }
+
+    .timeline-text {
+      font-size: 0.8rem;
+      color: var(--gray-6);
+    }
+    .timeline-text strong { color: var(--black); font-weight: 600; }
+
+    .modal-footer {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      padding: 1rem 1.5rem 1.5rem;
+      border-top: 1px solid var(--gray-f);
+    }
+
+    /* ── Status select inside modal ──────────────── */
+    .status-select {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .status-option {
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--gray-d);
+      background: var(--card);
+      color: var(--gray-6);
+      transition: all 0.12s;
+    }
+    .status-option:hover { border-color: var(--blue); color: var(--blue); }
+    .status-option.selected { border-color: var(--blue); background: rgba(0,113,227,0.08); color: var(--blue); }
+
+    /* ── Empty state ─────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--gray-6);
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ── Loading spinner ─────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--gray-d);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-row td {
+      text-align: center;
+      padding: 3rem;
+      color: var(--gray-6);
+    }
+
+    /* ── Toast ───────────────────────────────────── */
+    .toast-wrap {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .toast {
+      background: var(--black);
+      color: var(--white);
+      padding: 0.75rem 1.1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      animation: slideUp 0.2s ease;
+      max-width: 320px;
+    }
+    .toast.success { background: #1a7a3a; }
+    .toast.error   { background: #c0392b; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Pagination ──────────────────────────────── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.4rem;
+      padding: 0.9rem 1.25rem;
+      border-top: 1px solid var(--gray-f);
+    }
+
+    .page-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1.5px solid var(--gray-d);
+      background: var(--card);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--gray-6);
+      transition: all 0.1s;
+    }
+    .page-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .page-btn.active { background: var(--blue); border-color: var(--blue); color: var(--white); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .page-info { font-size: 0.8rem; color: var(--gray-6); margin-right: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<!-- ── Top navigation ──────────────────────────── -->
+<nav class="topnav">
+  <a class="topnav-logo" href="/apply">AIScore</a>
+  <span class="topnav-sep">/</span>
+  <span class="topnav-title">Admin Dashboard</span>
+  <div class="topnav-right">
+    <span class="topnav-badge" id="navLiveBadge">Live</span>
+    <button class="btn btn-ghost" onclick="loadData()" title="Genindlæs data" style="padding:0.4rem 0.65rem;">⟳</button>
+  </div>
+</nav>
+
+<!-- ── Layout ──────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Pipeline</div>
+    <div class="sidebar-section">
+      <a class="sidebar-item active" data-filter="" onclick="setFilter(this, '')">
+        <span class="icon">📋</span> Alle leads
+        <span class="sidebar-count" id="cnt-all">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="APPLIED" onclick="setFilter(this, 'APPLIED')">
+        <span class="icon">📨</span> Ansøgt
+        <span class="sidebar-count" id="cnt-APPLIED">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="UNDER_REVIEW" onclick="setFilter(this, 'UNDER_REVIEW')">
+        <span class="icon">🔍</span> Under review
+        <span class="sidebar-count" id="cnt-UNDER_REVIEW">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="APPROVED" onclick="setFilter(this, 'APPROVED')">
+        <span class="icon">✅</span> Godkendt
+        <span class="sidebar-count" id="cnt-APPROVED">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="CALLED" onclick="setFilter(this, 'CALLED')">
+        <span class="icon">📅</span> Møde booket
+        <span class="sidebar-count" id="cnt-CALLED">—</span>
+      </a>
+    </div>
+
+    <div class="sidebar-label">Betaling</div>
+    <div class="sidebar-section">
+      <a class="sidebar-item" data-filter="AWAITING_PAYMENT" onclick="setFilter(this, 'AWAITING_PAYMENT')">
+        <span class="icon">💳</span> Afventer betaling
+        <span class="sidebar-count" id="cnt-AWAITING_PAYMENT">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="PAID" onclick="setFilter(this, 'PAID')">
+        <span class="icon">💰</span> Betalt
+        <span class="sidebar-count" id="cnt-PAID">—</span>
+      </a>
+    </div>
+
+    <div class="sidebar-label">Produktion</div>
+    <div class="sidebar-section">
+      <a class="sidebar-item" data-filter="IN_PRODUCTION" onclick="setFilter(this, 'IN_PRODUCTION')">
+        <span class="icon">⚙️</span> I produktion
+        <span class="sidebar-count" id="cnt-IN_PRODUCTION">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="QC_REVIEW" onclick="setFilter(this, 'QC_REVIEW')">
+        <span class="icon">🔬</span> QC review
+        <span class="sidebar-count" id="cnt-QC_REVIEW">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="QC_PASSED" onclick="setFilter(this, 'QC_PASSED')">
+        <span class="icon">🎉</span> QC godkendt
+        <span class="sidebar-count" id="cnt-QC_PASSED">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="READY_FOR_REVIEW_CALL" onclick="setFilter(this, 'READY_FOR_REVIEW_CALL')">
+        <span class="icon">📞</span> Klar til review
+        <span class="sidebar-count" id="cnt-READY_FOR_REVIEW_CALL">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="ESCALATED" onclick="setFilter(this, 'ESCALATED')">
+        <span class="icon">⚠️</span> Eskaleret
+        <span class="sidebar-count" id="cnt-ESCALATED">—</span>
+      </a>
+    </div>
+
+    <div class="sidebar-label">Afsluttet</div>
+    <div class="sidebar-section">
+      <a class="sidebar-item" data-filter="REJECTED" onclick="setFilter(this, 'REJECTED')">
+        <span class="icon">🚫</span> Afvist
+        <span class="sidebar-count" id="cnt-REJECTED">—</span>
+      </a>
+      <a class="sidebar-item" data-filter="CANCELLED" onclick="setFilter(this, 'CANCELLED')">
+        <span class="icon">❌</span> Annulleret
+        <span class="sidebar-count" id="cnt-CANCELLED">—</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>Leads &amp; Ansøgninger</h1>
+        <p>Administrér kundeansøgninger og pipeline igennem AIScore-forløbet</p>
+      </div>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-ghost" onclick="exportCSV()">⬇ Eksporter CSV</button>
+      </div>
+    </div>
+
+    <!-- KPI widgets -->
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--kpi-color: var(--blue);">
+        <span class="kpi-icon">📋</span>
+        <div class="kpi-label">Totale leads</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub">Alle indkommende ansøgninger</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color: var(--green);">
+        <span class="kpi-icon">💳</span>
+        <div class="kpi-label">Betalte kunder</div>
+        <div class="kpi-value" id="kpi-paid">—</div>
+        <div class="kpi-sub" id="kpi-conversion">Konverteringsrate: —</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color: var(--orange);">
+        <span class="kpi-icon">⚙️</span>
+        <div class="kpi-label">Aktiv pipeline</div>
+        <div class="kpi-value" id="kpi-active">—</div>
+        <div class="kpi-sub">Under behandling</div>
+      </div>
+      <div class="kpi-card" style="--kpi-color: var(--red);">
+        <span class="kpi-icon">⚠️</span>
+        <div class="kpi-label">Kræver handling</div>
+        <div class="kpi-value" id="kpi-action">—</div>
+        <div class="kpi-sub">Eskaleret eller afventer</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Søg firma, kontakt eller e-mail…" oninput="renderTable()" />
+      </div>
+
+      <div class="filter-bar" id="filterBar">
+        <button class="filter-chip active" data-status="" onclick="setFilterChip(this, '')">Alle</button>
+        <button class="filter-chip" data-status="APPLIED" onclick="setFilterChip(this, 'APPLIED')">Ansøgt</button>
+        <button class="filter-chip" data-status="UNDER_REVIEW" onclick="setFilterChip(this, 'UNDER_REVIEW')">Review</button>
+        <button class="filter-chip" data-status="APPROVED" onclick="setFilterChip(this, 'APPROVED')">Godkendt</button>
+        <button class="filter-chip" data-status="PAID" onclick="setFilterChip(this, 'PAID')">Betalt</button>
+        <button class="filter-chip" data-status="IN_PRODUCTION" onclick="setFilterChip(this, 'IN_PRODUCTION')">Produktion</button>
+        <button class="filter-chip" data-status="ESCALATED" onclick="setFilterChip(this, 'ESCALATED')">Eskaleret</button>
+      </div>
+
+      <div class="toolbar-right">
+        <select class="btn btn-ghost" id="sortSelect" onchange="renderTable()" style="cursor:pointer;">
+          <option value="created_desc">Nyeste først</option>
+          <option value="created_asc">Ældste først</option>
+          <option value="company_asc">Firma A→Z</option>
+          <option value="status_asc">Status</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-meta">
+        <div class="table-meta-count" id="tableCount">Indlæser…</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Virksomhed</th>
+            <th>Kontakt</th>
+            <th>E-mail / Tlf.</th>
+            <th>Website</th>
+            <th>Status</th>
+            <th>Oprettet</th>
+            <th>Opdateret</th>
+            <th style="width:80px;">Handlinger</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr class="loading-row">
+            <td colspan="8">
+              <div class="spinner"></div>
+              <p style="margin-top:0.75rem;">Indlæser ansøgninger…</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Detail modal ─────────────────────────────── -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalTitle">Ansøgningsdetaljer</h2>
+        <p id="modalSubtitle"></p>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- ── Toast container ──────────────────────────── -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ─── State ────────────────────────────────────────
+let allApplications = [];
+let activeFilter = '';
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+// ─── Status config ────────────────────────────────
+const STATUS_LABELS = {
+  APPLIED: 'Ansøgt',
+  UNDER_REVIEW: 'Under review',
+  APPROVED: 'Godkendt',
+  REJECTED: 'Afvist',
+  CALLED: 'Møde booket',
+  AWAITING_PAYMENT: 'Afventer betaling',
+  PAID: 'Betalt',
+  IN_PRODUCTION: 'I produktion',
+  QC_REVIEW: 'QC review',
+  QC_PASSED: 'QC godkendt',
+  QC_FAILED: 'QC fejlet',
+  ESCALATED: 'Eskaleret',
+  RETRY: 'Genprøver',
+  CANCELLED: 'Annulleret',
+  READY_FOR_REVIEW_CALL: 'Klar til review',
+};
+
+const VALID_TRANSITIONS = {
+  APPLIED: ['UNDER_REVIEW', 'REJECTED'],
+  UNDER_REVIEW: ['APPROVED', 'REJECTED'],
+  APPROVED: ['CALLED'],
+  CALLED: ['AWAITING_PAYMENT', 'APPROVED'],
+  AWAITING_PAYMENT: ['PAID'],
+  PAID: ['IN_PRODUCTION'],
+  IN_PRODUCTION: ['QC_REVIEW'],
+  QC_REVIEW: ['QC_PASSED', 'QC_FAILED'],
+  QC_PASSED: ['READY_FOR_REVIEW_CALL'],
+  ESCALATED: ['RETRY'],
+};
+
+// ─── Data loading ─────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch('/api/v1/admin/applications?limit=200');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    allApplications = await res.json();
+  } catch (err) {
+    console.warn('API unavailable, using demo data:', err);
+    allApplications = getDemoData();
+  }
+  updateKPIs();
+  updateSidebarCounts();
+  renderTable();
+}
+
+function getDemoData() {
+  const statuses = Object.keys(STATUS_LABELS);
+  const companies = ['Nexus ApS','Velo Tech','DataDrive A/S','Orbit Solutions','Flux Digital','Maple AI','Zenith Consulting','Prism Analytics','Wave Robotics','Cloud Nine ApS'];
+  const contacts  = ['Mette Hansen','Lars Nielsen','Sofie Andersen','Thomas Pedersen','Anna Christensen','Michael Jensen','Emma Madsen','Kasper Rasmussen','Julie Sørensen','Oliver Lund'];
+  return Array.from({ length: 47 }, (_, i) => ({
+    id: crypto.randomUUID(),
+    firmanavn: companies[i % companies.length] + (i > 9 ? ` ${Math.floor(i/10)+1}` : ''),
+    kontaktperson: contacts[i % contacts.length],
+    email: contacts[i % contacts.length].toLowerCase().replace(' ','.')+`@example.dk`,
+    telefon: `+45 ${20+i} ${30+i} ${40+i%10} ${50+i%10}`.slice(0,16),
+    website: `https://example${i}.dk`,
+    status: statuses[i % statuses.length],
+    created_at: new Date(Date.now() - i * 86400000 * 2).toISOString(),
+    updated_at: new Date(Date.now() - i * 86400000).toISOString(),
+    virksomhedsinfo: 'Demo virksomhed — testdata.',
+    state_logs: [
+      { to_status: statuses[i % statuses.length], changed_at: new Date(Date.now() - i * 86400000).toISOString(), changed_by: 'system', note: 'Statusskift' }
+    ],
+  }));
+}
+
+// ─── KPI calculations ─────────────────────────────
+function updateKPIs() {
+  const total = allApplications.length;
+  const paid  = allApplications.filter(a => ['PAID','IN_PRODUCTION','QC_REVIEW','QC_PASSED','ESCALATED','RETRY','READY_FOR_REVIEW_CALL'].includes(a.status)).length;
+  const active = allApplications.filter(a => !['REJECTED','CANCELLED'].includes(a.status)).length;
+  const needAction = allApplications.filter(a => ['ESCALATED','AWAITING_PAYMENT','QC_FAILED'].includes(a.status)).length;
+  const convRate = total > 0 ? Math.round((paid / total) * 100) : 0;
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-paid').textContent = paid;
+  document.getElementById('kpi-conversion').textContent = `Konverteringsrate: ${convRate}%`;
+  document.getElementById('kpi-active').textContent = active;
+  document.getElementById('kpi-action').textContent = needAction;
+}
+
+function updateSidebarCounts() {
+  const countBy = {};
+  allApplications.forEach(a => { countBy[a.status] = (countBy[a.status] || 0) + 1; });
+
+  document.getElementById('cnt-all').textContent = allApplications.length;
+  Object.keys(STATUS_LABELS).forEach(s => {
+    const el = document.getElementById('cnt-' + s);
+    if (el) el.textContent = countBy[s] || 0;
+  });
+}
+
+// ─── Filter & render ──────────────────────────────
+function setFilter(el, status) {
+  activeFilter = status;
+  currentPage = 1;
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  // sync filter chips
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.status === status);
+  });
+  renderTable();
+}
+
+function setFilterChip(el, status) {
+  activeFilter = status;
+  currentPage = 1;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  // sync sidebar
+  document.querySelectorAll('.sidebar-item').forEach(i => {
+    i.classList.toggle('active', i.dataset.filter === status);
+  });
+  renderTable();
+}
+
+function getFilteredSorted() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const sort   = document.getElementById('sortSelect').value;
+
+  let data = allApplications.filter(a => {
+    if (activeFilter && a.status !== activeFilter) return false;
+    if (search) {
+      const haystack = [a.firmanavn, a.kontaktperson, a.email, a.website].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+
+  if (sort === 'created_desc') data.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  else if (sort === 'created_asc') data.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+  else if (sort === 'company_asc') data.sort((a,b) => a.firmanavn.localeCompare(b.firmanavn));
+  else if (sort === 'status_asc') data.sort((a,b) => a.status.localeCompare(b.status));
+
+  return data;
+}
+
+function renderTable() {
+  const data = getFilteredSorted();
+  const total = data.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const slice = data.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+
+  document.getElementById('tableCount').innerHTML =
+    `Viser <strong>${slice.length}</strong> af <strong>${total}</strong> leads` +
+    (activeFilter ? ` med status <strong>${STATUS_LABELS[activeFilter] || activeFilter}</strong>` : '');
+
+  const tbody = document.getElementById('tableBody');
+
+  if (slice.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8">
+      <div class="empty-state">
+        <div class="icon">📭</div>
+        <p>Ingen ansøgninger matcher filteret.</p>
+      </div>
+    </td></tr>`;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = slice.map(a => `
+    <tr>
+      <td>
+        <div class="td-company">${esc(a.firmanavn)}</div>
+      </td>
+      <td>${esc(a.kontaktperson)}</td>
+      <td>
+        <div>${esc(a.email)}</div>
+        <div class="td-sub">${esc(a.telefon || '—')}</div>
+      </td>
+      <td>
+        <a class="td-link" href="${esc(a.website)}" target="_blank" rel="noopener">
+          ${esc(a.website.replace(/^https?:\/\//,'').replace(/\/$/,''))}
+        </a>
+      </td>
+      <td>${statusChip(a.status)}</td>
+      <td><div>${fmtDate(a.created_at)}</div><div class="td-sub">${fmtTime(a.created_at)}</div></td>
+      <td><div>${fmtDate(a.updated_at)}</div><div class="td-sub">${fmtTime(a.updated_at)}</div></td>
+      <td class="td-actions">
+        <button class="action-btn blue" title="Se detaljer" onclick='openDetail(${JSON.stringify(a)})'>🔍</button>
+        <button class="action-btn" title="Skift status" onclick='openStatus(${JSON.stringify(a)})'>✏️</button>
+      </td>
+    </tr>
+  `).join('');
+
+  renderPagination(total, totalPages);
+}
+
+function renderPagination(total, totalPages) {
+  const pg = document.getElementById('pagination');
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+
+  let html = `<span class="page-info">Side ${currentPage} af ${totalPages}</span>`;
+  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+
+  const range = [];
+  for (let i = Math.max(1, currentPage-2); i <= Math.min(totalPages, currentPage+2); i++) range.push(i);
+  if (range[0] > 1) { html += `<button class="page-btn" onclick="goPage(1)">1</button>`; if (range[0]>2) html += `<span style="color:var(--gray-6);padding:0 0.2rem">…</span>`; }
+  range.forEach(p => html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`);
+  if (range[range.length-1] < totalPages) { if (range[range.length-1]<totalPages-1) html += `<span style="color:var(--gray-6);padding:0 0.2rem">…</span>`; html += `<button class="page-btn" onclick="goPage(${totalPages})">${totalPages}</button>`; }
+
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; renderTable(); }
+
+// ─── Detail modal ─────────────────────────────────
+function openDetail(app) {
+  document.getElementById('modalTitle').textContent = app.firmanavn;
+  document.getElementById('modalSubtitle').textContent = `ID: ${app.id}`;
+
+  const logs = (app.state_logs || []).slice().reverse();
+  const timelineHtml = logs.length ? logs.map(l => `
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-text">
+        <strong>${STATUS_LABELS[l.to_status] || l.to_status}</strong>
+        — ${fmtDate(l.changed_at)} ${fmtTime(l.changed_at)}
+        ${l.changed_by ? `<em style="color:var(--gray-6)"> af ${esc(l.changed_by)}</em>` : ''}
+        ${l.note ? `<br><span style="color:var(--gray-6)">${esc(l.note)}</span>` : ''}
+      </div>
+    </div>
+  `).join('') : '<p style="color:var(--gray-6);font-size:0.8rem;">Ingen historik tilgængelig</p>';
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-field">
+        <label>Virksomhed</label>
+        <div class="value">${esc(app.firmanavn)}</div>
+      </div>
+      <div class="detail-field">
+        <label>Status</label>
+        <div class="value">${statusChip(app.status)}</div>
+      </div>
+      <div class="detail-field">
+        <label>Kontaktperson</label>
+        <div class="value">${esc(app.kontaktperson)}</div>
+      </div>
+      <div class="detail-field">
+        <label>E-mail</label>
+        <div class="value"><a class="td-link" href="mailto:${esc(app.email)}">${esc(app.email)}</a></div>
+      </div>
+      <div class="detail-field">
+        <label>Telefon</label>
+        <div class="value">${esc(app.telefon || '—')}</div>
+      </div>
+      <div class="detail-field">
+        <label>Website</label>
+        <div class="value"><a class="td-link" href="${esc(app.website)}" target="_blank" rel="noopener">${esc(app.website)}</a></div>
+      </div>
+      <div class="detail-field">
+        <label>Oprettet</label>
+        <div class="value">${fmtDate(app.created_at)} ${fmtTime(app.created_at)}</div>
+      </div>
+      <div class="detail-field">
+        <label>Opdateret</label>
+        <div class="value">${fmtDate(app.updated_at)} ${fmtTime(app.updated_at)}</div>
+      </div>
+      <div class="detail-field full">
+        <label>Om virksomheden</label>
+        <div class="value" style="white-space:pre-wrap;">${esc(app.virksomhedsinfo || '—')}</div>
+      </div>
+    </div>
+    <div class="timeline">
+      <div class="timeline-title">Statushistorik</div>
+      ${timelineHtml}
+    </div>
+  `;
+
+  document.getElementById('modalFooter').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Luk</button>
+    <button class="btn btn-primary" onclick='openStatus(${JSON.stringify(app)})'>Skift status</button>
+  `;
+
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+
+function openStatus(app) {
+  const nextStatuses = VALID_TRANSITIONS[app.status] || [];
+
+  document.getElementById('modalTitle').textContent = 'Skift status';
+  document.getElementById('modalSubtitle').textContent = `${app.firmanavn} — nuværende: ${STATUS_LABELS[app.status] || app.status}`;
+
+  const optHtml = nextStatuses.length
+    ? `<div class="status-select">
+        ${nextStatuses.map(s => `
+          <button class="status-option" data-status="${s}" onclick="selectStatus(this)">${STATUS_LABELS[s] || s}</button>
+        `).join('')}
+      </div>`
+    : `<p style="color:var(--gray-6);font-size:0.875rem;padding:0.75rem 0;">
+        Ingen tilladte overgange fra <strong>${STATUS_LABELS[app.status]}</strong>. Denne status er terminal.
+      </p>`;
+
+  document.getElementById('modalBody').innerHTML = `
+    <p style="font-size:0.875rem;margin-bottom:1rem;color:var(--gray-6);">
+      Vælg den ønskede næste status for denne ansøgning:
+    </p>
+    ${optHtml}
+    <div style="margin-top:1.25rem;">
+      <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-6);margin-bottom:0.35rem;">Note (valgfri)</label>
+      <textarea id="statusNote" style="width:100%;border:1.5px solid var(--gray-d);border-radius:8px;padding:0.6rem 0.8rem;font-family:inherit;font-size:0.875rem;resize:vertical;min-height:80px;outline:none;" placeholder="Intern note til statusskiftet…" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--gray-d)'"></textarea>
+    </div>
+  `;
+
+  document.getElementById('modalFooter').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">Annuller</button>
+    <button class="btn btn-primary" id="confirmStatusBtn" onclick='confirmStatus("${app.id}")' disabled>Bekræft statusskift</button>
+  `;
+
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+
+function selectStatus(el) {
+  document.querySelectorAll('.status-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('confirmStatusBtn').disabled = false;
+}
+
+async function confirmStatus(appId) {
+  const selected = document.querySelector('.status-option.selected');
+  if (!selected) return;
+
+  const newStatus = selected.dataset.status;
+  const note = document.getElementById('statusNote')?.value?.trim() || '';
+  const btn = document.getElementById('confirmStatusBtn');
+
+  btn.disabled = true;
+  btn.textContent = 'Gemmer…';
+
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus, changed_by: 'admin', note: note || undefined }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const updated = await res.json();
+    const idx = allApplications.findIndex(a => a.id === appId);
+    if (idx >= 0) allApplications[idx] = updated;
+
+    toast('Status opdateret til ' + (STATUS_LABELS[newStatus] || newStatus), 'success');
+    closeModal();
+    updateKPIs();
+    updateSidebarCounts();
+    renderTable();
+  } catch (err) {
+    toast('Fejl: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Bekræft statusskift';
+  }
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalBackdrop')) return;
+  document.getElementById('modalBackdrop').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ─── Helpers ──────────────────────────────────────
+function statusChip(status) {
+  const label = STATUS_LABELS[status] || status;
+  const cls   = 'chip-' + status.toLowerCase();
+  return `<span class="chip ${cls}">${esc(label)}</span>`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('da-DK', { day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('da-DK', { hour:'2-digit', minute:'2-digit' });
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+function toast(msg, type = '') {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+function exportCSV() {
+  const data = getFilteredSorted();
+  if (!data.length) { toast('Ingen data at eksportere', 'error'); return; }
+
+  const headers = ['Firma','Kontakt','E-mail','Telefon','Website','Status','Oprettet','Opdateret'];
+  const rows = data.map(a => [
+    a.firmanavn, a.kontaktperson, a.email, a.telefon, a.website,
+    STATUS_LABELS[a.status] || a.status,
+    fmtDate(a.created_at) + ' ' + fmtTime(a.created_at),
+    fmtDate(a.updated_at) + ' ' + fmtTime(a.updated_at),
+  ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `aiscore-leads-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV eksporteret', 'success');
+}
+
+// ─── Init ─────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
