@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +18,7 @@ from src.api.schemas import (
 from src.llm.providers import REGISTRY
 from src.scoring.calculator import AIScore, ScoreCalculator
 from src.scoring.aggregator import aggregate_scores
+from src.api.rate_limit import limiter
 
 router = APIRouter()
 
@@ -88,7 +89,9 @@ async def upsert_provider_config(
 # ─────────────────────────────────────────────
 
 @router.post("/tenants/{tenant_id}/prompt", response_model=PromptResponse)
+@limiter.limit("20/minute")
 async def route_prompt(
+    request: Request,
     tenant_id: uuid.UUID,
     body: PromptRequest,
     db: AsyncSession = Depends(get_db),

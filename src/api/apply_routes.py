@@ -842,7 +842,9 @@ async def calendly_webhook(request: Request, db: AsyncSession = Depends(get_db))
     response_model=ApplicationResponse,
     dependencies=[Depends(require_admin_key)],
 )
+@limiter.limit("30/minute")
 async def submit_qc_result(
+    request: Request,
     application_id: uuid.UUID,
     body: QCResultSubmit,
     db: AsyncSession = Depends(get_db),
@@ -967,7 +969,9 @@ async def submit_qc_result(
     "/admin/applications/{application_id}/manual-correction",
     response_model=ApplicationResponse,
 )
+@limiter.limit("30/minute")
 async def submit_manual_correction(
+    request: Request,
     application_id: uuid.UUID,
     body: ManualCorrectionRequest,
     db: AsyncSession = Depends(get_db),
@@ -1053,7 +1057,9 @@ def _verify_password(password: str, stored: str) -> bool:
     response_model=PasswordResetResponse,
     summary="Request a password reset email",
 )
+@limiter.limit("5/minute")
 async def forgot_password(
+    request: Request,
     body: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ) -> PasswordResetResponse:
@@ -1061,9 +1067,6 @@ async def forgot_password(
     Send a password reset link to the given email if it belongs to an AISelect subscriber.
     Always returns 200 so the caller cannot enumerate valid emails.
     """
-    from src.config import get_settings
-    from src.payments.emailer import send_password_reset_email
-
     email = body.email.lower().strip()
 
     sub_result = await db.execute(
@@ -1074,6 +1077,9 @@ async def forgot_password(
     sub = sub_result.scalar_one_or_none()
 
     if sub is not None:
+        from src.config import get_settings
+        from src.payments.emailer import send_password_reset_email
+
         raw_token = secrets.token_urlsafe(32)
         token_hash = _hash_token(raw_token)
         expires_at = datetime.now(timezone.utc) + timedelta(hours=_RESET_TOKEN_TTL_HOURS)
@@ -1105,7 +1111,9 @@ async def forgot_password(
     response_model=PasswordResetResponse,
     summary="Set a new password using a reset token",
 )
+@limiter.limit("10/minute")
 async def reset_password(
+    request: Request,
     body: ResetPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ) -> PasswordResetResponse:
