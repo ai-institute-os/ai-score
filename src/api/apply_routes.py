@@ -136,7 +136,7 @@ async def update_application_status(
 
     prev_status = app.status
     app.status = new_status
-    app.updated_at = datetime.utcnow()
+    app.updated_at = datetime.now(timezone.utc)
 
     log = CustomerApplicationStateLog(
         application_id=app.id,
@@ -167,7 +167,7 @@ async def update_application_notes(
     """Admin — update internal notes on an application."""
     app = await _get_application_or_404(application_id, db)
     app.notes = notes
-    app.updated_at = datetime.utcnow()
+    app.updated_at = datetime.now(timezone.utc)
     await db.commit()
 
     result = await db.execute(
@@ -261,7 +261,7 @@ async def generate_payment_link(
     app.stripe_session_id = session.id
     app.payment_url = session.url
     app.status = CustomerApplicationStatus.AWAITING_PAYMENT
-    app.updated_at = datetime.utcnow()
+    app.updated_at = datetime.now(timezone.utc)
     await _add_state_log(
         db, app,
         from_status=prev_status,
@@ -357,7 +357,7 @@ async def _upsert_subscription(
     sub.current_period_start = current_period_start
     sub.current_period_end = current_period_end
     sub.cancelled_at = cancelled_at
-    sub.updated_at = datetime.utcnow()
+    sub.updated_at = datetime.now(timezone.utc)
     return sub
 
 
@@ -427,7 +427,7 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                 prev_status = app.status
                 app.status = CustomerApplicationStatus.PAID
                 app.stripe_payment_intent_id = payment_intent_id
-                app.updated_at = datetime.utcnow()
+                app.updated_at = datetime.now(timezone.utc)
                 await _add_state_log(
                     db, app,
                     from_status=prev_status,
@@ -577,7 +577,7 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         subscription_id = sub_obj.get("id")
         stripe_customer_id = sub_obj.get("customer", "")
         cancelled_at_ts = sub_obj.get("canceled_at")
-        cancelled_at = datetime.utcfromtimestamp(cancelled_at_ts) if cancelled_at_ts else datetime.utcnow()
+        cancelled_at = datetime.utcfromtimestamp(cancelled_at_ts) if cancelled_at_ts else datetime.now(timezone.utc)
         period_end = (
             datetime.utcfromtimestamp(sub_obj["current_period_end"])
             if sub_obj.get("current_period_end") else None
@@ -641,7 +641,7 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         existing = existing_result.scalar_one_or_none()
         if existing:
             existing.status = SubscriptionStatus.PAST_DUE
-            existing.updated_at = datetime.utcnow()
+            existing.updated_at = datetime.now(timezone.utc)
             await db.commit()
             log.info(
                 "stripe_webhook.invoice.payment_failed",
@@ -766,7 +766,7 @@ async def calendly_webhook(request: Request, db: AsyncSession = Depends(get_db))
             prev_status = app.status
             app.status = CustomerApplicationStatus.CALLED
             app.calendly_event_uri = event_uri or None
-            app.updated_at = datetime.utcnow()
+            app.updated_at = datetime.now(timezone.utc)
             await _add_state_log(
                 db, app,
                 from_status=prev_status,
@@ -801,7 +801,7 @@ async def calendly_webhook(request: Request, db: AsyncSession = Depends(get_db))
             stored_event_uri = app.calendly_event_uri or ""
             app.status = CustomerApplicationStatus.APPROVED
             app.calendly_event_uri = None
-            app.updated_at = datetime.utcnow()
+            app.updated_at = datetime.now(timezone.utc)
             await _add_state_log(
                 db, app,
                 from_status=prev_status,
@@ -873,7 +873,7 @@ async def submit_qc_result(
 
     if body.passed:
         app.status = CustomerApplicationStatus.QC_PASSED
-        app.updated_at = datetime.utcnow()
+        app.updated_at = datetime.now(timezone.utc)
         await _add_state_log(
             db, app,
             from_status=prev_status,
@@ -897,7 +897,7 @@ async def submit_qc_result(
     if failure_count < _QC_ESCALATION_THRESHOLD:
         # Auto-retry: back to IN_PRODUCTION
         app.status = CustomerApplicationStatus.IN_PRODUCTION
-        app.updated_at = datetime.utcnow()
+        app.updated_at = datetime.now(timezone.utc)
         await _add_state_log(
             db, app,
             from_status=prev_status,
@@ -915,7 +915,7 @@ async def submit_qc_result(
     elif not app.has_been_escalated:
         # 3rd pre-escalation failure → alert + ESCALATED
         app.status = CustomerApplicationStatus.ESCALATED
-        app.updated_at = datetime.utcnow()
+        app.updated_at = datetime.now(timezone.utc)
         await _add_state_log(
             db, app,
             from_status=prev_status,
@@ -937,7 +937,7 @@ async def submit_qc_result(
     else:
         # 3rd post-escalation failure → final alert + CANCELLED
         app.status = CustomerApplicationStatus.CANCELLED
-        app.updated_at = datetime.utcnow()
+        app.updated_at = datetime.now(timezone.utc)
         await _add_state_log(
             db, app,
             from_status=prev_status,
@@ -995,7 +995,7 @@ async def submit_manual_correction(
     app.status = CustomerApplicationStatus.RETRY
     app.has_been_escalated = True
     app.qc_failure_count = 0  # reset for the post-escalation cycle
-    app.updated_at = datetime.utcnow()
+    app.updated_at = datetime.now(timezone.utc)
     await _add_state_log(
         db, app,
         from_status=prev_status,
@@ -1006,7 +1006,7 @@ async def submit_manual_correction(
 
     # Immediately advance to IN_PRODUCTION
     app.status = CustomerApplicationStatus.IN_PRODUCTION
-    app.updated_at = datetime.utcnow()
+    app.updated_at = datetime.now(timezone.utc)
     await _add_state_log(
         db, app,
         from_status=CustomerApplicationStatus.RETRY,
@@ -1151,7 +1151,7 @@ async def reset_password(
         raise HTTPException(status_code=400, detail="Ingen konto fundet for dette nulstillingslink.")
 
     sub.password_hash = _hash_password(body.new_password)
-    sub.updated_at = datetime.utcnow()
+    sub.updated_at = datetime.now(timezone.utc)
     reset_token_row.used_at = now
     await db.commit()
 
