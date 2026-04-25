@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     # Calendly webhook signing secret
     calendly_webhook_secret: str = ""
 
+    # AISelect — Stripe price IDs mapped to subscription tiers
+    # Set these to the actual Stripe price IDs from your dashboard.
+    aiselect_price_starter: str = ""
+    aiselect_price_pro: str = ""
+    aiselect_price_enterprise: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

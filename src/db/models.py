@@ -10,6 +10,22 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.db.connection import Base
 
 
+class SubscriptionTier(str, Enum):
+    FREE = "free"
+    STARTER = "starter"
+    PRO = "pro"
+    ENTERPRISE = "enterprise"
+
+
+class SubscriptionStatus(str, Enum):
+    ACTIVE = "active"
+    TRIALING = "trialing"
+    PAST_DUE = "past_due"
+    CANCELLED = "cancelled"
+    INCOMPLETE = "incomplete"
+    INCOMPLETE_EXPIRED = "incomplete_expired"
+
+
 class CustomerApplicationStatus(str, Enum):
     APPLIED = "APPLIED"
     UNDER_REVIEW = "UNDER_REVIEW"
@@ -183,3 +199,32 @@ class CustomerApplicationStateLog(Base):
     changed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
 
     application: Mapped["CustomerApplication"] = relationship(back_populates="state_logs")
+
+
+class AISelectSubscription(Base):
+    __tablename__ = "aiselect_subscriptions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_email: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    company_name: Mapped[str] = mapped_column(String, nullable=False)
+
+    stripe_customer_id: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String, nullable=True, unique=True, index=True)
+
+    tier: Mapped[SubscriptionTier] = mapped_column(
+        SAEnum(SubscriptionTier, name="subscription_tier"),
+        nullable=False,
+        default=SubscriptionTier.FREE,
+    )
+    status: Mapped[SubscriptionStatus] = mapped_column(
+        SAEnum(SubscriptionStatus, name="subscription_status"),
+        nullable=False,
+        default=SubscriptionStatus.INCOMPLETE,
+    )
+
+    current_period_start: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    current_period_end: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    cancelled_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

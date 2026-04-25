@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -8,7 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.db import get_db
-from src.db.models import CustomerApplication, CustomerApplicationStateLog, CustomerApplicationStatus, VALID_TRANSITIONS
+from src.db.models import (
+    CustomerApplication, CustomerApplicationStateLog, CustomerApplicationStatus, VALID_TRANSITIONS,
+    AISelectSubscription, SubscriptionTier, SubscriptionStatus,
+)
 from src.api.schemas import (
     ApplicationCreate, ApplicationResponse, ApplicationStatusUpdate,
     GeneratePaymentLinkRequest, PaymentLinkResponse,
@@ -271,16 +275,90 @@ async def generate_payment_link(
 
 
 # ─────────────────────────────────────────────
-# Stripe webhook (payment confirmed)
+# Stripe webhook (payment confirmed + subscriptions)
 # ─────────────────────────────────────────────
+
+def _tier_from_price_id(price_id: str) -> SubscriptionTier:
+    """Map a Stripe price ID to a SubscriptionTier. Falls back to STARTER for unknown IDs."""
+    from src.config import get_settings
+    settings = get_settings()
+    mapping = {
+        settings.aiselect_price_starter: SubscriptionTier.STARTER,
+        settings.aiselect_price_pro: SubscriptionTier.PRO,
+        settings.aiselect_price_enterprise: SubscriptionTier.ENTERPRISE,
+    }
+    return mapping.get(price_id, SubscriptionTier.STARTER)
+
+
+def _subscription_status_from_stripe(stripe_status: str) -> SubscriptionStatus:
+    """Map a Stripe subscription status string to our SubscriptionStatus enum."""
+    return {
+        "active": SubscriptionStatus.ACTIVE,
+        "trialing": SubscriptionStatus.TRIALING,
+        "past_due": SubscriptionStatus.PAST_DUE,
+        "canceled": SubscriptionStatus.CANCELLED,
+        "cancelled": SubscriptionStatus.CANCELLED,
+        "incomplete": SubscriptionStatus.INCOMPLETE,
+        "incomplete_expired": SubscriptionStatus.INCOMPLETE_EXPIRED,
+    }.get(stripe_status, SubscriptionStatus.INCOMPLETE)
+
+
+async def _upsert_subscription(
+    db: AsyncSession,
+    stripe_subscription_id: str,
+    stripe_customer_id: str,
+    customer_email: str,
+    company_name: str,
+    tier: SubscriptionTier,
+    status: SubscriptionStatus,
+    current_period_start: Optional[datetime],
+    current_period_end: Optional[datetime],
+    cancelled_at: Optional[datetime] = None,
+) -> AISelectSubscription:
+    """Create or update an AISelectSubscription row."""
+    result = await db.execute(
+        select(AISelectSubscription).where(
+            AISelectSubscription.stripe_subscription_id == stripe_subscription_id
+        )
+    )
+    sub = result.scalar_one_or_none()
+
+    if sub is None:
+        sub = AISelectSubscription(
+            customer_email=customer_email,
+            company_name=company_name,
+            stripe_customer_id=stripe_customer_id,
+            stripe_subscription_id=stripe_subscription_id,
+        )
+        db.add(sub)
+
+    sub.tier = tier
+    sub.status = status
+    sub.current_period_start = current_period_start
+    sub.current_period_end = current_period_end
+    sub.cancelled_at = cancelled_at
+    sub.updated_at = datetime.utcnow()
+    return sub
+
 
 @router.post("/webhooks/stripe", include_in_schema=False)
 async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """
-    Stripe sends checkout.session.completed here.
-    We verify the signature and advance the application to PAID.
+    Unified Stripe webhook endpoint.
+
+    Handles:
+    - checkout.session.completed  — one-time payment (AIScore) or new subscription (AISelect)
+    - customer.subscription.updated — tier/status change on existing subscription
+    - customer.subscription.deleted — subscription cancelled by customer or Stripe
+    - invoice.payment_failed        — payment failed; flags subscription as past_due
     """
     from src.payments import construct_stripe_event
+    from src.payments.emailer import (
+        send_subscription_confirmation_email,
+        send_subscription_updated_email,
+        send_subscription_cancelled_email,
+        send_payment_failed_email,
+    )
     import stripe as _stripe
 
     payload = await request.body()
@@ -292,45 +370,280 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         log.warning("stripe_webhook.invalid_signature", error=str(exc))
         raise HTTPException(status_code=400, detail="Invalid Stripe signature")
 
-    if event["type"] == "checkout.session.completed":
+    event_type: str = event["type"]
+    log.info("stripe_webhook.received", event_type=event_type, event_id=event.get("id"))
+
+    # ── checkout.session.completed ──────────────────────────────────────────
+    if event_type == "checkout.session.completed":
         session = event["data"]["object"]
-        application_id_str = session.get("metadata", {}).get("order_id")
-        payment_intent_id = session.get("payment_intent")
+        mode = session.get("mode")
 
-        if not application_id_str:
-            log.warning("stripe_webhook.missing_order_id", session_id=session.get("id"))
-            return {"received": True}
+        if mode == "payment":
+            # AIScore one-time payment
+            application_id_str = session.get("metadata", {}).get("order_id")
+            payment_intent_id = session.get("payment_intent")
 
-        try:
-            application_id = uuid.UUID(application_id_str)
-        except ValueError:
-            log.warning("stripe_webhook.invalid_order_id", order_id=application_id_str)
-            return {"received": True}
+            if not application_id_str:
+                log.warning("stripe_webhook.missing_order_id", session_id=session.get("id"))
+                return {"received": True}
 
-        result = await db.execute(
-            select(CustomerApplication)
-            .options(selectinload(CustomerApplication.state_logs))
-            .where(CustomerApplication.id == application_id)
-        )
-        app = result.scalar_one_or_none()
-        if not app:
-            log.warning("stripe_webhook.application_not_found", application_id=application_id_str)
-            return {"received": True}
+            try:
+                application_id = uuid.UUID(application_id_str)
+            except ValueError:
+                log.warning("stripe_webhook.invalid_order_id", order_id=application_id_str)
+                return {"received": True}
 
-        if app.status == CustomerApplicationStatus.AWAITING_PAYMENT:
-            prev_status = app.status
-            app.status = CustomerApplicationStatus.PAID
-            app.stripe_payment_intent_id = payment_intent_id
-            app.updated_at = datetime.utcnow()
-            await _add_state_log(
-                db, app,
-                from_status=prev_status,
-                to_status=CustomerApplicationStatus.PAID,
-                changed_by="stripe",
-                note=f"Payment confirmed — intent {payment_intent_id}",
+            result = await db.execute(
+                select(CustomerApplication)
+                .options(selectinload(CustomerApplication.state_logs))
+                .where(CustomerApplication.id == application_id)
+            )
+            app = result.scalar_one_or_none()
+            if not app:
+                log.warning("stripe_webhook.application_not_found", application_id=application_id_str)
+                return {"received": True}
+
+            if app.status == CustomerApplicationStatus.AWAITING_PAYMENT:
+                prev_status = app.status
+                app.status = CustomerApplicationStatus.PAID
+                app.stripe_payment_intent_id = payment_intent_id
+                app.updated_at = datetime.utcnow()
+                await _add_state_log(
+                    db, app,
+                    from_status=prev_status,
+                    to_status=CustomerApplicationStatus.PAID,
+                    changed_by="stripe",
+                    note=f"Payment confirmed — intent {payment_intent_id}",
+                )
+                await db.commit()
+                log.info("stripe_webhook.payment_confirmed", application_id=application_id_str)
+
+        elif mode == "subscription":
+            # AISelect new subscription checkout completed
+            subscription_id = session.get("subscription")
+            stripe_customer_id = session.get("customer")
+            customer_email = session.get("customer_email") or session.get("customer_details", {}).get("email", "")
+            metadata = session.get("metadata", {})
+            company_name = metadata.get("company_name", "")
+            customer_name = metadata.get("customer_name", customer_email)
+            tier_str = metadata.get("tier", "")
+
+            if not subscription_id:
+                log.warning("stripe_webhook.subscription.missing_subscription_id", session_id=session.get("id"))
+                return {"received": True}
+
+            # Fetch subscription details from Stripe to get price ID and period
+            def _retrieve_sub(sub_id: str) -> Optional[dict]:
+                from src.config import get_settings as _gs
+                _stripe.api_key = _gs().stripe_secret_key
+                return _stripe.Subscription.retrieve(sub_id)
+
+            try:
+                stripe_sub = await asyncio.to_thread(_retrieve_sub, subscription_id)
+            except Exception as exc:
+                log.error("stripe_webhook.subscription.retrieve_failed", error=str(exc))
+                stripe_sub = None
+
+            # Derive tier: prefer metadata, fall back to price ID mapping
+            if tier_str and tier_str in SubscriptionTier._value2member_map_:
+                tier = SubscriptionTier(tier_str)
+            elif stripe_sub and stripe_sub.get("items", {}).get("data"):
+                price_id = stripe_sub["items"]["data"][0].get("price", {}).get("id", "")
+                tier = _tier_from_price_id(price_id)
+            else:
+                tier = SubscriptionTier.STARTER
+
+            period_start = (
+                datetime.utcfromtimestamp(stripe_sub["current_period_start"])
+                if stripe_sub and stripe_sub.get("current_period_start") else None
+            )
+            period_end = (
+                datetime.utcfromtimestamp(stripe_sub["current_period_end"])
+                if stripe_sub and stripe_sub.get("current_period_end") else None
+            )
+
+            await _upsert_subscription(
+                db,
+                stripe_subscription_id=subscription_id,
+                stripe_customer_id=stripe_customer_id or "",
+                customer_email=customer_email,
+                company_name=company_name,
+                tier=tier,
+                status=SubscriptionStatus.ACTIVE,
+                current_period_start=period_start,
+                current_period_end=period_end,
             )
             await db.commit()
-            log.info("stripe_webhook.payment_confirmed", application_id=application_id_str)
+            log.info(
+                "stripe_webhook.subscription.activated",
+                subscription_id=subscription_id,
+                tier=tier,
+                customer_email=customer_email,
+            )
+
+            if customer_email:
+                period_end_str = period_end.strftime("%d.%m.%Y") if period_end else None
+                await send_subscription_confirmation_email(
+                    customer_email=customer_email,
+                    customer_name=customer_name,
+                    company_name=company_name,
+                    tier=tier.value,
+                    period_end=period_end_str,
+                )
+
+    # ── customer.subscription.updated ──────────────────────────────────────
+    elif event_type == "customer.subscription.updated":
+        sub_obj = event["data"]["object"]
+        subscription_id = sub_obj.get("id")
+        stripe_customer_id = sub_obj.get("customer", "")
+        stripe_status = sub_obj.get("status", "")
+        items_data = sub_obj.get("items", {}).get("data", [])
+        price_id = items_data[0].get("price", {}).get("id", "") if items_data else ""
+
+        new_tier = _tier_from_price_id(price_id)
+        new_status = _subscription_status_from_stripe(stripe_status)
+        period_start = (
+            datetime.utcfromtimestamp(sub_obj["current_period_start"])
+            if sub_obj.get("current_period_start") else None
+        )
+        period_end = (
+            datetime.utcfromtimestamp(sub_obj["current_period_end"])
+            if sub_obj.get("current_period_end") else None
+        )
+
+        # Look up existing subscription record to detect tier change
+        existing_result = await db.execute(
+            select(AISelectSubscription).where(
+                AISelectSubscription.stripe_subscription_id == subscription_id
+            )
+        )
+        existing = existing_result.scalar_one_or_none()
+        old_tier = existing.tier if existing else None
+        customer_email = existing.customer_email if existing else ""
+        company_name = existing.company_name if existing else ""
+
+        await _upsert_subscription(
+            db,
+            stripe_subscription_id=subscription_id,
+            stripe_customer_id=stripe_customer_id,
+            customer_email=customer_email,
+            company_name=company_name,
+            tier=new_tier,
+            status=new_status,
+            current_period_start=period_start,
+            current_period_end=period_end,
+        )
+        await db.commit()
+        log.info(
+            "stripe_webhook.subscription.updated",
+            subscription_id=subscription_id,
+            tier=new_tier,
+            status=new_status,
+        )
+
+        # Send tier-change email only when tier actually changed
+        if customer_email and old_tier is not None and old_tier != new_tier:
+            await send_subscription_updated_email(
+                customer_email=customer_email,
+                customer_name=customer_email,
+                company_name=company_name,
+                old_tier=old_tier.value,
+                new_tier=new_tier.value,
+            )
+
+    # ── customer.subscription.deleted ──────────────────────────────────────
+    elif event_type == "customer.subscription.deleted":
+        sub_obj = event["data"]["object"]
+        subscription_id = sub_obj.get("id")
+        stripe_customer_id = sub_obj.get("customer", "")
+        cancelled_at_ts = sub_obj.get("canceled_at")
+        cancelled_at = datetime.utcfromtimestamp(cancelled_at_ts) if cancelled_at_ts else datetime.utcnow()
+        period_end = (
+            datetime.utcfromtimestamp(sub_obj["current_period_end"])
+            if sub_obj.get("current_period_end") else None
+        )
+
+        existing_result = await db.execute(
+            select(AISelectSubscription).where(
+                AISelectSubscription.stripe_subscription_id == subscription_id
+            )
+        )
+        existing = existing_result.scalar_one_or_none()
+        customer_email = existing.customer_email if existing else ""
+        company_name = existing.company_name if existing else ""
+        tier = existing.tier if existing else SubscriptionTier.STARTER
+
+        await _upsert_subscription(
+            db,
+            stripe_subscription_id=subscription_id,
+            stripe_customer_id=stripe_customer_id,
+            customer_email=customer_email,
+            company_name=company_name,
+            tier=tier,
+            status=SubscriptionStatus.CANCELLED,
+            current_period_start=existing.current_period_start if existing else None,
+            current_period_end=period_end,
+            cancelled_at=cancelled_at,
+        )
+        await db.commit()
+        log.info(
+            "stripe_webhook.subscription.deleted",
+            subscription_id=subscription_id,
+            customer_email=customer_email,
+        )
+
+        if customer_email:
+            period_end_str = period_end.strftime("%d.%m.%Y") if period_end else None
+            await send_subscription_cancelled_email(
+                customer_email=customer_email,
+                customer_name=customer_email,
+                company_name=company_name,
+                tier=tier.value,
+                period_end=period_end_str,
+            )
+
+    # ── invoice.payment_failed ──────────────────────────────────────────────
+    elif event_type == "invoice.payment_failed":
+        invoice = event["data"]["object"]
+        subscription_id = invoice.get("subscription")
+        amount_due = invoice.get("amount_due")  # in øre (smallest currency unit)
+        amount_dkk = (amount_due // 100) if amount_due is not None else None
+
+        if not subscription_id:
+            log.warning("stripe_webhook.invoice.no_subscription", invoice_id=invoice.get("id"))
+            return {"received": True}
+
+        existing_result = await db.execute(
+            select(AISelectSubscription).where(
+                AISelectSubscription.stripe_subscription_id == subscription_id
+            )
+        )
+        existing = existing_result.scalar_one_or_none()
+        if existing:
+            existing.status = SubscriptionStatus.PAST_DUE
+            existing.updated_at = datetime.utcnow()
+            await db.commit()
+            log.info(
+                "stripe_webhook.invoice.payment_failed",
+                subscription_id=subscription_id,
+                customer_email=existing.customer_email,
+            )
+
+            await send_payment_failed_email(
+                customer_email=existing.customer_email,
+                customer_name=existing.customer_email,
+                company_name=existing.company_name,
+                tier=existing.tier.value,
+                amount_dkk=amount_dkk,
+            )
+        else:
+            log.warning(
+                "stripe_webhook.invoice.subscription_not_found",
+                subscription_id=subscription_id,
+            )
+
+    else:
+        log.debug("stripe_webhook.ignored_event_type", event_type=event_type)
 
     return {"received": True}
 

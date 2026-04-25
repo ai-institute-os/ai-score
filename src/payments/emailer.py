@@ -171,6 +171,195 @@ async def send_qc_escalation_email(
         await send_email(to=recipient, subject=subject, html_body=html_body)
 
 
+async def send_subscription_confirmation_email(
+    customer_email: str,
+    customer_name: str,
+    company_name: str,
+    tier: str,
+    period_end: Optional[str] = None,
+) -> None:
+    """Confirm a new AISelect subscription to the customer."""
+    subject = f"Velkommen til AISelect {tier.capitalize()} — {company_name}"
+    period_line = f"<p>Dit abonnement fornyes automatisk d. <strong>{period_end}</strong>.</p>" if period_end else ""
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h2 style="color:#1d4ed8;">Tak for dit abonnement på AISelect {tier.capitalize()}</h2>
+  <p>Hej {customer_name},</p>
+  <p>
+    Vi har modtaget din betaling og dit abonnement for <strong>{company_name}</strong>
+    er nu aktivt på pakken <strong>{tier.capitalize()}</strong>.
+  </p>
+  {period_line}
+  <p>Log ind på <a href="https://aiselect.dk">aiselect.dk</a> for at komme i gang.</p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+  <p style="color:#6b7280;font-size:12px;">
+    AISelect &bull; aiselect.dk &bull;
+    <a href="mailto:support@aiscore.dk">support@aiscore.dk</a>
+  </p>
+</body>
+</html>
+""".strip()
+
+    text_body = (
+        f"Hej {customer_name},\n\n"
+        f"Tak for dit abonnement på AISelect {tier.capitalize()} ({company_name}).\n"
+        f"Dit abonnement er nu aktivt.\n\n"
+        f"Log ind på https://aiselect.dk\n\n"
+        f"AISelect — support@aiscore.dk"
+    )
+
+    await send_email(to=customer_email, subject=subject, html_body=html_body, text_body=text_body)
+
+
+async def send_subscription_updated_email(
+    customer_email: str,
+    customer_name: str,
+    company_name: str,
+    old_tier: str,
+    new_tier: str,
+) -> None:
+    """Notify customer when their AISelect subscription tier changes."""
+    subject = f"Dit AISelect abonnement er opdateret — {company_name}"
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h2 style="color:#1d4ed8;">Dit abonnement er blevet opdateret</h2>
+  <p>Hej {customer_name},</p>
+  <p>
+    Dit AISelect abonnement for <strong>{company_name}</strong> er skiftet
+    fra <strong>{old_tier.capitalize()}</strong> til <strong>{new_tier.capitalize()}</strong>.
+  </p>
+  <p>Ændringen træder i kraft øjeblikkeligt. Log ind på
+     <a href="https://aiselect.dk">aiselect.dk</a> for at se din opdaterede adgang.
+  </p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+  <p style="color:#6b7280;font-size:12px;">
+    AISelect &bull; aiselect.dk &bull;
+    <a href="mailto:support@aiscore.dk">support@aiscore.dk</a>
+  </p>
+</body>
+</html>
+""".strip()
+
+    text_body = (
+        f"Hej {customer_name},\n\n"
+        f"Dit AISelect abonnement ({company_name}) er ændret fra {old_tier} til {new_tier}.\n\n"
+        f"Log ind på https://aiselect.dk\n\n"
+        f"AISelect — support@aiscore.dk"
+    )
+
+    await send_email(to=customer_email, subject=subject, html_body=html_body, text_body=text_body)
+
+
+async def send_subscription_cancelled_email(
+    customer_email: str,
+    customer_name: str,
+    company_name: str,
+    tier: str,
+    period_end: Optional[str] = None,
+) -> None:
+    """Notify customer that their AISelect subscription has been cancelled."""
+    subject = f"Dit AISelect abonnement er annulleret — {company_name}"
+    access_line = (
+        f"<p>Du har adgang til <strong>{tier.capitalize()}</strong>-funktioner frem til <strong>{period_end}</strong>.</p>"
+        if period_end else ""
+    )
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h2 style="color:#b91c1c;">Dit abonnement er annulleret</h2>
+  <p>Hej {customer_name},</p>
+  <p>
+    Dit AISelect abonnement (<strong>{tier.capitalize()}</strong>) for
+    <strong>{company_name}</strong> er blevet annulleret.
+  </p>
+  {access_line}
+  <p>
+    Har du annulleret ved en fejl? Skriv til
+    <a href="mailto:support@aiscore.dk">support@aiscore.dk</a> — vi hjælper gerne.
+  </p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+  <p style="color:#6b7280;font-size:12px;">
+    AISelect &bull; aiselect.dk
+  </p>
+</body>
+</html>
+""".strip()
+
+    text_body = (
+        f"Hej {customer_name},\n\n"
+        f"Dit AISelect abonnement ({tier}, {company_name}) er annulleret.\n"
+        + (f"Adgang til {period_end}.\n\n" if period_end else "\n")
+        + f"Spørgsmål? support@aiscore.dk\n\n"
+        f"AISelect"
+    )
+
+    await send_email(to=customer_email, subject=subject, html_body=html_body, text_body=text_body)
+
+
+async def send_payment_failed_email(
+    customer_email: str,
+    customer_name: str,
+    company_name: str,
+    tier: str,
+    amount_dkk: Optional[int] = None,
+) -> None:
+    """Notify customer when an AISelect invoice payment fails."""
+    subject = f"Betaling mislykkedes for dit AISelect abonnement — {company_name}"
+    amount_line = (
+        f"<p>Beløb: <strong>{amount_dkk:,} kr.</strong></p>" if amount_dkk else ""
+    )
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h2 style="color:#b91c1c;">Betaling mislykkedes</h2>
+  <p>Hej {customer_name},</p>
+  <p>
+    Vi kunne ikke trække betalingen for dit AISelect abonnement
+    (<strong>{tier.capitalize()}</strong>) for <strong>{company_name}</strong>.
+  </p>
+  {amount_line}
+  <p>
+    Opdater din betalingsmetode via
+    <a href="https://aiselect.dk/billing">aiselect.dk/billing</a>
+    for at undgå afbrydelse af din adgang.
+  </p>
+  <p style="color:#6b7280;font-size:13px;">
+    Stripe vil automatisk forsøge igen inden for de næste par dage.
+  </p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+  <p style="color:#6b7280;font-size:12px;">
+    AISelect &bull; aiselect.dk &bull;
+    <a href="mailto:support@aiscore.dk">support@aiscore.dk</a>
+  </p>
+</body>
+</html>
+""".strip()
+
+    text_body = (
+        f"Hej {customer_name},\n\n"
+        f"Vi kunne ikke trække betalingen for dit AISelect abonnement ({tier}, {company_name}).\n"
+        + (f"Beløb: {amount_dkk:,} kr.\n" if amount_dkk else "")
+        + f"\nOpdater din betalingsmetode: https://aiselect.dk/billing\n\n"
+        f"AISelect — support@aiscore.dk"
+    )
+
+    await send_email(to=customer_email, subject=subject, html_body=html_body, text_body=text_body)
+
+
 async def send_calendly_booking_email(
     company_name: str,
     kontaktperson: str,
