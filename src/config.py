@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     # Calendly webhook signing secret
     calendly_webhook_secret: str = ""
 
+    # Admin API key — must be set in production; all /admin/* endpoints require X-Admin-Key header
+    admin_api_key: str = ""
+
     # AISelect — Stripe price IDs mapped to subscription tiers
     # Set these to the actual Stripe price IDs from your dashboard.
     aiselect_price_starter: str = ""

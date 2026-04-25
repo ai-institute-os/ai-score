@@ -18,6 +18,7 @@ from src.api.schemas import (
     GeneratePaymentLinkRequest, PaymentLinkResponse,
     QCResultSubmit, ManualCorrectionRequest,
 )
+from src.api.auth import require_admin_key
 
 log = structlog.get_logger()
 router = APIRouter()
@@ -68,7 +69,7 @@ async def submit_application(body: ApplicationCreate, db: AsyncSession = Depends
 # Admin: list and manage applications
 # ─────────────────────────────────────────────
 
-@router.get("/admin/applications", response_model=list[ApplicationResponse])
+@router.get("/admin/applications", response_model=list[ApplicationResponse], dependencies=[Depends(require_admin_key)])
 async def list_applications(
     status: Optional[str] = Query(default=None, description="Filter by status"),
     limit: int = Query(default=50, le=200),
@@ -88,14 +89,14 @@ async def list_applications(
     return list(result.scalars().all())
 
 
-@router.get("/admin/applications/{application_id}", response_model=ApplicationResponse)
+@router.get("/admin/applications/{application_id}", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
 async def get_application(application_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """Admin — get a single application with full state log."""
     app = await _get_application_or_404(application_id, db)
     return app
 
 
-@router.patch("/admin/applications/{application_id}/status", response_model=ApplicationResponse)
+@router.patch("/admin/applications/{application_id}/status", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
 async def update_application_status(
     application_id: uuid.UUID,
     body: ApplicationStatusUpdate,
@@ -141,7 +142,7 @@ async def update_application_status(
     return result.scalar_one()
 
 
-@router.patch("/admin/applications/{application_id}/notes", response_model=ApplicationResponse)
+@router.patch("/admin/applications/{application_id}/notes", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
 async def update_application_notes(
     application_id: uuid.UUID,
     notes: str,
@@ -203,6 +204,7 @@ async def _add_state_log(
     "/admin/applications/{application_id}/payment-link",
     response_model=PaymentLinkResponse,
     status_code=201,
+    dependencies=[Depends(require_admin_key)],
 )
 async def generate_payment_link(
     application_id: uuid.UUID,
@@ -693,10 +695,13 @@ async def calendly_webhook(request: Request, db: AsyncSession = Depends(get_db))
     payload = await request.body()
     sig_header = request.headers.get("calendly-webhook-signature", "")
 
-    if settings.calendly_webhook_secret:
-        if not _verify_calendly_signature(payload, sig_header, settings.calendly_webhook_secret):
-            log.warning("calendly_webhook.invalid_signature")
-            raise HTTPException(status_code=400, detail="Invalid Calendly signature")
+    if not settings.calendly_webhook_secret:
+        log.error("calendly_webhook.secret_not_configured")
+        raise HTTPException(status_code=500, detail="Webhook signing secret not configured")
+
+    if not _verify_calendly_signature(payload, sig_header, settings.calendly_webhook_secret):
+        log.warning("calendly_webhook.invalid_signature")
+        raise HTTPException(status_code=400, detail="Invalid Calendly signature")
 
     try:
         import json as _json
@@ -809,6 +814,7 @@ async def calendly_webhook(request: Request, db: AsyncSession = Depends(get_db))
 @router.post(
     "/admin/applications/{application_id}/qc-result",
     response_model=ApplicationResponse,
+    dependencies=[Depends(require_admin_key)],
 )
 async def submit_qc_result(
     application_id: uuid.UUID,
@@ -934,6 +940,7 @@ async def submit_qc_result(
 @router.post(
     "/admin/applications/{application_id}/manual-correction",
     response_model=ApplicationResponse,
+    dependencies=[Depends(require_admin_key)],
 )
 async def submit_manual_correction(
     application_id: uuid.UUID,
