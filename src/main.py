@@ -4,12 +4,16 @@ from pathlib import Path
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.config import get_settings
 from src.llm import PromptRouter, PromptCache, RateLimiter
+from src.api.rate_limit import limiter
 from src.api.routes import router
 from src.api.apply_routes import router as apply_router
 
@@ -74,6 +78,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 _settings = get_settings()
 
 # HTTPS redirect only in production — reverse proxy handles it in most deployments,
@@ -81,6 +88,7 @@ _settings = get_settings()
 if _settings.environment == "production":
     app.add_middleware(HTTPSRedirectMiddleware)
 
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=[h.strip() for h in _settings.allowed_hosts.split(",") if h.strip()],

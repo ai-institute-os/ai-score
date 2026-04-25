@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import hmac as _hmac
 import secrets
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -24,6 +25,7 @@ from src.api.schemas import (
     ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
 )
 from src.api.auth import require_admin_key
+from src.api.rate_limit import limiter
 
 log = structlog.get_logger()
 router = APIRouter()
@@ -37,7 +39,8 @@ _QC_ESCALATION_THRESHOLD = 3
 # ─────────────────────────────────────────────
 
 @router.post("/apply", response_model=ApplicationResponse, status_code=201)
-async def submit_application(body: ApplicationCreate, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def submit_application(request: Request, body: ApplicationCreate, db: AsyncSession = Depends(get_db)):
     """Public endpoint — customers submit their pre-qualification application here."""
     app = CustomerApplication(
         firmanavn=body.firmanavn,
@@ -75,7 +78,9 @@ async def submit_application(body: ApplicationCreate, db: AsyncSession = Depends
 # ─────────────────────────────────────────────
 
 @router.get("/admin/applications", response_model=list[ApplicationResponse], dependencies=[Depends(require_admin_key)])
+@limiter.limit("30/minute")
 async def list_applications(
+    request: Request,
     status: Optional[str] = Query(default=None, description="Filter by status"),
     limit: int = Query(default=50, le=200),
     offset: int = Query(default=0),
@@ -95,17 +100,21 @@ async def list_applications(
 
 
 @router.get("/admin/applications/{application_id}", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
-async def get_application(application_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+@limiter.limit("30/minute")
+async def get_application(request: Request, application_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """Admin — get a single application with full state log."""
     app = await _get_application_or_404(application_id, db)
     return app
 
 
-@router.patch("/admin/applications/{application_id}/status", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
+@router.patch("/admin/applications/{application_id}/status", response_model=ApplicationResponse)
+@limiter.limit("30/minute")
 async def update_application_status(
+    request: Request,
     application_id: uuid.UUID,
     body: ApplicationStatusUpdate,
     db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_admin_key),
 ):
     """Admin — advance the application through the CRM state machine."""
     app = await _get_application_or_404(application_id, db)
@@ -133,7 +142,7 @@ async def update_application_status(
         application_id=app.id,
         from_status=prev_status,
         to_status=new_status,
-        changed_by=body.changed_by,
+        changed_by=admin_id,
         note=body.note,
     )
     db.add(log)
@@ -148,7 +157,9 @@ async def update_application_status(
 
 
 @router.patch("/admin/applications/{application_id}/notes", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
+@limiter.limit("30/minute")
 async def update_application_notes(
+    request: Request,
     application_id: uuid.UUID,
     notes: str,
     db: AsyncSession = Depends(get_db),
@@ -211,7 +222,9 @@ async def _add_state_log(
     status_code=201,
     dependencies=[Depends(require_admin_key)],
 )
+@limiter.limit("30/minute")
 async def generate_payment_link(
+    request: Request,
     application_id: uuid.UUID,
     body: GeneratePaymentLinkRequest,
     db: AsyncSession = Depends(get_db),
@@ -953,12 +966,12 @@ async def submit_qc_result(
 @router.post(
     "/admin/applications/{application_id}/manual-correction",
     response_model=ApplicationResponse,
-    dependencies=[Depends(require_admin_key)],
 )
 async def submit_manual_correction(
     application_id: uuid.UUID,
     body: ManualCorrectionRequest,
     db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_admin_key),
 ):
     """
     Dennis submits a manual correction for an ESCALATED application.
@@ -983,7 +996,7 @@ async def submit_manual_correction(
         db, app,
         from_status=prev_status,
         to_status=CustomerApplicationStatus.RETRY,
-        changed_by=body.changed_by or "dennis",
+        changed_by=admin_id,
         note=body.note or "Manual correction applied",
     )
 
@@ -1005,3 +1018,137 @@ async def submit_manual_correction(
         .where(CustomerApplication.id == application_id)
     )
     return result.scalar_one()
+
+
+# ─────────────────────────────────────────────
+# AISelect: password reset flow
+# ─────────────────────────────────────────────
+
+_RESET_TOKEN_TTL_HOURS = 1
+
+
+def _hash_token(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode()).hexdigest()
+
+
+def _hash_password(password: str) -> str:
+    """PBKDF2-HMAC-SHA256 with a random salt. Returns 'salt_hex:key_hex'."""
+    salt = secrets.token_bytes(32)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 200_000)
+    return salt.hex() + ":" + key.hex()
+
+
+def _verify_password(password: str, stored: str) -> bool:
+    try:
+        salt_hex, key_hex = stored.split(":", 1)
+    except ValueError:
+        return False
+    salt = bytes.fromhex(salt_hex)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 200_000)
+    return _hmac.compare_digest(key.hex(), key_hex)
+
+
+@router.post(
+    "/aiselect/auth/forgot-password",
+    response_model=PasswordResetResponse,
+    summary="Request a password reset email",
+)
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> PasswordResetResponse:
+    """
+    Send a password reset link to the given email if it belongs to an AISelect subscriber.
+    Always returns 200 so the caller cannot enumerate valid emails.
+    """
+    from src.config import get_settings
+    from src.payments.emailer import send_password_reset_email
+
+    email = body.email.lower().strip()
+
+    sub_result = await db.execute(
+        select(AISelectSubscription)
+        .where(AISelectSubscription.customer_email == email)
+        .limit(1)
+    )
+    sub = sub_result.scalar_one_or_none()
+
+    if sub is not None:
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = _hash_token(raw_token)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=_RESET_TOKEN_TTL_HOURS)
+
+        reset_token_row = PasswordResetToken(
+            email=email,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+        db.add(reset_token_row)
+        await db.commit()
+
+        settings = get_settings()
+        reset_url = f"{settings.aiselect_base_url}/reset-password?token={raw_token}"
+
+        try:
+            await send_password_reset_email(customer_email=email, reset_url=reset_url)
+            log.info("password_reset.email_sent", email=email)
+        except Exception as exc:
+            log.error("password_reset.email_failed", email=email, error=str(exc))
+
+    return PasswordResetResponse(
+        message="Hvis e-mailadressen er registreret, er der sendt et nulstillingslink."
+    )
+
+
+@router.post(
+    "/aiselect/auth/reset-password",
+    response_model=PasswordResetResponse,
+    summary="Set a new password using a reset token",
+)
+async def reset_password(
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> PasswordResetResponse:
+    """
+    Validate the reset token and set the new password on the matching AISelect subscription.
+    """
+    token_hash = _hash_token(body.token)
+    now = datetime.now(timezone.utc)
+
+    result = await db.execute(
+        select(PasswordResetToken)
+        .where(
+            PasswordResetToken.token_hash == token_hash,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > now,
+        )
+        .limit(1)
+    )
+    reset_token_row = result.scalar_one_or_none()
+
+    if reset_token_row is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Ugyldigt eller udløbet nulstillingslink. Anmod venligst om et nyt.",
+        )
+
+    sub_result = await db.execute(
+        select(AISelectSubscription)
+        .where(AISelectSubscription.customer_email == reset_token_row.email)
+        .limit(1)
+    )
+    sub = sub_result.scalar_one_or_none()
+
+    if sub is None:
+        raise HTTPException(status_code=400, detail="Ingen konto fundet for dette nulstillingslink.")
+
+    sub.password_hash = _hash_password(body.new_password)
+    sub.updated_at = datetime.utcnow()
+    reset_token_row.used_at = now
+    await db.commit()
+
+    log.info("password_reset.completed", email=reset_token_row.email)
+
+    return PasswordResetResponse(
+        message="Din adgangskode er nu opdateret. Du kan logge ind med din nye adgangskode."
+    )

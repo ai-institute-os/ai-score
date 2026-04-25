@@ -382,6 +382,66 @@ async def send_payment_failed_email(
     await send_email(to=customer_email, subject=subject, html_body=html_body, text_body=text_body)
 
 
+async def send_password_reset_email(
+    customer_email: str,
+    reset_url: str,
+) -> None:
+    """Send a branded AISelect password reset email with a one-hour token link."""
+    subject = "Nulstil din AISelect adgangskode"
+    safe_reset_url = html.escape(reset_url)
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;background:#f9fafb;">
+  <div style="background:#fff;border-radius:8px;padding:32px;border:1px solid #e5e7eb;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <span style="font-size:22px;font-weight:bold;color:#1d4ed8;">AISelect</span>
+    </div>
+    <h2 style="color:#1a1a1a;font-size:20px;margin-top:0;">Nulstil din adgangskode</h2>
+    <p style="color:#374151;">
+      Vi har modtaget en anmodning om at nulstille adgangskoden til din AISelect-konto.
+      Klik på knappen nedenfor for at vælge en ny adgangskode.
+    </p>
+    <p style="margin:32px 0;text-align:center;">
+      <a href="{safe_reset_url}"
+         style="background:#1d4ed8;color:#fff;padding:14px 28px;border-radius:6px;
+                text-decoration:none;font-size:16px;font-weight:bold;display:inline-block;">
+        Nulstil adgangskode
+      </a>
+    </p>
+    <p style="color:#6b7280;font-size:13px;">
+      Linket er gyldigt i <strong>1 time</strong>.
+      Hvis du ikke har anmodet om en nulstilling, kan du se bort fra denne e-mail —
+      din adgangskode forbliver uændret.
+    </p>
+    <p style="color:#9ca3af;font-size:12px;word-break:break-all;">
+      Kan knappen ikke klikkes? Kopiér dette link til din browser:<br>
+      {safe_reset_url}
+    </p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+    <p style="color:#6b7280;font-size:12px;text-align:center;">
+      AISelect &bull; <a href="https://aiselect.dk" style="color:#1d4ed8;">aiselect.dk</a>
+      &bull; <a href="mailto:support@aiscore.dk" style="color:#1d4ed8;">support@aiscore.dk</a>
+    </p>
+  </div>
+</body>
+</html>
+""".strip()
+
+    text_body = (
+        "Nulstil din AISelect adgangskode\n\n"
+        "Vi har modtaget en anmodning om at nulstille adgangskoden til din konto.\n\n"
+        f"Klik her for at vælge en ny adgangskode:\n{reset_url}\n\n"
+        "Linket er gyldigt i 1 time.\n\n"
+        "Hvis du ikke har anmodet om en nulstilling, kan du se bort fra denne e-mail.\n\n"
+        "AISelect — support@aiscore.dk"
+    )
+
+    await send_email(to=customer_email, subject=subject, html_body=html_body, text_body=text_body)
+
+
 async def send_calendly_booking_email(
     company_name: str,
     kontaktperson: str,

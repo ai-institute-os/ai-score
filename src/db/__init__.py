@@ -3,6 +3,7 @@ from src.db.models import (
     Tenant, TenantProviderConfig, LLMResponse, PromptRequest, ScoreAlert,
     CustomerApplication, CustomerApplicationStateLog, CustomerApplicationStatus, VALID_TRANSITIONS,
     AISelectSubscription, SubscriptionTier, SubscriptionStatus,
+    PasswordResetToken,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "Tenant", "TenantProviderConfig", "LLMResponse", "PromptRequest", "ScoreAlert",
     "CustomerApplication", "CustomerApplicationStateLog", "CustomerApplicationStatus", "VALID_TRANSITIONS",
     "AISelectSubscription", "SubscriptionTier", "SubscriptionStatus",
+    "PasswordResetToken",
 ]
