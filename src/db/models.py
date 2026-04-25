@@ -33,7 +33,8 @@ VALID_TRANSITIONS: dict[CustomerApplicationStatus, set[CustomerApplicationStatus
     CustomerApplicationStatus.APPLIED: {CustomerApplicationStatus.UNDER_REVIEW, CustomerApplicationStatus.REJECTED},
     CustomerApplicationStatus.UNDER_REVIEW: {CustomerApplicationStatus.APPROVED, CustomerApplicationStatus.REJECTED},
     CustomerApplicationStatus.APPROVED: {CustomerApplicationStatus.CALLED},
-    CustomerApplicationStatus.CALLED: {CustomerApplicationStatus.AWAITING_PAYMENT},
+    # CALLED → AWAITING_PAYMENT (normal flow) or APPROVED (Calendly cancellation)
+    CustomerApplicationStatus.CALLED: {CustomerApplicationStatus.AWAITING_PAYMENT, CustomerApplicationStatus.APPROVED},
     CustomerApplicationStatus.AWAITING_PAYMENT: {CustomerApplicationStatus.PAID},
     CustomerApplicationStatus.PAID: {CustomerApplicationStatus.IN_PRODUCTION},
     CustomerApplicationStatus.IN_PRODUCTION: {CustomerApplicationStatus.QC_REVIEW},
@@ -154,6 +155,8 @@ class CustomerApplication(Base):
     qc_failure_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     # True after the first escalation (manual correction round); next 3 failures → CANCELLED
     has_been_escalated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Calendly booking URI — set when invitee.created fires, cleared on cancellation
+    calendly_event_uri: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

@@ -336,6 +336,160 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 
 
 # ─────────────────────────────────────────────
+# Calendly webhook (meeting booked / cancelled)
+# ─────────────────────────────────────────────
+
+def _verify_calendly_signature(payload: bytes, header: str, secret: str) -> bool:
+    """
+    Calendly signs webhooks with HMAC-SHA256.
+    Header format: t=<timestamp>,v1=<hex_digest>
+    Signed message: <timestamp>.<raw_body>
+    """
+    import hashlib
+    import hmac
+
+    parts: dict[str, str] = {}
+    for part in header.split(","):
+        k, _, v = part.partition("=")
+        parts[k.strip()] = v.strip()
+
+    timestamp = parts.get("t", "")
+    v1 = parts.get("v1", "")
+    if not timestamp or not v1:
+        return False
+
+    signed = f"{timestamp}.".encode() + payload
+    expected = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, v1)
+
+
+@router.post("/webhooks/calendly", include_in_schema=False)
+async def calendly_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Receives Calendly invitee.created and invitee.canceled events.
+
+    invitee.created  → if application is APPROVED, advance to CALLED and store event URI.
+    invitee.canceled → if application is CALLED, revert to APPROVED and clear event URI.
+
+    Email and invitee.email are used to match the application.
+    """
+    from src.config import get_settings
+    from src.payments.emailer import send_calendly_booking_email
+
+    settings = get_settings()
+    payload = await request.body()
+    sig_header = request.headers.get("calendly-webhook-signature", "")
+
+    if settings.calendly_webhook_secret:
+        if not _verify_calendly_signature(payload, sig_header, settings.calendly_webhook_secret):
+            log.warning("calendly_webhook.invalid_signature")
+            raise HTTPException(status_code=400, detail="Invalid Calendly signature")
+
+    try:
+        import json as _json
+        event = _json.loads(payload)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    event_type = event.get("event", "")
+    payload_data = event.get("payload", {})
+
+    invitee = payload_data.get("invitee", {})
+    invitee_email: str = invitee.get("email", "").lower().strip()
+    event_uri: str = payload_data.get("event", {}).get("uri", "") if isinstance(payload_data.get("event"), dict) else ""
+    scheduled_at: str = payload_data.get("event", {}).get("start_time", "") if isinstance(payload_data.get("event"), dict) else ""
+
+    if not invitee_email:
+        log.warning("calendly_webhook.missing_invitee_email", event_type=event_type)
+        return {"received": True}
+
+    # Find matching application by email (most-recent non-terminal match)
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.email == invitee_email)
+        .order_by(CustomerApplication.created_at.desc())
+        .limit(1)
+    )
+    app = result.scalar_one_or_none()
+
+    if not app:
+        log.warning("calendly_webhook.application_not_found", email=invitee_email, event_type=event_type)
+        return {"received": True}
+
+    if event_type == "invitee.created":
+        if app.status == CustomerApplicationStatus.APPROVED:
+            prev_status = app.status
+            app.status = CustomerApplicationStatus.CALLED
+            app.calendly_event_uri = event_uri or None
+            app.updated_at = datetime.utcnow()
+            await _add_state_log(
+                db, app,
+                from_status=prev_status,
+                to_status=CustomerApplicationStatus.CALLED,
+                changed_by="calendly",
+                note=f"Calendly møde booket — {scheduled_at or 'tidspunkt ukendt'}",
+            )
+            await db.commit()
+            log.info("calendly_webhook.booking_created", application_id=str(app.id), email=invitee_email)
+
+            try:
+                await send_calendly_booking_email(
+                    company_name=app.firmanavn,
+                    kontaktperson=app.kontaktperson,
+                    customer_email=app.email,
+                    event_uri=event_uri,
+                    scheduled_at=scheduled_at or None,
+                    canceled=False,
+                )
+            except Exception as exc:
+                log.error("calendly_webhook.email_failed", application_id=str(app.id), error=str(exc))
+        else:
+            log.info(
+                "calendly_webhook.booking_skipped_wrong_status",
+                application_id=str(app.id),
+                status=app.status.value,
+            )
+
+    elif event_type == "invitee.canceled":
+        if app.status == CustomerApplicationStatus.CALLED:
+            prev_status = app.status
+            stored_event_uri = app.calendly_event_uri or ""
+            app.status = CustomerApplicationStatus.APPROVED
+            app.calendly_event_uri = None
+            app.updated_at = datetime.utcnow()
+            await _add_state_log(
+                db, app,
+                from_status=prev_status,
+                to_status=CustomerApplicationStatus.APPROVED,
+                changed_by="calendly",
+                note="Calendly møde aflyst — tilbage til APPROVED",
+            )
+            await db.commit()
+            log.info("calendly_webhook.booking_canceled", application_id=str(app.id), email=invitee_email)
+
+            try:
+                await send_calendly_booking_email(
+                    company_name=app.firmanavn,
+                    kontaktperson=app.kontaktperson,
+                    customer_email=app.email,
+                    event_uri=event_uri or stored_event_uri,
+                    scheduled_at=None,
+                    canceled=True,
+                )
+            except Exception as exc:
+                log.error("calendly_webhook.cancel_email_failed", application_id=str(app.id), error=str(exc))
+        else:
+            log.info(
+                "calendly_webhook.cancel_skipped_wrong_status",
+                application_id=str(app.id),
+                status=app.status.value,
+            )
+
+    return {"received": True}
+
+
+# ─────────────────────────────────────────────
 # QC loop — 3+3 escalation
 # ─────────────────────────────────────────────
 

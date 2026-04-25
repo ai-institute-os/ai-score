@@ -169,3 +169,48 @@ async def send_qc_escalation_email(
     recipients = [settings.qc_alert_email, settings.admin_email]
     for recipient in recipients:
         await send_email(to=recipient, subject=subject, html_body=html_body)
+
+
+async def send_calendly_booking_email(
+    company_name: str,
+    kontaktperson: str,
+    customer_email: str,
+    event_uri: str,
+    scheduled_at: Optional[str],
+    canceled: bool = False,
+) -> None:
+    """Notify admin when a Calendly meeting is booked or cancelled."""
+    settings = get_settings()
+
+    if canceled:
+        subject = f"[AIScore Calendly] Møde aflyst — {company_name}"
+        headline = "Møde aflyst"
+        body_text = (
+            f"<strong>{kontaktperson}</strong> ({company_name}, {customer_email}) "
+            f"har aflyst deres Calendly-møde."
+        )
+    else:
+        subject = f"[AIScore Calendly] Nyt møde booket — {company_name}"
+        headline = "Nyt møde booket"
+        when_line = f"<br><strong>Tidspunkt:</strong> {scheduled_at}" if scheduled_at else ""
+        body_text = (
+            f"<strong>{kontaktperson}</strong> ({company_name}, {customer_email}) "
+            f"har booket et Calendly-møde.{when_line}"
+        )
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h2 style="color:#1d4ed8;">{headline}</h2>
+  <p>{body_text}</p>
+  <p style="color:#6b7280;font-size:13px;">
+    Calendly event URI: {event_uri}<br>
+    AIScore intern system
+  </p>
+</body>
+</html>
+""".strip()
+
+    await send_email(to=settings.admin_email, subject=subject, html_body=html_body)

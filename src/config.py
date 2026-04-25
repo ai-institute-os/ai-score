@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     qc_alert_email: str = "research@aiscore.dk"
     admin_email: str = "dennis@aiscore.dk"
 
+    # Calendly webhook signing secret
+    calendly_webhook_secret: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
