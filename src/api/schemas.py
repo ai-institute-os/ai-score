@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class AIScoreDimensions(BaseModel):
@@ -150,7 +150,7 @@ class ApplicationCreate(BaseModel):
     firmanavn: str = Field(..., min_length=1, max_length=255, description="Virksomhedens navn")
     website: str = Field(..., min_length=1, max_length=500, description="Virksomhedens website")
     kontaktperson: str = Field(..., min_length=1, max_length=255, description="Kontaktpersonens fulde navn")
-    email: str = Field(..., min_length=1, max_length=255, description="Kontakt-e-mail")
+    email: EmailStr = Field(..., description="Kontakt-e-mail")
     telefon: str = Field(..., min_length=1, max_length=50, description="Telefonnummer")
     virksomhedsinfo: str = Field(..., min_length=10, max_length=5000, description="Kort beskrivelse af virksomheden og dens behov")
 
