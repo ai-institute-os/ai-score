@@ -8,6 +8,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.db.connection import Base
+from src.crypto import EncryptedText
 
 
 class SubscriptionTier(str, Enum):
@@ -101,7 +102,7 @@ class TenantProviderConfig(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     provider: Mapped[str] = mapped_column(String, nullable=False)
-    api_key: Mapped[Optional[str]] = mapped_column(Text)
+    api_key: Mapped[Optional[str]] = mapped_column(EncryptedText)
     extra_config: Mapped[dict] = mapped_column(JSON, default=dict)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)

@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     # Admin API key — must be set in production; all /admin/* endpoints require X-Admin-Key header
     admin_api_key: str = ""
 
+    # Fernet key for encrypting LLM provider API keys at rest.
+    # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    # Must be set in production. If absent, keys are stored as plaintext (unsafe).
+    llm_encryption_key: str = ""
+
     # AISelect — Stripe price IDs mapped to subscription tiers
     # Set these to the actual Stripe price IDs from your dashboard.
     aiselect_price_starter: str = ""
