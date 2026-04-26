@@ -116,6 +116,12 @@ async def admin_dashboard():
     return FileResponse(str(_static_dir / "admin.html"))
 
 
+@app.get("/admin/orders", include_in_schema=False)
+async def admin_orders():
+    """Serve the AIScore admin orders list."""
+    return FileResponse(str(_static_dir / "admin_orders.html"))
+
+
 _templates_dir = Path(__file__).parent / "templates"
 
 

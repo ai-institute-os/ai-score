@@ -99,6 +99,45 @@ async def list_applications(
     return list(result.scalars().all())
 
 
+@router.get("/admin/orders", dependencies=[Depends(require_admin_key)])
+@limiter.limit("30/minute")
+async def list_orders(request: Request, db: AsyncSession = Depends(get_db)):
+    """Admin — seneste 20 betalte AIScore-rapporter med Calendly-status."""
+    paid_statuses = [
+        CustomerApplicationStatus.PAID,
+        CustomerApplicationStatus.IN_PRODUCTION,
+        CustomerApplicationStatus.QC_REVIEW,
+        CustomerApplicationStatus.QC_PASSED,
+        CustomerApplicationStatus.QC_FAILED,
+        CustomerApplicationStatus.ESCALATED,
+        CustomerApplicationStatus.RETRY,
+        CustomerApplicationStatus.READY_FOR_REVIEW_CALL,
+    ]
+    q = (
+        select(CustomerApplication)
+        .where(CustomerApplication.status.in_(paid_statuses))
+        .order_by(CustomerApplication.updated_at.desc())
+        .limit(20)
+    )
+    result = await db.execute(q)
+    apps = list(result.scalars().all())
+
+    return [
+        {
+            "id": str(app.id),
+            "firmanavn": app.firmanavn,
+            "email": app.email,
+            "status": app.status.value,
+            "updated_at": app.updated_at.isoformat() if app.updated_at else None,
+            "created_at": app.created_at.isoformat() if app.created_at else None,
+            "score": None,
+            "rapport_url": f"/report-status/{app.id}",
+            "calendly_booked": app.calendly_event_uri is not None,
+        }
+        for app in apps
+    ]
+
+
 @router.get("/admin/applications/{application_id}", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
 @limiter.limit("30/minute")
 async def get_application(request: Request, application_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
