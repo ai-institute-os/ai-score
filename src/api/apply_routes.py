@@ -235,6 +235,18 @@ async def update_application_status(
     db.add(log)
     await db.commit()
 
+    if new_status == CustomerApplicationStatus.READY_FOR_REVIEW_CALL:
+        from src.payments.emailer import send_aiselect_crosssell_email
+        from src.config import get_settings as _gs
+        _settings = _gs()
+        aiselect_url = getattr(_settings, "aiselect_checkout_url", _settings.aiselect_base_url)
+        await send_aiselect_crosssell_email(
+            customer_email=app.email,
+            customer_name=app.kontaktperson,
+            company_name=app.firmanavn,
+            aiselect_url=aiselect_url,
+        )
+
     result = await db.execute(
         select(CustomerApplication)
         .options(selectinload(CustomerApplication.state_logs))
@@ -555,6 +567,7 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """
     from src.payments import construct_stripe_event
     from src.payments.emailer import (
+        send_payment_confirmation_email,
         send_subscription_confirmation_email,
         send_subscription_updated_email,
         send_subscription_cancelled_email,
@@ -618,6 +631,23 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                 )
                 await db.commit()
                 log.info("stripe_webhook.payment_confirmed", application_id=application_id_str)
+
+                amount_total = session.get("amount_total")
+                amount_dkk = (amount_total // 100) if amount_total is not None else None
+                try:
+                    await send_payment_confirmation_email(
+                        customer_email=app.email,
+                        customer_name=app.kontaktperson,
+                        company_name=app.firmanavn,
+                        amount_dkk=amount_dkk,
+                        payment_intent_id=payment_intent_id,
+                    )
+                except Exception as exc:
+                    log.error(
+                        "stripe_webhook.payment_confirmation_email_failed",
+                        application_id=application_id_str,
+                        error=str(exc),
+                    )
 
         elif mode == "subscription":
             # AISelect new subscription checkout completed

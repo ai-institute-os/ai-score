@@ -60,6 +60,167 @@ async def send_email(
         raise
 
 
+async def send_payment_confirmation_email(
+    customer_email: str,
+    customer_name: str,
+    company_name: str,
+    amount_dkk: Optional[int] = None,
+    payment_intent_id: Optional[str] = None,
+) -> None:
+    """Confirm to the customer that their AIScore payment was received and production has started."""
+    subject = f"Betaling modtaget — AIScore-rapport for {company_name}"
+    safe_customer_name = html.escape(customer_name)
+    safe_company_name = html.escape(company_name)
+
+    amount_line = (
+        f"<p style='color:#6b7280;font-size:13px;'>Beløb: <strong>{amount_dkk:,} kr.</strong></p>"
+        if amount_dkk else ""
+    )
+    ref_line = (
+        f"<p style='color:#6b7280;font-size:12px;'>Reference: {html.escape(payment_intent_id)}</p>"
+        if payment_intent_id else ""
+    )
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <p>Hej {safe_customer_name},</p>
+  <p>
+    Din betaling er modtaget.
+  </p>
+  <p>
+    Vi er i gang med at analysere, hvordan AI-systemerne aktuelt positionerer og evaluerer
+    <strong>{safe_company_name}</strong> — på tværs af ChatGPT, Gemini, Perplexity og Claude.
+  </p>
+  <p>
+    Rapporten gennemgår intern kvalitetssikring, inden den er klar. Du modtager besked,
+    når vi er klar til at gennemgå resultaterne med dig.
+  </p>
+  {amount_line}
+  {ref_line}
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+  <p style="color:#6b7280;font-size:12px;">
+    AIScore &bull; aiscore.dk &bull;
+    <a href="mailto:support@aiscore.dk">support@aiscore.dk</a>
+  </p>
+</body>
+</html>
+""".strip()
+
+    text_body = (
+        f"Hej {customer_name},\n\n"
+        f"Din betaling er modtaget.\n\n"
+        f"Vi er i gang med at analysere, hvordan AI-systemerne aktuelt positionerer og evaluerer "
+        f"{company_name} — på tværs af ChatGPT, Gemini, Perplexity og Claude.\n\n"
+        f"Rapporten gennemgår intern kvalitetssikring, inden den er klar. "
+        f"Du modtager besked, når vi er klar til at gennemgå resultaterne med dig.\n\n"
+        + (f"Beløb: {amount_dkk:,} kr.\n" if amount_dkk else "")
+        + (f"Reference: {payment_intent_id}\n" if payment_intent_id else "")
+        + f"\nAIScore — support@aiscore.dk"
+    )
+
+    await send_email(
+        to=customer_email,
+        subject=subject,
+        html_body=html_body,
+        text_body=text_body,
+    )
+
+
+async def send_aiselect_crosssell_email(
+    customer_email: str,
+    customer_name: str,
+    company_name: str,
+    aiscore_total: Optional[int] = None,
+    aiselect_url: str = "https://www.aiselect.dk",
+) -> None:
+    """
+    Invite the customer to AISelect after their AIScore report is ready.
+    Sent when the application reaches READY_FOR_REVIEW_CALL.
+    Errors are caught internally so a failed send never interrupts report delivery.
+    """
+    try:
+        subject = f"Din AIScore-rapport er klar — {company_name}"
+        safe_customer_name = html.escape(customer_name)
+        safe_company_name = html.escape(company_name)
+        safe_aiselect_url = html.escape(aiselect_url)
+
+        score_line = (
+            f"<p>Din samlede AIScore er <strong>{aiscore_total}/100</strong>.</p>"
+            if aiscore_total is not None else ""
+        )
+
+        html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <p>Hej {safe_customer_name},</p>
+  <p>
+    AIScore-rapporten for <strong>{safe_company_name}</strong> er klar.
+    Du modtager snart et opkald, hvor vi gennemgår resultaterne med dig.
+  </p>
+  {score_line}
+  <p>
+    Rapporten viser, hvor AI-systemerne positionerer jer i dag — og hvor positionen
+    endnu ikke er stabil nok til konsekvent at blive valgt. Det er udgangspunktet.
+  </p>
+  <p>
+    <strong>AISelect</strong> er programmet, der bygger videre herfra. Det handler ikke
+    om at optimere indhold — det handler om at gøre jeres position i AI-systemer
+    til noget, de kan genkende, forstå og vælge konsekvent.
+  </p>
+  <p style="margin:32px 0;text-align:center;">
+    <a href="{safe_aiselect_url}"
+       style="background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:6px;
+              text-decoration:none;font-size:15px;font-weight:bold;display:inline-block;">
+      Læs mere om AISelect
+    </a>
+  </p>
+  <p style="color:#6b7280;font-size:13px;">
+    Vi ses snart til gennemgangen.
+  </p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+  <p style="color:#6b7280;font-size:12px;">
+    AIScore &bull; aiscore.dk &bull;
+    <a href="mailto:support@aiscore.dk">support@aiscore.dk</a>
+  </p>
+</body>
+</html>
+""".strip()
+
+        text_body = (
+            f"Hej {customer_name},\n\n"
+            f"AIScore-rapporten for {company_name} er klar. "
+            f"Du modtager snart et opkald, hvor vi gennemgår resultaterne med dig.\n\n"
+            + (f"Din samlede AIScore: {aiscore_total}/100\n\n" if aiscore_total is not None else "")
+            + "Rapporten viser, hvor AI-systemerne positionerer jer i dag — og hvor positionen "
+            f"endnu ikke er stabil nok til konsekvent at blive valgt. Det er udgangspunktet.\n\n"
+            f"AISelect er programmet, der bygger videre herfra. Det handler ikke om at optimere "
+            f"indhold — det handler om at gøre jeres position i AI-systemer til noget, de kan "
+            f"genkende, forstå og vælge konsekvent.\n\n"
+            f"Læs mere: {aiselect_url}\n\n"
+            f"Vi ses snart til gennemgangen.\n\n"
+            f"AIScore — support@aiscore.dk"
+        )
+
+        await send_email(
+            to=customer_email,
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body,
+        )
+    except Exception as exc:
+        log.error(
+            "email.aiselect_crosssell_failed",
+            to=customer_email,
+            company=company_name,
+            error=str(exc),
+        )
+
+
 async def send_payment_link_email(
     customer_email: str,
     customer_name: str,
