@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -38,9 +38,48 @@ _QC_ESCALATION_THRESHOLD = 3
 # Public: submit an application
 # ─────────────────────────────────────────────
 
+async def _generate_and_store_questions(application_id: uuid.UUID, firmanavn: str, website: str, virksomhedsinfo: str) -> None:
+    """Background task: detect company type and generate questions, then persist."""
+    from src.config import get_settings
+    from src.questions.generator import generate_questions
+
+    settings = get_settings()
+    try:
+        company_type, confidence, questions = await generate_questions(
+            firmanavn=firmanavn,
+            website=website,
+            virksomhedsinfo=virksomhedsinfo,
+            openai_api_key=settings.openai_api_key,
+        )
+        from src.db.connection import get_session_factory
+        async with get_session_factory()() as session:
+            result = await session.execute(
+                select(CustomerApplication).where(CustomerApplication.id == application_id)
+            )
+            app = result.scalar_one_or_none()
+            if app:
+                app.detected_company_type = company_type
+                app.company_type_confidence = confidence
+                app.generated_questions = questions
+                app.questions_status = "pending"
+                await session.commit()
+                log.info(
+                    "questions.stored",
+                    application_id=str(application_id),
+                    company_type=company_type,
+                )
+    except Exception as exc:
+        log.error("questions.background_failed", application_id=str(application_id), error=str(exc))
+
+
 @router.post("/apply", response_model=ApplicationResponse, status_code=201)
 @limiter.limit("5/minute")
-async def submit_application(request: Request, body: ApplicationCreate, db: AsyncSession = Depends(get_db)):
+async def submit_application(
+    request: Request,
+    body: ApplicationCreate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     """Public endpoint — customers submit their pre-qualification application here."""
     app = CustomerApplication(
         firmanavn=body.firmanavn,
@@ -54,16 +93,25 @@ async def submit_application(request: Request, body: ApplicationCreate, db: Asyn
     db.add(app)
     await db.flush()  # get app.id before creating log entry
 
-    log = CustomerApplicationStateLog(
+    state_log = CustomerApplicationStateLog(
         application_id=app.id,
         from_status=None,
         to_status=CustomerApplicationStatus.APPLIED,
         changed_by="system",
         note="Application submitted",
     )
-    db.add(log)
+    db.add(state_log)
     await db.commit()
     await db.refresh(app)
+
+    # Trigger question generation in background — does not block the response
+    background_tasks.add_task(
+        _generate_and_store_questions,
+        app.id,
+        body.firmanavn,
+        body.website,
+        body.virksomhedsinfo,
+    )
 
     result = await db.execute(
         select(CustomerApplication)
@@ -249,6 +297,100 @@ async def _add_state_log(
         note=note,
     )
     db.add(entry)
+
+
+# ─────────────────────────────────────────────
+# Admin: question review
+# ─────────────────────────────────────────────
+
+@router.get(
+    "/admin/applications/{application_id}/questions",
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("30/minute")
+async def get_application_questions(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — fetch auto-generated questions for an application (pending admin review)."""
+    app = await _get_application_or_404(application_id, db)
+    return {
+        "application_id": str(application_id),
+        "firmanavn": app.firmanavn,
+        "detected_company_type": app.detected_company_type,
+        "company_type_confidence": app.company_type_confidence,
+        "questions_status": app.questions_status,
+        "generated_questions": app.generated_questions or [],
+    }
+
+
+@router.post(
+    "/admin/applications/{application_id}/questions/approve",
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("30/minute")
+async def approve_application_questions(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — approve generated questions so they become visible on the customer's profile."""
+    app = await _get_application_or_404(application_id, db)
+    if not app.generated_questions:
+        raise HTTPException(status_code=422, detail="No generated questions to approve.")
+    app.questions_status = "approved"
+    app.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"application_id": str(application_id), "questions_status": "approved"}
+
+
+@router.post(
+    "/admin/applications/{application_id}/questions/reject",
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("30/minute")
+async def reject_application_questions(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — reject generated questions (triggers regeneration on next admin action)."""
+    app = await _get_application_or_404(application_id, db)
+    app.questions_status = "rejected"
+    app.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"application_id": str(application_id), "questions_status": "rejected"}
+
+
+@router.post(
+    "/admin/applications/{application_id}/questions/regenerate",
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("10/minute")
+async def regenerate_application_questions(
+    request: Request,
+    application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — manually trigger question re-generation for an application."""
+    app = await _get_application_or_404(application_id, db)
+    app.questions_status = "pending"
+    app.generated_questions = None
+    app.detected_company_type = None
+    app.company_type_confidence = None
+    app.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+
+    background_tasks.add_task(
+        _generate_and_store_questions,
+        app.id,
+        app.firmanavn,
+        app.website,
+        app.virksomhedsinfo,
+    )
+    return {"application_id": str(application_id), "questions_status": "pending", "message": "Regeneration started."}
 
 
 # ─────────────────────────────────────────────

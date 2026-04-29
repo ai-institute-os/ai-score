@@ -167,6 +167,12 @@ class StateLogEntry(BaseModel):
         from_attributes = True
 
 
+class GeneratedQuestion(BaseModel):
+    id: str
+    question: str
+    category: str
+
+
 class ApplicationResponse(BaseModel):
     id: uuid.UUID
     firmanavn: str
@@ -183,6 +189,11 @@ class ApplicationResponse(BaseModel):
     # QC loop
     qc_failure_count: int = 0
     has_been_escalated: bool = False
+    # Auto-generated questions
+    detected_company_type: Optional[str] = None
+    company_type_confidence: Optional[float] = None
+    generated_questions: Optional[list] = None
+    questions_status: str = "pending"
     created_at: datetime
     updated_at: datetime
     state_logs: list[StateLogEntry] = []

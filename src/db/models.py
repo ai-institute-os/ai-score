@@ -174,6 +174,12 @@ class CustomerApplication(Base):
     has_been_escalated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Calendly booking URI — set when invitee.created fires, cleared on cancellation
     calendly_event_uri: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Auto-generated pre-qualification questions (generated at submission, approved by admin)
+    detected_company_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    company_type_confidence: Mapped[Optional[float]] = mapped_column(nullable=True)
+    generated_questions: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    # pending | approved | rejected
+    questions_status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
