@@ -62,8 +62,12 @@ class Settings(BaseSettings):
     aiselect_price_pro: str = ""
     aiselect_price_enterprise: str = ""
 
-    # AISelect — base URL used to build password reset links
+    # AISelect — base URL used to build password reset links and API calls
     aiselect_base_url: str = "https://aiselect.dk"
+
+    # AISelect — admin secret for /api/invite and /api/provision endpoints
+    # Must match ADMIN_SECRET in the AISelect environment.
+    aiselect_admin_secret: str = ""
 
     # Runtime environment: "production" enables HTTPS redirect and strict headers
     environment: str = "development"

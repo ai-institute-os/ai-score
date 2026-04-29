@@ -246,6 +246,12 @@ async def update_application_status(
             company_name=app.firmanavn,
             aiselect_url=aiselect_url,
         )
+        await _call_aiselect_invite(
+            customer_email=app.email,
+            customer_name=app.kontaktperson,
+            company_name=app.firmanavn,
+            application_id=str(application_id),
+        )
 
     result = await db.execute(
         select(CustomerApplication)
@@ -280,6 +286,54 @@ async def update_application_notes(
 # ─────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────
+
+async def _call_aiselect_invite(
+    customer_email: str,
+    customer_name: str,
+    company_name: str,
+    application_id: str,
+) -> None:
+    """
+    POST {aiselect_base_url}/api/invite to create an AISelect invitation.
+    Fire-and-forget: logs errors but never raises, so downstream failures
+    cannot break the status transition.
+    """
+    import httpx
+    from src.config import get_settings as _gs
+
+    settings = _gs()
+    if not settings.aiselect_admin_secret:
+        log.warning("aiselect_invite.admin_secret_not_configured", application_id=application_id)
+        return
+
+    invite_url = f"{settings.aiselect_base_url.rstrip('/')}/api/invite"
+    payload = {
+        "contactEmail": customer_email,
+        "contactName": customer_name,
+        "companyName": company_name,
+        "planId": "starter",
+    }
+    headers = {"x-admin-secret": settings.aiselect_admin_secret}
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(invite_url, json=payload, headers=headers)
+        if resp.status_code == 200:
+            log.info(
+                "aiselect_invite.sent",
+                application_id=application_id,
+                email=customer_email,
+            )
+        else:
+            log.error(
+                "aiselect_invite.unexpected_status",
+                application_id=application_id,
+                status_code=resp.status_code,
+                body=resp.text[:500],
+            )
+    except Exception as exc:
+        log.error("aiselect_invite.failed", application_id=application_id, error=str(exc))
+
 
 async def _get_application_or_404(application_id: uuid.UUID, db: AsyncSession) -> CustomerApplication:
     result = await db.execute(
