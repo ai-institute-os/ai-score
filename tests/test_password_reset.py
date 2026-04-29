@@ -23,7 +23,7 @@ def _stub(name: str) -> types.ModuleType:
     sys.modules[name] = m
     return m
 
-for _mod_name in ("aiosmtplib", "stripe"):
+for _mod_name in ("resend", "stripe"):
     if _mod_name not in sys.modules:
         _stub(_mod_name)
 

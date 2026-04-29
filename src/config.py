@@ -33,13 +33,9 @@ class Settings(BaseSettings):
     payment_success_url: str = "https://aiscore.dk/payment/success"
     payment_cancel_url: str = "https://aiscore.dk/payment/cancel"
 
-    # SMTP (outbound email)
-    smtp_host: str = "smtp.gmail.com"
-    smtp_port: int = 587
-    smtp_username: str = ""
-    smtp_password: str = ""
-    smtp_from_email: str = "noreply@aiscore.dk"
-    smtp_from_name: str = "AIScore"
+    # Resend (outbound email)
+    resend_api_key: str = ""
+    resend_from_email: str = "rapport@aiscore.dk"
 
     # Internal alert recipients
     qc_alert_email: str = "research@aiscore.dk"

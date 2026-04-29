@@ -1,17 +1,16 @@
 """
-Async email sender using aiosmtplib.
+Async email sender using Resend SDK.
 
 All outbound emails go through send_email(). Higher-level helpers (e.g.
 send_payment_link_email) build the HTML body and delegate here.
 """
 
+import asyncio
 import html
 import structlog
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from typing import Optional
 
-import aiosmtplib
+import resend
 
 from src.config import get_settings
 
@@ -24,36 +23,33 @@ async def send_email(
     html_body: str,
     text_body: Optional[str] = None,
 ) -> None:
-    """Send an HTML email. Falls back gracefully when SMTP is not configured."""
+    """Send an HTML email via Resend. Falls back gracefully when API key is not configured."""
     settings = get_settings()
 
-    if not settings.smtp_username or not settings.smtp_password:
+    if not settings.resend_api_key:
         log.warning(
             "email.skipped",
-            reason="SMTP credentials not configured",
+            reason="Resend API key not configured",
             to=to,
             subject=subject,
         )
         return
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"{settings.smtp_from_name} <{settings.smtp_from_email}>"
-    msg["To"] = to
-
+    params: resend.Emails.SendParams = {
+        "from": settings.resend_from_email,
+        "to": [to],
+        "subject": subject,
+        "html": html_body,
+    }
     if text_body:
-        msg.attach(MIMEText(text_body, "plain", "utf-8"))
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
+        params["text"] = text_body
+
+    def _send() -> None:
+        resend.api_key = settings.resend_api_key
+        resend.Emails.send(params)
 
     try:
-        await aiosmtplib.send(
-            msg,
-            hostname=settings.smtp_host,
-            port=settings.smtp_port,
-            username=settings.smtp_username,
-            password=settings.smtp_password,
-            start_tls=True,
-        )
+        await asyncio.to_thread(_send)
         log.info("email.sent", to=to, subject=subject)
     except Exception as exc:
         log.error("email.failed", to=to, subject=subject, error=str(exc))
