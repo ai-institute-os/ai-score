@@ -8,7 +8,9 @@ send_payment_link_email) build the HTML body and delegate here.
 import asyncio
 import html
 import structlog
+from datetime import datetime, timezone
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 import resend
 
@@ -599,6 +601,91 @@ async def send_password_reset_email(
     await send_email(to=customer_email, subject=subject, html_body=html_body, text_body=text_body)
 
 
+def _format_scheduled_at_da(scheduled_at: Optional[str]) -> str:
+    """Parse an ISO 8601 datetime string and return a readable Danish label, e.g. 'mandag d. 5. maj 2025 kl. 10:00'."""
+    if not scheduled_at:
+        return "tidspunkt ikke angivet"
+    try:
+        dt = datetime.fromisoformat(scheduled_at.replace("Z", "+00:00"))
+        dt_cph = dt.astimezone(ZoneInfo("Europe/Copenhagen"))
+        _DANISH_DAYS = ["mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"]
+        _DANISH_MONTHS = [
+            "", "januar", "februar", "marts", "april", "maj", "juni",
+            "juli", "august", "september", "oktober", "november", "december",
+        ]
+        day_name = _DANISH_DAYS[dt_cph.weekday()]
+        return f"{day_name} d. {dt_cph.day}. {_DANISH_MONTHS[dt_cph.month]} {dt_cph.year} kl. {dt_cph.strftime('%H:%M')}"
+    except Exception:
+        return html.escape(scheduled_at)
+
+
+async def _send_booking_confirmation_to_customer(
+    company_name: str,
+    kontaktperson: str,
+    customer_email: str,
+    scheduled_at: Optional[str],
+) -> None:
+    """Send a branded booking confirmation to the customer after they book via Calendly."""
+    safe_name = html.escape(kontaktperson)
+    safe_company = html.escape(company_name)
+    formatted_time = _format_scheduled_at_da(scheduled_at)
+    safe_time = html.escape(formatted_time)
+
+    subject = f"Dit opkald er bekræftet — AIScore for {company_name}"
+
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;color:#1a1a1a;background:#fff;">
+  <p>Hej {safe_name},</p>
+  <p>
+    Din booking er bekræftet. Vi ses til gennemgangen af AIScore-rapporten for
+    <strong>{safe_company}</strong>.
+  </p>
+  <table style="background:#f9fafb;border-radius:8px;padding:16px 20px;margin:24px 0;width:100%;border-collapse:collapse;">
+    <tr>
+      <td style="font-weight:bold;padding:4px 0;white-space:nowrap;vertical-align:top;">Tidspunkt:</td>
+      <td style="padding:4px 0 4px 12px;">{safe_time}</td>
+    </tr>
+  </table>
+  <p>
+    Under opkaldet gennemgår Silas rapporten med dig — hvad AI-systemerne ser, siger og vælger
+    om <strong>{safe_company}</strong> i dag, og hvad det betyder for jer.
+  </p>
+  <p>
+    Du behøver ikke forberede noget. Rapporten er vores udgangspunkt.
+  </p>
+  <p style="color:#6b7280;font-size:13px;">
+    Hvis du har brug for at ændre tidspunktet, er du velkommen til at skrive til
+    <a href="mailto:support@aiscore.dk" style="color:#1d4ed8;">support@aiscore.dk</a>.
+  </p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">
+  <p style="color:#6b7280;font-size:12px;">
+    AIScore &bull; aiscore.dk &bull;
+    <a href="mailto:support@aiscore.dk" style="color:#6b7280;">support@aiscore.dk</a>
+  </p>
+</body>
+</html>
+""".strip()
+
+    text_body = (
+        f"Hej {kontaktperson},\n\n"
+        f"Din booking er bekræftet. Vi ses til gennemgangen af AIScore-rapporten for {company_name}.\n\n"
+        f"Tidspunkt: {formatted_time}\n\n"
+        f"Under opkaldet gennemgår Silas rapporten med dig — hvad AI-systemerne ser, siger og vælger "
+        f"om {company_name} i dag, og hvad det betyder for jer.\n\n"
+        f"Du behøver ikke forberede noget. Rapporten er vores udgangspunkt.\n\n"
+        f"Ønsker du at ændre tidspunktet? Skriv til support@aiscore.dk\n\n"
+        f"AIScore — support@aiscore.dk"
+    )
+
+    await send_email(to=customer_email, subject=subject, html_body=html_body, text_body=text_body)
+
+
 async def send_calendly_booking_email(
     company_name: str,
     kontaktperson: str,
@@ -607,7 +694,7 @@ async def send_calendly_booking_email(
     scheduled_at: Optional[str],
     canceled: bool = False,
 ) -> None:
-    """Notify admin when a Calendly meeting is booked or cancelled."""
+    """Notify admin when a Calendly meeting is booked or cancelled, and send branded confirmation to customer on new bookings."""
     settings = get_settings()
     safe_kontaktperson = html.escape(kontaktperson)
     safe_company_name = html.escape(company_name)
@@ -646,3 +733,11 @@ async def send_calendly_booking_email(
 """.strip()
 
     await send_email(to=settings.admin_email, subject=subject, html_body=html_body)
+
+    if not canceled:
+        await _send_booking_confirmation_to_customer(
+            company_name=company_name,
+            kontaktperson=kontaktperson,
+            customer_email=customer_email,
+            scheduled_at=scheduled_at,
+        )
