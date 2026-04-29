@@ -92,7 +92,7 @@ async def send_payment_confirmation_email(
   </p>
   <p>
     Vi er i gang med at analysere, hvordan AI-systemerne aktuelt positionerer og evaluerer
-    <strong>{safe_company_name}</strong> — på tværs af ChatGPT, Gemini, Perplexity og Claude.
+    <strong>{safe_company_name}</strong> — på tværs af ChatGPT, Gemini, Perplexity og Microsoft Copilot.
   </p>
   <p>
     Rapporten gennemgår intern kvalitetssikring, inden den er klar. Du modtager besked,
@@ -113,7 +113,7 @@ async def send_payment_confirmation_email(
         f"Hej {customer_name},\n\n"
         f"Din betaling er modtaget.\n\n"
         f"Vi er i gang med at analysere, hvordan AI-systemerne aktuelt positionerer og evaluerer "
-        f"{company_name} — på tværs af ChatGPT, Gemini, Perplexity og Claude.\n\n"
+        f"{company_name} — på tværs af ChatGPT, Gemini, Perplexity og Microsoft Copilot.\n\n"
         f"Rapporten gennemgår intern kvalitetssikring, inden den er klar. "
         f"Du modtager besked, når vi er klar til at gennemgå resultaterne med dig.\n\n"
         + (f"Beløb: {amount_dkk:,} kr.\n" if amount_dkk else "")
