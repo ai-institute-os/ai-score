@@ -573,7 +573,13 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         send_subscription_cancelled_email,
         send_payment_failed_email,
     )
+    from src.config import get_settings
     import stripe as _stripe
+
+    settings = get_settings()
+    if not settings.stripe_webhook_secret:
+        log.error("stripe_webhook.secret_not_configured")
+        raise HTTPException(status_code=500, detail="Stripe webhook secret not configured")
 
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature", "")
