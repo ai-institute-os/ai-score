@@ -194,6 +194,9 @@ class ApplicationResponse(BaseModel):
     company_type_confidence: Optional[float] = None
     generated_questions: Optional[list] = None
     questions_status: str = "pending"
+    # Report questions (scoring criteria generated from answered interview)
+    report_questions: Optional[list] = None
+    report_questions_status: str = "not_started"
     created_at: datetime
     updated_at: datetime
     state_logs: list[StateLogEntry] = []

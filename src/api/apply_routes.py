@@ -460,6 +460,106 @@ async def regenerate_application_questions(
 
 
 # ─────────────────────────────────────────────
+# Report questions (scoring criteria from answered interview)
+# ─────────────────────────────────────────────
+
+async def _generate_and_store_report_questions(application_id: uuid.UUID) -> None:
+    """Background task: generate report scoring criteria from answered interview + company data."""
+    from src.config import get_settings
+    from src.questions.report_generator import generate_report_questions
+    from src.db.connection import get_session_factory
+
+    settings = get_settings()
+    async with get_session_factory()() as session:
+        result = await session.execute(
+            select(CustomerApplication).where(CustomerApplication.id == application_id)
+        )
+        app = result.scalar_one_or_none()
+        if not app:
+            log.error("report_questions.app_not_found", application_id=str(application_id))
+            return
+
+        try:
+            questions = await generate_report_questions(
+                firmanavn=app.firmanavn,
+                website=app.website,
+                virksomhedsinfo=app.virksomhedsinfo,
+                company_type=app.detected_company_type or "andet",
+                answered_questions=app.generated_questions or [],
+                openai_api_key=settings.openai_api_key,
+                perplexity_api_key=getattr(settings, "perplexity_api_key", ""),
+            )
+            app.report_questions = questions
+            app.report_questions_status = "done"
+            log.info(
+                "report_questions.stored",
+                application_id=str(application_id),
+                count=len(questions),
+            )
+        except Exception as exc:
+            log.error("report_questions.failed", application_id=str(application_id), error=str(exc))
+            app.report_questions_status = "error"
+
+        await session.commit()
+
+
+@router.post(
+    "/admin/applications/{application_id}/report-questions/generate",
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("10/minute")
+async def generate_report_questions_endpoint(
+    request: Request,
+    application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — trigger async generation of report scoring criteria from answered interview."""
+    app = await _get_application_or_404(application_id, db)
+
+    if app.report_questions_status == "generating":
+        return {
+            "application_id": str(application_id),
+            "report_questions_status": "generating",
+            "message": "Generering er allerede i gang.",
+        }
+
+    app.report_questions_status = "generating"
+    app.report_questions = None
+    app.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+
+    background_tasks.add_task(_generate_and_store_report_questions, application_id)
+
+    return {
+        "application_id": str(application_id),
+        "report_questions_status": "generating",
+        "message": "Rapport-spørgsmål genereres i baggrunden.",
+    }
+
+
+@router.get(
+    "/admin/applications/{application_id}/report-questions",
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("60/minute")
+async def get_report_questions(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — fetch status and generated report scoring criteria for an application."""
+    app = await _get_application_or_404(application_id, db)
+    return {
+        "application_id": str(application_id),
+        "firmanavn": app.firmanavn,
+        "detected_company_type": app.detected_company_type,
+        "report_questions_status": app.report_questions_status,
+        "report_questions": app.report_questions or [],
+    }
+
+
+# ─────────────────────────────────────────────
 # Payment link generation
 # ─────────────────────────────────────────────
 

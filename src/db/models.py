@@ -180,6 +180,10 @@ class CustomerApplication(Base):
     generated_questions: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     # pending | approved | rejected
     questions_status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
+    # Report questions generated from answered interview + company data (used as scoring criteria)
+    report_questions: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    # not_started | generating | done | error
+    report_questions_status: Mapped[str] = mapped_column(String, nullable=False, default="not_started")
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

@@ -599,6 +599,53 @@
     .status-option:hover { border-color: var(--blue); color: var(--blue); }
     .status-option.selected { border-color: var(--blue); background: rgba(0,113,227,0.08); color: var(--blue); }
 
+    /* ── Report questions section ────────────────── */
+    .report-q-section {
+      margin-top: 1.25rem;
+      border-top: 1px solid var(--gray-f);
+      padding-top: 1rem;
+    }
+    .report-q-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gray-6);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .report-q-status {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .rqs-not_started { background: var(--gray-f); color: var(--gray-6); }
+    .rqs-generating   { background: #fff3cd; color: #856404; }
+    .rqs-done         { background: #d4edda; color: #155724; }
+    .rqs-error        { background: #f8d7da; color: #721c24; }
+    .report-q-item {
+      background: var(--gray-f);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.85rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.82rem;
+    }
+    .report-q-item .rq-cat {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--blue);
+      margin-bottom: 0.2rem;
+    }
+    .report-q-item .rq-q { font-weight: 600; color: var(--black); margin-bottom: 0.2rem; }
+    .report-q-item .rq-guide { color: var(--gray-6); font-size: 0.78rem; line-height: 1.4; }
+
     /* ── Empty state ─────────────────────────────── */
     .empty-state {
       text-align: center;
@@ -1139,6 +1186,27 @@ function openDetail(app) {
     </div>
   `).join('') : '<p style="color:var(--gray-6);font-size:0.8rem;">Ingen historik tilgængelig</p>';
 
+  // Report questions section
+  const rqStatus = app.report_questions_status || 'not_started';
+  const rqStatusLabel = {
+    'not_started': 'Ikke genereret',
+    'generating':  'Genererer…',
+    'done':        `${(app.report_questions || []).length} rapport-spørgsmål klar`,
+    'error':       'Fejl ved generering',
+  }[rqStatus] || rqStatus;
+
+  const rqItemsHtml = (app.report_questions && app.report_questions.length)
+    ? app.report_questions.map(q => `
+        <div class="report-q-item">
+          <div class="rq-cat">${esc(q.category || '')}</div>
+          <div class="rq-q">${esc(q.question || '')}</div>
+          ${q.scoring_guide ? `<div class="rq-guide">${esc(q.scoring_guide)}</div>` : ''}
+        </div>
+      `).join('')
+    : (rqStatus === 'generating'
+        ? '<p style="color:var(--gray-6);font-size:0.8rem;">Rapport-spørgsmål genereres — opdater om lidt…</p>'
+        : '<p style="color:var(--gray-6);font-size:0.8rem;">Ingen rapport-spørgsmål endnu.</p>');
+
   document.getElementById('modalBody').innerHTML = `
     <div class="detail-grid">
       <div class="detail-field">
@@ -1178,18 +1246,81 @@ function openDetail(app) {
         <div class="value" style="white-space:pre-wrap;">${esc(app.virksomhedsinfo || '—')}</div>
       </div>
     </div>
+    <div class="report-q-section">
+      <div class="report-q-title">
+        Rapport-spørgsmål
+        <span class="report-q-status rqs-${rqStatus}">${esc(rqStatusLabel)}</span>
+      </div>
+      ${rqItemsHtml}
+    </div>
     <div class="timeline">
       <div class="timeline-title">Statushistorik</div>
       ${timelineHtml}
     </div>
   `;
 
+  const canGenerate = rqStatus === 'not_started' || rqStatus === 'error';
+  const isGenerating = rqStatus === 'generating';
+
   document.getElementById('modalFooter').innerHTML = `
     <button class="btn btn-ghost" onclick="closeModal()">Luk</button>
+    ${canGenerate
+      ? `<button class="btn btn-ghost" onclick='triggerReportQuestions("${app.id}")'>Generer rapport-spørgsmål</button>`
+      : ''}
+    ${isGenerating
+      ? `<button class="btn btn-ghost" onclick='refreshReportQuestions("${app.id}")'>Opdater status</button>`
+      : ''}
     <button class="btn btn-primary" onclick='openStatus(${JSON.stringify(app)})'>Skift status</button>
   `;
 
   document.getElementById('modalBackdrop').classList.add('open');
+}
+
+async function triggerReportQuestions(appId) {
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/report-questions/generate`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    toast('Rapport-spørgsmål genereres i baggrunden…', 'success');
+
+    // Update in-memory app and re-open detail
+    const idx = allApplications.findIndex(a => a.id === appId);
+    if (idx >= 0) {
+      allApplications[idx].report_questions_status = 'generating';
+      allApplications[idx].report_questions = null;
+      openDetail(allApplications[idx]);
+    }
+  } catch (err) {
+    toast('Fejl: ' + err.message, 'error');
+  }
+}
+
+async function refreshReportQuestions(appId) {
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/report-questions`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const idx = allApplications.findIndex(a => a.id === appId);
+    if (idx >= 0) {
+      allApplications[idx].report_questions_status = data.report_questions_status;
+      allApplications[idx].report_questions = data.report_questions;
+      openDetail(allApplications[idx]);
+    }
+
+    if (data.report_questions_status === 'done') {
+      toast(`${data.report_questions.length} rapport-spørgsmål genereret`, 'success');
+    } else if (data.report_questions_status === 'error') {
+      toast('Generering fejlede — prøv igen', 'error');
+    }
+  } catch (err) {
+    toast('Fejl ved opdatering: ' + err.message, 'error');
+  }
 }
 
 function openStatus(app) {
