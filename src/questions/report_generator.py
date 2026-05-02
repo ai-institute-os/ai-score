@@ -22,7 +22,7 @@ Din opgave er at generere præcise, målbare scoringskriterier til en AIScore-ra
 Kriterierne bruges til at vurdere, hvor godt virksomheden er synlig og findbar via AI-assistenter
 (ChatGPT, Gemini, Perplexity, Claude m.fl.) og moderne søgeteknologi.
 
-Svar KUN med valid JSON — ingen forklaringer, ingen markdown-fences.
+Svar KUN med et valid JSON-array — ingen forklaringer, ingen markdown-fences, ingen wrapper-objekt.
 """
 
 _USER_PROMPT_TEMPLATE = """\
@@ -40,16 +40,24 @@ Generer {count} virksomhedsspecifikke scoringskriterier til AIScore-rapporten.
 Hvert kriterium skal:
 - Være direkte relateret til DENNE specifikke virksomhed (brug firmanavn, branche, produkter fra interviewet)
 - Måle et konkret aspekt af AI-synlighed, findbarhed eller AI-parathed
-- Have en klar scoring-guide (0–10 skala)
+- Have en klar scoring-guide (0–10 skala) med eksempler på hvad 0, 5 og 10 konkret indebærer
 - Dække forskellige dimensioner (mix af: synlighed i AI-svar, indholdsstruktur, konkurrenceposition, brandkendskab i AI, lokal/global findbarhed, FAQ-dækning, anmeldelser/autoritet)
 
-Svar med JSON-array:
+VIGTIGT — undgå generiske spørgsmål. Eksempel på et DÅRLIGT spørgsmål:
+  "Er {firmanavn} synlig i AI-svar ved relevante søgninger?"
+Eksempel på et GODT spørgsmål (brug specifikt produkt/service/marked fra interviewet):
+  "Nævner ChatGPT {firmanavn} specifikt, når en potentiel kunde spørger om [specifikt produkt eller problem fra interviewet]?"
+
+Scoring-guide skal følge dette format:
+  "0: [Firmanavn] nævnes ikke / [konkret negativ indikator]. 5: Nævnes i generiske sammenhænge uden klar anbefaling. 10: [Firmanavn] fremhæves aktivt og specifikt i relevante AI-svar."
+
+Svar med et JSON-array — ingen wrapper, kun arrayet:
 [
   {{
     "id": "rq_1",
     "category": "<kategori-nøgleord>",
-    "question": "<specifikt scoringsspørgsmål om DENNE virksomhed>",
-    "scoring_guide": "<konkret vejledning: hvad giver 0, hvad giver 5, hvad giver 10>"
+    "question": "<specifikt scoringsspørgsmål om DENNE virksomhed og dens konkrete produkter/services>",
+    "scoring_guide": "<0: [negativ indikator]. 5: [midterindikator]. 10: [positiv indikator].>"
   }},
   ...
 ]
@@ -159,7 +167,6 @@ async def generate_report_questions(
         ],
         temperature=0.3,
         max_tokens=2000,
-        response_format={"type": "json_object"},
     )
 
     raw = response.choices[0].message.content or "[]"
