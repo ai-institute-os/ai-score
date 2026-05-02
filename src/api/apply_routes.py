@@ -463,6 +463,13 @@ async def regenerate_application_questions(
 # Report questions (scoring criteria from answered interview)
 # ─────────────────────────────────────────────
 
+def _all_answered(questions: list) -> bool:
+    return bool(questions) and all(
+        isinstance(q, dict) and q.get("answer", "").strip()
+        for q in questions
+    )
+
+
 async def _generate_and_store_report_questions(application_id: uuid.UUID) -> None:
     """Background task: generate report scoring criteria from answered interview + company data."""
     from src.config import get_settings
@@ -556,6 +563,76 @@ async def get_report_questions(
         "detected_company_type": app.detected_company_type,
         "report_questions_status": app.report_questions_status,
         "report_questions": app.report_questions or [],
+    }
+
+
+@router.patch(
+    "/admin/applications/{application_id}/questions/answers",
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("30/minute")
+async def save_question_answers(
+    request: Request,
+    application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — save interview answers for generated questions.
+
+    Expects JSON body: list of {id, answer} objects.
+    Auto-triggers report-questions generation when all questions are answered
+    and report_questions_status is not_started or error.
+    """
+    try:
+        body = await request.json()
+        if not isinstance(body, list):
+            raise ValueError("Expected a JSON array")
+        answers: list[dict] = body
+    except Exception:
+        raise HTTPException(status_code=400, detail="Body must be a JSON array of {id, answer} objects.")
+
+    app = await _get_application_or_404(application_id, db)
+
+    if not app.generated_questions:
+        raise HTTPException(status_code=422, detail="No generated questions to answer.")
+
+    answer_map = {
+        str(a.get("id", "")): str(a.get("answer", "")).strip()
+        for a in answers
+        if isinstance(a, dict) and a.get("id")
+    }
+
+    updated = []
+    for q in app.generated_questions:
+        qcopy = dict(q)
+        qid = str(q.get("id", ""))
+        if qid in answer_map:
+            qcopy["answer"] = answer_map[qid]
+        updated.append(qcopy)
+
+    app.generated_questions = updated
+    app.updated_at = datetime.now(timezone.utc)
+
+    should_trigger = (
+        _all_answered(updated)
+        and app.report_questions_status in ("not_started", "error")
+    )
+    if should_trigger:
+        app.report_questions_status = "generating"
+        app.report_questions = None
+        background_tasks.add_task(_generate_and_store_report_questions, application_id)
+        log.info(
+            "report_questions.auto_triggered",
+            application_id=str(application_id),
+        )
+
+    await db.commit()
+
+    return {
+        "application_id": str(application_id),
+        "generated_questions": updated,
+        "report_questions_status": app.report_questions_status,
+        "auto_triggered": should_trigger,
     }
 
 

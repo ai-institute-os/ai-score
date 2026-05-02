@@ -599,6 +599,54 @@
     .status-option:hover { border-color: var(--blue); color: var(--blue); }
     .status-option.selected { border-color: var(--blue); background: rgba(0,113,227,0.08); color: var(--blue); }
 
+    /* ── Interview dimensions section ───────────── */
+    .dimensions-section {
+      margin-top: 1.25rem;
+      border-top: 1px solid var(--gray-f);
+      padding-top: 1rem;
+    }
+    .dimensions-heading {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--black);
+      margin-bottom: 0.75rem;
+    }
+    .dim-item {
+      background: var(--gray-f);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.85rem;
+      margin-bottom: 0.65rem;
+    }
+    .dim-cat {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--blue);
+      margin-bottom: 0.2rem;
+    }
+    .dim-question {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--black);
+      margin-bottom: 0.4rem;
+    }
+    .dim-answer {
+      width: 100%;
+      border: 1.5px solid var(--gray-d);
+      border-radius: 6px;
+      padding: 0.45rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.82rem;
+      resize: vertical;
+      min-height: 64px;
+      outline: none;
+      background: var(--white);
+      color: var(--black);
+      transition: border-color 0.15s;
+    }
+    .dim-answer:focus { border-color: var(--blue); }
+
     /* ── Report questions section ────────────────── */
     .report-q-section {
       margin-top: 1.25rem;
@@ -1169,7 +1217,57 @@ function renderPagination(total, totalPages) {
 function goPage(p) { currentPage = p; renderTable(); }
 
 // ─── Detail modal ─────────────────────────────────
+let _reportQPollTimer = null;
+
+function _clearReportQPoll() {
+  if (_reportQPollTimer) { clearInterval(_reportQPollTimer); _reportQPollTimer = null; }
+}
+
+function _buildReportQSection(app) {
+  const rqStatus = app.report_questions_status || 'not_started';
+  const rqStatusLabel = {
+    'not_started': 'Afventer svar',
+    'generating':  'Genererer…',
+    'done':        `${(app.report_questions || []).length} spørgsmål klar`,
+    'error':       'Fejl ved generering',
+  }[rqStatus] || rqStatus;
+
+  let rqItemsHtml;
+  if (app.report_questions && app.report_questions.length) {
+    rqItemsHtml = app.report_questions.map(q => `
+      <div class="report-q-item">
+        <div class="rq-cat">${esc(q.category || '')}</div>
+        <div class="rq-q">${esc(q.question || '')}</div>
+        ${q.scoring_guide ? `<div class="rq-guide">${esc(q.scoring_guide)}</div>` : ''}
+      </div>
+    `).join('');
+  } else if (rqStatus === 'generating') {
+    rqItemsHtml = '<p style="color:var(--gray-6);font-size:0.8rem;"><span class="spinner" style="vertical-align:middle;margin-right:0.4rem;"></span>Rapport-spørgsmål genereres automatisk…</p>';
+  } else if (rqStatus === 'not_started') {
+    rqItemsHtml = '<p style="color:var(--gray-6);font-size:0.8rem;">Genereres automatisk når alle svar er gemt.</p>';
+  } else {
+    rqItemsHtml = '<p style="color:var(--gray-6);font-size:0.8rem;">Ingen rapport-spørgsmål endnu.</p>';
+  }
+
+  const retryBtn = rqStatus === 'error'
+    ? `<button class="btn btn-ghost" style="margin-top:0.5rem;" onclick='triggerReportQuestions("${app.id}")'>Generer igen</button>`
+    : '';
+
+  return `
+    <div class="report-q-section">
+      <div class="report-q-title">
+        Rapport-spørgsmål
+        <span class="report-q-status rqs-${rqStatus}">${esc(rqStatusLabel)}</span>
+      </div>
+      ${rqItemsHtml}
+      ${retryBtn}
+    </div>
+  `;
+}
+
 function openDetail(app) {
+  _clearReportQPoll();
+
   document.getElementById('modalTitle').textContent = app.firmanavn;
   document.getElementById('modalSubtitle').textContent = `ID: ${app.id}`;
 
@@ -1186,26 +1284,27 @@ function openDetail(app) {
     </div>
   `).join('') : '<p style="color:var(--gray-6);font-size:0.8rem;">Ingen historik tilgængelig</p>';
 
-  // Report questions section
-  const rqStatus = app.report_questions_status || 'not_started';
-  const rqStatusLabel = {
-    'not_started': 'Ikke genereret',
-    'generating':  'Genererer…',
-    'done':        `${(app.report_questions || []).length} rapport-spørgsmål klar`,
-    'error':       'Fejl ved generering',
-  }[rqStatus] || rqStatus;
-
-  const rqItemsHtml = (app.report_questions && app.report_questions.length)
-    ? app.report_questions.map(q => `
-        <div class="report-q-item">
-          <div class="rq-cat">${esc(q.category || '')}</div>
-          <div class="rq-q">${esc(q.question || '')}</div>
-          ${q.scoring_guide ? `<div class="rq-guide">${esc(q.scoring_guide)}</div>` : ''}
-        </div>
-      `).join('')
-    : (rqStatus === 'generating'
-        ? '<p style="color:var(--gray-6);font-size:0.8rem;">Rapport-spørgsmål genereres — opdater om lidt…</p>'
-        : '<p style="color:var(--gray-6);font-size:0.8rem;">Ingen rapport-spørgsmål endnu.</p>');
+  // Interview questions (dimensioner)
+  const genQs = app.generated_questions || [];
+  let dimensionerHtml = '';
+  if (genQs.length) {
+    const qItemsHtml = genQs.map(q => `
+      <div class="dim-item">
+        <div class="dim-cat">${esc(q.category || '')}</div>
+        <div class="dim-question">${esc(q.question || '')}</div>
+        <textarea class="dim-answer" data-qid="${esc(q.id || '')}"
+          placeholder="Svar fra interview…"
+        >${esc(q.answer || '')}</textarea>
+      </div>
+    `).join('');
+    dimensionerHtml = `
+      <div class="dimensions-section">
+        <h2 class="dimensions-heading">Opkaldsresultat — AI-parathed dimensioner</h2>
+        ${qItemsHtml}
+        <button class="btn btn-ghost" style="margin-top:0.5rem;" onclick='saveAnswers("${app.id}")'>Gem svar</button>
+      </div>
+    `;
+  }
 
   document.getElementById('modalBody').innerHTML = `
     <div class="detail-grid">
@@ -1246,34 +1345,104 @@ function openDetail(app) {
         <div class="value" style="white-space:pre-wrap;">${esc(app.virksomhedsinfo || '—')}</div>
       </div>
     </div>
-    <div class="report-q-section">
-      <div class="report-q-title">
-        Rapport-spørgsmål
-        <span class="report-q-status rqs-${rqStatus}">${esc(rqStatusLabel)}</span>
-      </div>
-      ${rqItemsHtml}
-    </div>
+    ${dimensionerHtml}
+    <div id="reportQContainer">${_buildReportQSection(app)}</div>
     <div class="timeline">
       <div class="timeline-title">Statushistorik</div>
       ${timelineHtml}
     </div>
   `;
 
-  const canGenerate = rqStatus === 'not_started' || rqStatus === 'error';
-  const isGenerating = rqStatus === 'generating';
-
   document.getElementById('modalFooter').innerHTML = `
     <button class="btn btn-ghost" onclick="closeModal()">Luk</button>
-    ${canGenerate
-      ? `<button class="btn btn-ghost" onclick='triggerReportQuestions("${app.id}")'>Generer rapport-spørgsmål</button>`
-      : ''}
-    ${isGenerating
-      ? `<button class="btn btn-ghost" onclick='refreshReportQuestions("${app.id}")'>Opdater status</button>`
-      : ''}
     <button class="btn btn-primary" onclick='openStatus(${JSON.stringify(app)})'>Skift status</button>
   `;
 
   document.getElementById('modalBackdrop').classList.add('open');
+
+  // Auto-poll while generating
+  if ((app.report_questions_status || 'not_started') === 'generating') {
+    _reportQPollTimer = setInterval(() => pollReportQuestions(app.id), 4000);
+  }
+}
+
+async function saveAnswers(appId) {
+  const textareas = document.querySelectorAll('.dim-answer');
+  const answers = Array.from(textareas).map(ta => ({
+    id: ta.dataset.qid,
+    answer: ta.value.trim(),
+  }));
+
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/questions/answers`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(answers),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+
+    const idx = allApplications.findIndex(a => a.id === appId);
+    if (idx >= 0) {
+      allApplications[idx].generated_questions = data.generated_questions;
+      allApplications[idx].report_questions_status = data.report_questions_status;
+      if (data.report_questions_status !== 'done') {
+        allApplications[idx].report_questions = null;
+      }
+    }
+
+    if (data.auto_triggered) {
+      toast('Svar gemt — rapport-spørgsmål genereres automatisk…', 'success');
+      // Update rapport-spørgsmål container in-place and start polling
+      const rqApp = idx >= 0 ? allApplications[idx] : { ...data, report_questions: null };
+      const container = document.getElementById('reportQContainer');
+      if (container) container.innerHTML = _buildReportQSection(rqApp);
+      _clearReportQPoll();
+      _reportQPollTimer = setInterval(() => pollReportQuestions(appId), 4000);
+    } else {
+      toast('Svar gemt.', 'success');
+    }
+  } catch (err) {
+    toast('Fejl ved gem: ' + err.message, 'error');
+  }
+}
+
+async function pollReportQuestions(appId) {
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/report-questions`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const idx = allApplications.findIndex(a => a.id === appId);
+    if (idx >= 0) {
+      allApplications[idx].report_questions_status = data.report_questions_status;
+      allApplications[idx].report_questions = data.report_questions;
+    }
+
+    const container = document.getElementById('reportQContainer');
+    if (!container) { _clearReportQPoll(); return; }
+
+    const fakeApp = {
+      id: appId,
+      report_questions_status: data.report_questions_status,
+      report_questions: data.report_questions,
+    };
+    container.innerHTML = _buildReportQSection(fakeApp);
+
+    if (data.report_questions_status !== 'generating') {
+      _clearReportQPoll();
+      if (data.report_questions_status === 'done') {
+        toast(`${(data.report_questions || []).length} rapport-spørgsmål klar`, 'success');
+      } else if (data.report_questions_status === 'error') {
+        toast('Rapport-spørgsmål: generering fejlede — prøv igen', 'error');
+      }
+    }
+  } catch (_) {
+    // silent fail — polling continues
+  }
 }
 
 async function triggerReportQuestions(appId) {
@@ -1285,41 +1454,22 @@ async function triggerReportQuestions(appId) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || `HTTP ${res.status}`);
     }
-    const data = await res.json();
-    toast('Rapport-spørgsmål genereres i baggrunden…', 'success');
+    toast('Rapport-spørgsmål genereres…', 'success');
 
-    // Update in-memory app and re-open detail
     const idx = allApplications.findIndex(a => a.id === appId);
     if (idx >= 0) {
       allApplications[idx].report_questions_status = 'generating';
       allApplications[idx].report_questions = null;
-      openDetail(allApplications[idx]);
     }
+
+    const container = document.getElementById('reportQContainer');
+    if (container) {
+      container.innerHTML = _buildReportQSection({ id: appId, report_questions_status: 'generating', report_questions: null });
+    }
+    _clearReportQPoll();
+    _reportQPollTimer = setInterval(() => pollReportQuestions(appId), 4000);
   } catch (err) {
     toast('Fejl: ' + err.message, 'error');
-  }
-}
-
-async function refreshReportQuestions(appId) {
-  try {
-    const res = await fetch(`/api/v1/admin/applications/${appId}/report-questions`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    const idx = allApplications.findIndex(a => a.id === appId);
-    if (idx >= 0) {
-      allApplications[idx].report_questions_status = data.report_questions_status;
-      allApplications[idx].report_questions = data.report_questions;
-      openDetail(allApplications[idx]);
-    }
-
-    if (data.report_questions_status === 'done') {
-      toast(`${data.report_questions.length} rapport-spørgsmål genereret`, 'success');
-    } else if (data.report_questions_status === 'error') {
-      toast('Generering fejlede — prøv igen', 'error');
-    }
-  } catch (err) {
-    toast('Fejl ved opdatering: ' + err.message, 'error');
   }
 }
 
@@ -1405,6 +1555,7 @@ async function confirmStatus(appId) {
 
 function closeModal(e) {
   if (e && e.target !== document.getElementById('modalBackdrop')) return;
+  _clearReportQPoll();
   document.getElementById('modalBackdrop').classList.remove('open');
 }
 
