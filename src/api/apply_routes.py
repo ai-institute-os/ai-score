@@ -5,9 +5,11 @@ import secrets
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Optional
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
+from fastapi.responses import Response
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -1732,3 +1734,76 @@ async def get_report_status(
         "message": "Betaling bekræftet — analyse starter snart",
         "download_url": None,
     }
+
+
+# ─────────────────────────────────────────────
+# Admin: HTML-to-PDF report download
+# ─────────────────────────────────────────────
+
+_REPORT_TEMPLATE = (
+    Path(__file__).parent.parent / "templates" / "aiscore-report.html"
+)
+
+
+def _render_report_html(app: "CustomerApplication") -> str:
+    """Substitute template placeholders with application data."""
+    from datetime import date
+
+    template = _REPORT_TEMPLATE.read_text(encoding="utf-8")
+
+    analysis_date = date.today().strftime("%-d. %B %Y")
+    for en, da in [
+        ("January", "januar"), ("February", "februar"), ("March", "marts"),
+        ("April", "april"), ("May", "maj"), ("June", "juni"),
+        ("July", "juli"), ("August", "august"), ("September", "september"),
+        ("October", "oktober"), ("November", "november"), ("December", "december"),
+    ]:
+        analysis_date = analysis_date.replace(en, da)
+
+    substitutions = {
+        "{{COMPANY_NAME}}": app.firmanavn,
+        "{{CONTACT_EMAIL}}": app.email,
+        "{{ANALYSIS_DATE}}": analysis_date,
+        # Placeholder values until scoring data is persisted on the model
+        "{{OVERALL_SCORE}}": "–",
+        "{{SYSTEMS_ANALYZED}}": "4",
+        "{{QUERIES_RUN}}": "–",
+        "{{RANK}}": "–",
+    }
+    for placeholder, value in substitutions.items():
+        template = template.replace(placeholder, str(value))
+    return template
+
+
+@router.get(
+    "/admin/applications/{application_id}/report/pdf",
+    dependencies=[Depends(require_admin_key)],
+    include_in_schema=True,
+    summary="Admin — download AIScore rapport som PDF",
+)
+@limiter.limit("10/minute")
+async def download_report_pdf(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Renders the HTML report template for *application_id* to a PDF using Puppeteer."""
+    from src.pdf_renderer import render_html_to_pdf
+
+    app = await _get_application_or_404(application_id, db)
+    html = _render_report_html(app)
+
+    try:
+        pdf_bytes = await render_html_to_pdf(html)
+    except RuntimeError as exc:
+        log.error("report_pdf.render_failed", application_id=str(application_id), error=str(exc))
+        raise HTTPException(status_code=500, detail=f"PDF-generering fejlede: {exc}")
+
+    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in app.firmanavn)
+    filename = f"AIScore-rapport-{safe_name}.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
