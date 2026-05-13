@@ -197,6 +197,10 @@ class ApplicationResponse(BaseModel):
     # Report questions (scoring criteria generated from answered interview)
     report_questions: Optional[list] = None
     report_questions_status: str = "not_started"
+    # Scoring data (persisted after IN_PRODUCTION run)
+    overall_score: Optional[int] = None
+    queries_run: Optional[int] = None
+    rank: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     state_logs: list[StateLogEntry] = []
@@ -230,6 +234,12 @@ class QCResultSubmit(BaseModel):
 
 class ManualCorrectionRequest(BaseModel):
     note: Optional[str] = Field(default=None, description="Dennis' note on what was corrected")
+
+
+class ScoringDataUpdate(BaseModel):
+    overall_score: int = Field(..., ge=0, le=100, description="Weighted aggregate AIScore (0–100)")
+    queries_run: int = Field(..., ge=0, description="Total LLM queries run for this analysis")
+    rank: int = Field(..., ge=1, description="Brand position in LLM responses")
 
 
 # ─────────────────────────────────────────────

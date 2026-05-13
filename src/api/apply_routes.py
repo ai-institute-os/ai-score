@@ -23,7 +23,7 @@ from src.db.models import (
 from src.api.schemas import (
     ApplicationCreate, ApplicationResponse, ApplicationStatusUpdate,
     GeneratePaymentLinkRequest, PaymentLinkResponse,
-    QCResultSubmit, ManualCorrectionRequest,
+    QCResultSubmit, ManualCorrectionRequest, ScoringDataUpdate,
     ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
 )
 from src.api.auth import require_admin_key
@@ -1737,6 +1737,48 @@ async def get_report_status(
 
 
 # ─────────────────────────────────────────────
+# Admin: set scoring data for PDF report
+# ─────────────────────────────────────────────
+
+@router.patch(
+    "/admin/applications/{application_id}/scoring",
+    response_model=ApplicationResponse,
+    dependencies=[Depends(require_admin_key)],
+    summary="Admin — sæt OVERALL_SCORE, QUERIES_RUN og RANK på en ansøgning",
+)
+@limiter.limit("30/minute")
+async def set_scoring_data(
+    request: Request,
+    application_id: uuid.UUID,
+    body: ScoringDataUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    """Persist scoring fields on a CustomerApplication so the PDF report can display real values."""
+    app = await _get_application_or_404(application_id, db)
+
+    app.overall_score = body.overall_score
+    app.queries_run = body.queries_run
+    app.rank = body.rank
+    app.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+
+    log.info(
+        "scoring_data.updated",
+        application_id=str(application_id),
+        overall_score=body.overall_score,
+        queries_run=body.queries_run,
+        rank=body.rank,
+    )
+
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == application_id)
+    )
+    return result.scalar_one()
+
+
+# ─────────────────────────────────────────────
 # Admin: HTML-to-PDF report download
 # ─────────────────────────────────────────────
 
@@ -1764,11 +1806,10 @@ def _render_report_html(app: "CustomerApplication") -> str:
         "{{COMPANY_NAME}}": app.firmanavn,
         "{{CONTACT_EMAIL}}": app.email,
         "{{ANALYSIS_DATE}}": analysis_date,
-        # Placeholder values until scoring data is persisted on the model
-        "{{OVERALL_SCORE}}": "–",
+        "{{OVERALL_SCORE}}": f"{app.overall_score} / 100" if app.overall_score is not None else "–",
         "{{SYSTEMS_ANALYZED}}": "4",
-        "{{QUERIES_RUN}}": "–",
-        "{{RANK}}": "–",
+        "{{QUERIES_RUN}}": str(app.queries_run) if app.queries_run is not None else "–",
+        "{{RANK}}": str(app.rank) if app.rank is not None else "–",
     }
     for placeholder, value in substitutions.items():
         template = template.replace(placeholder, str(value))

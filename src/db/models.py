@@ -184,6 +184,10 @@ class CustomerApplication(Base):
     report_questions: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     # not_started | generating | done | error
     report_questions_status: Mapped[str] = mapped_column(String, nullable=False, default="not_started")
+    # Scoring data persisted after production run — used in PDF report
+    overall_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    queries_run: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    rank: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
