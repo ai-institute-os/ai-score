@@ -2,45 +2,28 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# System dependencies for Puppeteer/Chromium
+# System Chromium + Node.js (avoids 300 MB Puppeteer bundled-Chromium download)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
     ca-certificates \
-    # Chromium runtime deps
-    libglib2.0-0 \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libfontconfig1 \
-    libfreetype6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxext6 \
-    libxss1 \
+    chromium \
     fonts-liberation \
     fonts-noto \
   && rm -rf /var/lib/apt/lists/*
+
+# Tell Puppeteer to use the system Chromium instead of downloading its own
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Install Node.js 20 LTS
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
   && apt-get install -y --no-install-recommends nodejs \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Puppeteer (downloads bundled Chromium)
+# Install Puppeteer without triggering Chromium download
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --ignore-scripts
 
 # Python dependencies
 COPY requirements.txt .
