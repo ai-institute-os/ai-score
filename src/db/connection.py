@@ -50,6 +50,86 @@ async def get_db() -> AsyncSession:
         yield session
 
 
+def _split_sql(sql: str) -> list[str]:
+    """Split a SQL script into individual statements at top-level semicolons.
+
+    Handles dollar-quoted blocks (DO $$ ... $$; and $tag$...$tag$) and
+    single-quoted string literals so internal semicolons are never treated
+    as statement boundaries.
+    """
+    import re as _re
+    statements: list[str] = []
+    buf: list[str] = []
+    i = 0
+    n = len(sql)
+    dollar_tag: str | None = None  # non-None while inside $tag$...$tag$
+    in_single_quote = False
+
+    while i < n:
+        c = sql[i]
+
+        if dollar_tag is not None:
+            closing = f"${dollar_tag}$"
+            if sql[i:i + len(closing)] == closing:
+                buf.append(closing)
+                i += len(closing)
+                dollar_tag = None
+            else:
+                buf.append(c)
+                i += 1
+
+        elif in_single_quote:
+            buf.append(c)
+            if c == "'":
+                if i + 1 < n and sql[i + 1] == "'":
+                    buf.append("'")
+                    i += 2
+                else:
+                    in_single_quote = False
+                    i += 1
+            else:
+                i += 1
+
+        elif c == "'":
+            in_single_quote = True
+            buf.append(c)
+            i += 1
+
+        elif c == "$":
+            m = _re.match(r"\$([A-Za-z_0-9]*)\$", sql[i:])
+            if m:
+                tag = m.group(1)
+                dollar_tag = tag
+                buf.append(m.group(0))
+                i += len(m.group(0))
+            else:
+                buf.append(c)
+                i += 1
+
+        elif c == "-" and i + 1 < n and sql[i + 1] == "-":
+            # Line comment — copy through but don't treat ';' inside as boundary
+            while i < n and sql[i] != "\n":
+                buf.append(sql[i])
+                i += 1
+
+        elif c == ";":
+            stmt = "".join(buf).strip()
+            if stmt:
+                statements.append(stmt)
+            buf = []
+            i += 1
+
+        else:
+            buf.append(c)
+            i += 1
+
+    tail = "".join(buf).strip()
+    if tail:
+        statements.append(tail)
+
+    return statements
+
+
 async def run_migrations(database_url: str | None = None) -> None:
     """Apply all pending SQL migration files from src/db/migrations/ in alphabetical order.
 
@@ -78,9 +158,9 @@ async def run_migrations(database_url: str | None = None) -> None:
         sql_content = sql_file.read_text(encoding="utf-8")
         try:
             async with engine.begin() as conn:
-                # asyncpg rejects multi-statement strings — split on semicolons
-                import re as _re
-                statements = [s.strip() for s in _re.split(r";\s*", sql_content) if s.strip()]
+                # asyncpg rejects multi-statement strings — split on top-level semicolons
+                # (respects dollar-quoted blocks like DO $$ ... $$; and $tag$...$tag$)
+                statements = _split_sql(sql_content)
                 for stmt in statements:
                     await conn.execute(text(stmt))
                 await conn.execute(

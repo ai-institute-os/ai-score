@@ -1,5 +1,11 @@
--- Enable TimescaleDB extension
-CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+-- Enable TimescaleDB extension (optional — skipped silently if not available)
+DO $$
+BEGIN
+    CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'TimescaleDB not available, skipping extension install';
+END;
+$$;
 
 -- ─────────────────────────────────────────────
 -- Multi-tenant configuration
@@ -54,13 +60,19 @@ CREATE TABLE IF NOT EXISTS llm_responses (
     PRIMARY KEY (id, timestamp)
 );
 
--- Convert to TimescaleDB hypertable partitioned by timestamp
-SELECT create_hypertable(
-    'llm_responses',
-    'timestamp',
-    chunk_time_interval => INTERVAL '7 days',
-    if_not_exists => TRUE
-);
+-- Convert to TimescaleDB hypertable (skipped if TimescaleDB not available)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        PERFORM create_hypertable(
+            'llm_responses',
+            'timestamp',
+            chunk_time_interval => INTERVAL '7 days',
+            if_not_exists => TRUE
+        );
+    END IF;
+END;
+$$;
 
 -- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_llm_responses_tenant_ts
@@ -93,27 +105,50 @@ CREATE INDEX IF NOT EXISTS idx_prompt_requests_tenant
 
 -- ─────────────────────────────────────────────
 -- Continuous aggregate: daily provider stats per tenant
+-- (TimescaleDB continuous aggregate if available, plain view otherwise)
 -- ─────────────────────────────────────────────
-CREATE MATERIALIZED VIEW IF NOT EXISTS daily_provider_stats
-WITH (timescaledb.continuous) AS
-SELECT
-    time_bucket('1 day', timestamp)   AS bucket,
-    tenant_id,
-    provider,
-    model,
-    COUNT(*)                          AS total_calls,
-    COUNT(*) FILTER (WHERE error IS NULL) AS successful_calls,
-    AVG(latency_ms)                   AS avg_latency_ms,
-    SUM(tokens_used)                  AS total_tokens,
-    AVG(score)                        AS avg_score
-FROM llm_responses
-GROUP BY bucket, tenant_id, provider, model
-WITH NO DATA;
-
-SELECT add_continuous_aggregate_policy(
-    'daily_provider_stats',
-    start_offset    => INTERVAL '3 days',
-    end_offset      => INTERVAL '1 hour',
-    schedule_interval => INTERVAL '1 hour',
-    if_not_exists   => TRUE
-);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        EXECUTE $sql$
+            CREATE MATERIALIZED VIEW IF NOT EXISTS daily_provider_stats
+            WITH (timescaledb.continuous) AS
+            SELECT
+                time_bucket('1 day', timestamp)   AS bucket,
+                tenant_id,
+                provider,
+                model,
+                COUNT(*)                          AS total_calls,
+                COUNT(*) FILTER (WHERE error IS NULL) AS successful_calls,
+                AVG(latency_ms)                   AS avg_latency_ms,
+                SUM(tokens_used)                  AS total_tokens,
+                AVG(score)                        AS avg_score
+            FROM llm_responses
+            GROUP BY bucket, tenant_id, provider, model
+            WITH NO DATA
+        $sql$;
+        PERFORM add_continuous_aggregate_policy(
+            'daily_provider_stats',
+            start_offset    => INTERVAL '3 days',
+            end_offset      => INTERVAL '1 hour',
+            schedule_interval => INTERVAL '1 hour',
+            if_not_exists   => TRUE
+        );
+    ELSE
+        CREATE MATERIALIZED VIEW IF NOT EXISTS daily_provider_stats AS
+        SELECT
+            date_trunc('day', timestamp)      AS bucket,
+            tenant_id,
+            provider,
+            model,
+            COUNT(*)                          AS total_calls,
+            COUNT(*) FILTER (WHERE error IS NULL) AS successful_calls,
+            AVG(latency_ms)                   AS avg_latency_ms,
+            SUM(tokens_used)                  AS total_tokens,
+            AVG(score)                        AS avg_score
+        FROM llm_responses
+        GROUP BY date_trunc('day', timestamp), tenant_id, provider, model
+        WITH NO DATA;
+    END IF;
+END;
+$$;
