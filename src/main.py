@@ -106,10 +106,8 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
 
     # Apply pending SQL migrations before accepting traffic
-    from src.db.migrate import run_migrations
-    from src.db.connection import get_engine
     try:
-        await run_migrations(get_engine())
+        await run_migrations()
     except Exception as exc:
         log.error("migrations.failed", error=str(exc))
         raise
