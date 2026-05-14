@@ -165,7 +165,7 @@ class ApplicationCreatePublic(BaseModel):
     industry: str = Field(..., min_length=1, max_length=255)
     business_description: str = Field(..., min_length=10, max_length=5000)
     competitors: Optional[str] = Field(default=None, max_length=2000)
-    application_goal: Optional[str] = Field(default=None, max_length=2000)
+    application_goal: str = Field(..., min_length=1, max_length=2000)
 
 
 class ApplicationRejectRequest(BaseModel):
