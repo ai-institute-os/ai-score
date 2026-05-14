@@ -73,7 +73,7 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     # Comma-separated list of allowed hostnames for TrustedHostMiddleware
-    allowed_hosts: str = "localhost,127.0.0.1"
+     allowed_hosts: str = "*"
 
 
 @lru_cache
