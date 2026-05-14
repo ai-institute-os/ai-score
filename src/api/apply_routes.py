@@ -27,7 +27,6 @@ from src.api.schemas import (
     QCResultSubmit, ManualCorrectionRequest, ScoringDataUpdate,
     ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
 )
-from src.api.auth import require_admin_key
 from src.api.rate_limit import limiter
 
 log = structlog.get_logger()
@@ -253,7 +252,7 @@ async def submit_application_public(
 # Admin: list and manage applications
 # ─────────────────────────────────────────────
 
-@router.get("/admin/applications", response_model=list[ApplicationResponse], dependencies=[Depends(require_admin_key)])
+@router.get("/admin/applications", response_model=list[ApplicationResponse])
 @limiter.limit("30/minute")
 async def list_applications(
     request: Request,
@@ -275,7 +274,7 @@ async def list_applications(
     return list(result.scalars().all())
 
 
-@router.get("/admin/orders", dependencies=[Depends(require_admin_key)])
+@router.get("/admin/orders")
 @limiter.limit("30/minute")
 async def list_orders(request: Request, db: AsyncSession = Depends(get_db)):
     """Admin — seneste 20 betalte AIScore-rapporter med Calendly-status."""
@@ -314,7 +313,7 @@ async def list_orders(request: Request, db: AsyncSession = Depends(get_db)):
     ]
 
 
-@router.get("/admin/applications/{application_id}", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
+@router.get("/admin/applications/{application_id}", response_model=ApplicationResponse)
 @limiter.limit("30/minute")
 async def get_application(request: Request, application_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """Admin — get a single application with full state log."""
@@ -325,14 +324,12 @@ async def get_application(request: Request, application_id: uuid.UUID, db: Async
 @router.post(
     "/admin/applications/{application_id}/approve",
     response_model=ApplicationResponse,
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("30/minute")
 async def approve_application(
     request: Request,
     application_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin_key),
 ):
     """Admin — approve an application in UNDER_REVIEW → APPROVED."""
     app = await _get_application_or_404(application_id, db)
@@ -347,13 +344,13 @@ async def approve_application(
     prev_status = app.status
     app.status = CustomerApplicationStatus.APPROVED
     app.approved_at = now
-    app.approved_by = admin_id
+    app.approved_by = "admin"
     app.updated_at = now
     db.add(CustomerApplicationStateLog(
         application_id=app.id,
         from_status=prev_status,
         to_status=CustomerApplicationStatus.APPROVED,
-        changed_by=admin_id,
+        changed_by="admin",
         note="Application approved",
     ))
     await db.commit()
@@ -369,7 +366,6 @@ async def approve_application(
 @router.post(
     "/admin/applications/{application_id}/reject",
     response_model=ApplicationResponse,
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("30/minute")
 async def reject_application(
@@ -377,7 +373,6 @@ async def reject_application(
     application_id: uuid.UUID,
     body: ApplicationRejectRequest = ApplicationRejectRequest(),
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin_key),
 ):
     """Admin — reject an application (APPLIED or UNDER_REVIEW → REJECTED)."""
     app = await _get_application_or_404(application_id, db)
@@ -393,14 +388,14 @@ async def reject_application(
     prev_status = app.status
     app.status = CustomerApplicationStatus.REJECTED
     app.rejected_at = now
-    app.rejected_by = admin_id
+    app.rejected_by = "admin"
     app.rejection_reason = body.rejection_reason
     app.updated_at = now
     db.add(CustomerApplicationStateLog(
         application_id=app.id,
         from_status=prev_status,
         to_status=CustomerApplicationStatus.REJECTED,
-        changed_by=admin_id,
+        changed_by="admin",
         note=body.rejection_reason or "Application rejected",
     ))
     await db.commit()
@@ -420,7 +415,6 @@ async def update_application_status(
     application_id: uuid.UUID,
     body: ApplicationStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin_key),
 ):
     """Admin — advance the application through the CRM state machine."""
     app = await _get_application_or_404(application_id, db)
@@ -448,7 +442,7 @@ async def update_application_status(
         application_id=app.id,
         from_status=prev_status,
         to_status=new_status,
-        changed_by=admin_id,
+        changed_by="admin",
         note=body.note,
     )
     db.add(log)
@@ -480,7 +474,7 @@ async def update_application_status(
     return result.scalar_one()
 
 
-@router.patch("/admin/applications/{application_id}/notes", response_model=ApplicationResponse, dependencies=[Depends(require_admin_key)])
+@router.patch("/admin/applications/{application_id}/notes", response_model=ApplicationResponse)
 @limiter.limit("30/minute")
 async def update_application_notes(
     request: Request,
@@ -590,7 +584,6 @@ async def _add_state_log(
 
 @router.get(
     "/admin/applications/{application_id}/questions",
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("30/minute")
 async def get_application_questions(
@@ -612,7 +605,6 @@ async def get_application_questions(
 
 @router.post(
     "/admin/applications/{application_id}/questions/approve",
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("30/minute")
 async def approve_application_questions(
@@ -632,7 +624,6 @@ async def approve_application_questions(
 
 @router.post(
     "/admin/applications/{application_id}/questions/reject",
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("30/minute")
 async def reject_application_questions(
@@ -650,7 +641,6 @@ async def reject_application_questions(
 
 @router.post(
     "/admin/applications/{application_id}/questions/regenerate",
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("10/minute")
 async def regenerate_application_questions(
@@ -731,7 +721,6 @@ async def _generate_and_store_report_questions(application_id: uuid.UUID) -> Non
 
 @router.post(
     "/admin/applications/{application_id}/report-questions/generate",
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("10/minute")
 async def generate_report_questions_endpoint(
@@ -766,7 +755,6 @@ async def generate_report_questions_endpoint(
 
 @router.get(
     "/admin/applications/{application_id}/report-questions",
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("60/minute")
 async def get_report_questions(
@@ -787,7 +775,6 @@ async def get_report_questions(
 
 @router.patch(
     "/admin/applications/{application_id}/questions/answers",
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("30/minute")
 async def save_question_answers(
@@ -863,7 +850,6 @@ async def save_question_answers(
     "/admin/applications/{application_id}/payment-link",
     response_model=PaymentLinkResponse,
     status_code=201,
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("30/minute")
 async def generate_payment_link(
@@ -1507,7 +1493,6 @@ async def calendly_webhook(request: Request, db: AsyncSession = Depends(get_db))
 @router.post(
     "/admin/applications/{application_id}/qc-result",
     response_model=ApplicationResponse,
-    dependencies=[Depends(require_admin_key)],
 )
 @limiter.limit("30/minute")
 async def submit_qc_result(
@@ -1642,7 +1627,6 @@ async def submit_manual_correction(
     application_id: uuid.UUID,
     body: ManualCorrectionRequest,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin_key),
 ):
     """
     Dennis submits a manual correction for an ESCALATED application.
@@ -1667,7 +1651,7 @@ async def submit_manual_correction(
         db, app,
         from_status=prev_status,
         to_status=CustomerApplicationStatus.RETRY,
-        changed_by=admin_id,
+        changed_by="admin",
         note=body.note or "Manual correction applied",
     )
 
@@ -1960,7 +1944,6 @@ async def get_report_status(
 @router.patch(
     "/admin/applications/{application_id}/scoring",
     response_model=ApplicationResponse,
-    dependencies=[Depends(require_admin_key)],
     summary="Admin — sæt OVERALL_SCORE, QUERIES_RUN og RANK på en ansøgning",
 )
 @limiter.limit("30/minute")
@@ -2035,7 +2018,6 @@ def _render_report_html(app: "CustomerApplication") -> str:
 
 @router.get(
     "/admin/applications/{application_id}/report/pdf",
-    dependencies=[Depends(require_admin_key)],
     include_in_schema=True,
     summary="Admin — download AIScore rapport som PDF",
 )

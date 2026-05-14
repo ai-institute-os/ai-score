@@ -543,12 +543,7 @@ async function loadData() {
     </tr>`;
 
   try {
-    const apiKey = getAdminKey();
-    if (!apiKey) return;
-
-    const res = await fetch('/api/v1/admin/orders', {
-      headers: { 'X-Admin-Key': apiKey },
-    });
+    const res = await fetch('/api/v1/admin/orders');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     orders = await res.json();
   } catch (err) {
@@ -558,16 +553,6 @@ async function loadData() {
 
   updateKPIs();
   renderTable();
-}
-
-function getAdminKey() {
-  let key = sessionStorage.getItem('admin_key');
-  if (!key) {
-    key = prompt('Indtast admin API-nøgle:');
-    if (!key) { toast('Ingen API-nøgle angivet', 'error'); return null; }
-    sessionStorage.setItem('admin_key', key);
-  }
-  return key;
 }
 
 // ─── KPIs ─────────────────────────────────────────

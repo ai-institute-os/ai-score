@@ -289,7 +289,7 @@
 </nav>
 
 <main class="main">
-  <div class="page-header" id="pageHeader" style="display:none;">
+  <div class="page-header" id="pageHeader">
     <div>
       <h1>Applications</h1>
       <p>Review incoming applications — approve or reject to advance them through the pipeline</p>
@@ -297,7 +297,7 @@
   </div>
 
   <!-- Toolbar -->
-  <div class="toolbar" style="display:none;">
+  <div class="toolbar">
     <div class="search-box">
       <span style="color:var(--gray-6);">🔍</span>
       <input type="text" id="searchInput" placeholder="Search company, email…" oninput="renderTable()" />
@@ -310,27 +310,8 @@
     <button class="filter-chip" data-status="REJECTED" onclick="setFilter(this, 'REJECTED')">Rejected</button>
   </div>
 
-  <!-- Auth gate — shown when no valid key is stored -->
-  <div id="authGate" style="display:none; max-width:420px; margin:0 auto; padding-top:2rem;">
-    <div style="background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:2rem 2rem 1.75rem;">
-      <h2 style="font-size:1.15rem; font-weight:700; margin-bottom:0.35rem;">Admin Access</h2>
-      <p style="font-size:0.875rem; color:var(--gray-6); margin-bottom:1.25rem;">Enter the admin API key to continue. The key is configured in Railway environment variables (<code style="font-size:0.8rem; background:var(--gray-f); padding:0.1rem 0.35rem; border-radius:4px;">ADMIN_API_KEY</code>).</p>
-      <div id="authError" style="display:none; background:rgba(255,59,48,0.08); border:1px solid rgba(255,59,48,0.2); border-radius:var(--radius-sm); padding:0.6rem 0.85rem; margin-bottom:1rem; font-size:0.825rem; color:#c0392b;"></div>
-      <div style="display:flex; gap:0.6rem;">
-        <input
-          id="keyInput"
-          type="password"
-          placeholder="Paste admin key here…"
-          style="flex:1; border:1.5px solid var(--gray-d); border-radius:var(--radius-sm); padding:0.55rem 0.75rem; font-size:0.875rem; font-family:inherit; outline:none; background:var(--white);"
-          onkeydown="if(event.key==='Enter') submitKey()"
-        />
-        <button class="btn btn-primary" onclick="submitKey()" id="keyBtn">Unlock</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Table -->
-  <div class="table-wrap" id="tableWrap" style="display:none;">
+  <div class="table-wrap" id="tableWrap">
     <div class="table-meta">
       <div class="table-meta-count" id="tableCount">Loading…</div>
     </div>
@@ -380,75 +361,11 @@ const STATUS_LABELS = {
   READY_FOR_REVIEW_CALL: 'Ready for Review',
 };
 
-function getStoredKey() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('key')) {
-    localStorage.setItem('aiScore_adminKey', params.get('key'));
-    history.replaceState({}, '', window.location.pathname);
-  }
-  return localStorage.getItem('aiScore_adminKey') || '';
-}
-
-function showAuthGate(errorMsg) {
-  document.getElementById('tableWrap').style.display = 'none';
-  document.getElementById('authGate').style.display = 'block';
-  document.querySelector('.toolbar').style.display = 'none';
-  document.getElementById('pageHeader').style.display = 'none';
-  const errEl = document.getElementById('authError');
-  if (errorMsg) {
-    errEl.textContent = errorMsg;
-    errEl.style.display = 'block';
-  } else {
-    errEl.style.display = 'none';
-  }
-  setTimeout(() => document.getElementById('keyInput').focus(), 50);
-}
-
-function showTable() {
-  document.getElementById('authGate').style.display = 'none';
-  document.getElementById('tableWrap').style.display = 'block';
-  document.querySelector('.toolbar').style.display = 'flex';
-  document.getElementById('pageHeader').style.display = 'flex';
-}
-
-async function submitKey() {
-  const input = document.getElementById('keyInput');
-  const key = input.value.trim();
-  if (!key) return;
-  const btn = document.getElementById('keyBtn');
-  btn.disabled = true;
-  btn.textContent = '…';
-  localStorage.setItem('aiScore_adminKey', key);
-  await loadData();
-  btn.disabled = false;
-  btn.textContent = 'Unlock';
-}
-
 async function loadData() {
-  const key = getStoredKey();
-  if (!key) {
-    showAuthGate();
-    return;
-  }
-
   try {
-    const res = await fetch('/api/v1/admin/applications?limit=200', {
-      headers: { 'X-Admin-Key': key },
-    });
-    if (res.status === 401) {
-      localStorage.removeItem('aiScore_adminKey');
-      showAuthGate('Invalid admin key. Check the ADMIN_API_KEY value in Railway and try again.');
-      allApplications = [];
-      return;
-    }
-    if (res.status === 500) {
-      showAuthGate('Server error: ADMIN_API_KEY is not configured in Railway environment variables.');
-      allApplications = [];
-      return;
-    }
+    const res = await fetch('/api/v1/admin/applications?limit=200');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     allApplications = await res.json();
-    showTable();
   } catch (err) {
     toast('Failed to load applications: ' + err.message, 'error');
     allApplications = [];

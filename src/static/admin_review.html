@@ -373,18 +373,6 @@
 let appId = null;
 let appData = null;
 
-function getAdminKey() {
-  // Prefer URL param for direct email links with key embedded
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('key')) {
-    localStorage.setItem('aiScore_adminKey', params.get('key'));
-    // Clean URL
-    const clean = window.location.pathname;
-    history.replaceState({}, '', clean);
-  }
-  return localStorage.getItem('aiScore_adminKey') || '';
-}
-
 function statusChip(status) {
   const labels = {
     APPLIED: 'Applied', UNDER_REVIEW: 'Under Review',
@@ -473,7 +461,6 @@ function updateActionPanel(status) {
 }
 
 async function doApprove() {
-  const key = getAdminKey();
   const btn = document.getElementById('btnApprove');
   btn.disabled = true;
   btn.textContent = 'Approving…';
@@ -481,7 +468,6 @@ async function doApprove() {
   try {
     const res = await fetch(`/api/v1/admin/applications/${appId}/approve`, {
       method: 'POST',
-      headers: { 'X-Admin-Key': key },
     });
 
     if (!res.ok) {
@@ -510,7 +496,6 @@ function hideRejectForm() {
 }
 
 async function doReject() {
-  const key    = getAdminKey();
   const reason = document.getElementById('rejectionReason').value.trim();
   const btn    = document.getElementById('btnRejectConfirm');
   btn.disabled = true;
@@ -519,7 +504,7 @@ async function doReject() {
   try {
     const res = await fetch(`/api/v1/admin/applications/${appId}/reject`, {
       method: 'POST',
-      headers: { 'X-Admin-Key': key, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rejection_reason: reason || null }),
     });
 
@@ -559,30 +544,8 @@ async function init() {
 
   appId = match[1];
 
-  const key = getAdminKey();
-  if (!key) {
-    const entered = prompt('Enter your admin API key:');
-    if (!entered) {
-      document.getElementById('loadingMsg').style.display = 'none';
-      document.getElementById('errorMsg').style.display = 'block';
-      document.getElementById('errorMsg').textContent = 'Admin key required.';
-      return;
-    }
-    localStorage.setItem('aiScore_adminKey', entered.trim());
-  }
-
   try {
-    const res = await fetch(`/api/v1/admin/applications/${appId}`, {
-      headers: { 'X-Admin-Key': getAdminKey() },
-    });
-
-    if (res.status === 401) {
-      localStorage.removeItem('aiScore_adminKey');
-      document.getElementById('loadingMsg').style.display = 'none';
-      document.getElementById('errorMsg').style.display = 'block';
-      document.getElementById('errorMsg').textContent = 'Invalid admin key. Refresh and try again.';
-      return;
-    }
+    const res = await fetch(`/api/v1/admin/applications/${appId}`);
 
     if (res.status === 404) {
       document.getElementById('loadingMsg').style.display = 'none';
