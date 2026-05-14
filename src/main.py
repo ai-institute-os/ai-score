@@ -104,6 +104,16 @@ def get_router() -> PromptRouter:
 async def lifespan(app: FastAPI):
     global _router
     settings = get_settings()
+
+    # Apply pending SQL migrations before accepting traffic
+    from src.db.migrate import run_migrations
+    from src.db.connection import get_engine
+    try:
+        await run_migrations(get_engine())
+    except Exception as exc:
+        log.error("migrations.failed", error=str(exc))
+        raise
+
     cache = PromptCache(redis_url=settings.redis_url, ttl_seconds=settings.cache_ttl_seconds)
     rate_limiter = RateLimiter(
         redis_url=settings.redis_url,
