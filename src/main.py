@@ -124,6 +124,13 @@ async def lifespan(app: FastAPI):
         },
     )
     _router = PromptRouter(cache=cache, rate_limiter=rate_limiter)
+
+    if not settings.admin_api_key:
+        log.warning(
+            "config.missing_admin_api_key",
+            detail="ADMIN_API_KEY env var is not set — all /admin/* endpoints will return HTTP 500",
+        )
+
     log.info("app.started", cache_ttl=settings.cache_ttl_seconds)
     yield
     log.info("app.shutdown")
