@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed hostnames for TrustedHostMiddleware
     allowed_hosts: str = "*"
 
+    # Paperclip — used by error-alert middleware to wake System-Søren on 5xx errors
+    paperclip_api_url: str = ""
+    paperclip_api_key: str = ""
+    paperclip_company_id: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

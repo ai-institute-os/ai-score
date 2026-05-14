@@ -1,6 +1,7 @@
+import asyncio
 import structlog
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
@@ -10,6 +11,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+import httpx
 
 from src.config import get_settings
 from src.llm import PromptRouter, PromptCache, RateLimiter
@@ -20,6 +22,52 @@ from src.api.apply_routes import router as apply_router
 log = structlog.get_logger()
 
 _router: PromptRouter | None = None
+
+
+_SYSTEM_SOREN_AGENT_ID = "05eac349-ac13-47dc-83ad-eabbbb148be4"
+_AISCORE_PROJECT_ID = "c3437c5c-c453-41bd-9ad6-de62eb9ead69"
+
+
+async def _alert_system_soren(path: str, status_code: int, method: str) -> None:
+    settings = get_settings()
+    if not (settings.paperclip_api_url and settings.paperclip_api_key and settings.paperclip_company_id):
+        return
+    ts = datetime.now(timezone.utc).isoformat()
+    payload = {
+        "title": f"SYSTEM FEJL: {method} {path} — HTTP {status_code}",
+        "status": "todo",
+        "priority": "critical",
+        "assigneeAgentId": _SYSTEM_SOREN_AGENT_ID,
+        "projectId": _AISCORE_PROJECT_ID,
+        "description": (
+            f"## System Alert — AIScore 5xx fejl\n\n"
+            f"**Tidspunkt:** {ts}\n"
+            f"**Endpoint:** `{method} {path}`\n"
+            f"**HTTP Status:** {status_code}\n\n"
+            f"Backend returnerede en 5xx-fejl. Tjek Railway-logs og app-status."
+        ),
+    }
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post(
+                f"{settings.paperclip_api_url}/api/companies/{settings.paperclip_company_id}/issues",
+                json=payload,
+                headers={"Authorization": f"Bearer {settings.paperclip_api_key}"},
+            )
+    except Exception:
+        log.warning("paperclip.alert.failed", path=path, status=status_code)
+
+
+class ErrorAlertMiddleware(BaseHTTPMiddleware):
+    """Fires a Paperclip alert to System-Søren on any 5xx response."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        if response.status_code >= 500:
+            asyncio.create_task(
+                _alert_system_soren(request.url.path, response.status_code, request.method)
+            )
+        return response
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -87,8 +135,9 @@ app.add_middleware(SlowAPIMiddleware)
 _allowed_hosts = [h.strip() for h in _settings.allowed_hosts.split(",") if h.strip()]
 if _allowed_hosts and _allowed_hosts != ["*"]:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
-    
+
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(ErrorAlertMiddleware)
 
 app.include_router(router, prefix="/api/v1")
 app.include_router(apply_router, prefix="/api/v1")
