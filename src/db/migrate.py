@@ -7,9 +7,12 @@ Each file is applied exactly once — idempotent due to IF NOT EXISTS guards in 
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 import structlog
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 log = structlog.get_logger()
 
@@ -23,7 +26,11 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 """
 
 
-async def run_migrations(engine: AsyncEngine) -> None:
+async def run_migrations(engine: "AsyncEngine | None" = None) -> None:
+    if engine is None:
+        from src.db.connection import get_engine
+        engine = get_engine()
+
     migration_files = sorted(_MIGRATIONS_DIR.glob("*.sql"))
     if not migration_files:
         log.warning("migrations.none_found", dir=str(_MIGRATIONS_DIR))

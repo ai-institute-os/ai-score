@@ -14,6 +14,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import httpx
 
 from src.config import get_settings
+from src.db.connection import run_migrations
 from src.llm import PromptRouter, PromptCache, RateLimiter
 from src.api.rate_limit import limiter
 from src.api.routes import router
