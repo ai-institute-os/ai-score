@@ -155,6 +155,23 @@ class ApplicationCreate(BaseModel):
     virksomhedsinfo: str = Field(..., min_length=10, max_length=5000, description="Kort beskrivelse af virksomheden og dens behov")
 
 
+class ApplicationCreatePublic(BaseModel):
+    """Schema for the new public /api/v1/applications endpoint (English field names)."""
+    company_name: str = Field(..., min_length=1, max_length=255)
+    contact_name: str = Field(..., min_length=1, max_length=255)
+    contact_email: EmailStr
+    website: str = Field(..., min_length=1, max_length=500)
+    country: str = Field(..., min_length=1, max_length=100)
+    industry: str = Field(..., min_length=1, max_length=255)
+    business_description: str = Field(..., min_length=10, max_length=5000)
+    competitors: Optional[str] = Field(default=None, max_length=2000)
+    application_goal: Optional[str] = Field(default=None, max_length=2000)
+
+
+class ApplicationRejectRequest(BaseModel):
+    rejection_reason: Optional[str] = Field(default=None, max_length=2000)
+
+
 class StateLogEntry(BaseModel):
     id: uuid.UUID
     from_status: Optional[str]
@@ -179,10 +196,22 @@ class ApplicationResponse(BaseModel):
     website: str
     kontaktperson: str
     email: str
-    telefon: str
+    telefon: Optional[str] = None
     virksomhedsinfo: str
     status: str
     notes: Optional[str]
+    # New fields from public application endpoint
+    country: Optional[str] = None
+    industry: Optional[str] = None
+    business_description: Optional[str] = None
+    competitors: Optional[str] = None
+    application_goal: Optional[str] = None
+    submitted_at: Optional[datetime] = None
+    approved_at: Optional[datetime] = None
+    rejected_at: Optional[datetime] = None
+    approved_by: Optional[str] = None
+    rejected_by: Optional[str] = None
+    rejection_reason: Optional[str] = None
     # Payment
     payment_url: Optional[str] = None
     stripe_session_id: Optional[str] = None

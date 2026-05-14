@@ -21,7 +21,8 @@ from src.db.models import (
     PasswordResetToken,
 )
 from src.api.schemas import (
-    ApplicationCreate, ApplicationResponse, ApplicationStatusUpdate,
+    ApplicationCreate, ApplicationCreatePublic, ApplicationRejectRequest,
+    ApplicationResponse, ApplicationStatusUpdate,
     GeneratePaymentLinkRequest, PaymentLinkResponse,
     QCResultSubmit, ManualCorrectionRequest, ScoringDataUpdate,
     ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
@@ -124,6 +125,131 @@ async def submit_application(
 
 
 # ─────────────────────────────────────────────
+# Public: new application flow (English fields, auto UNDER_REVIEW)
+# ─────────────────────────────────────────────
+
+async def _send_admin_review_email(app: CustomerApplication, app_base_url: str, admin_email: str) -> None:
+    """Send admin notification when an application moves to UNDER_REVIEW."""
+    from src.payments.emailer import send_email
+    import html as _html
+
+    review_url = f"{app_base_url.rstrip('/')}/admin/applications/{app.id}/review"
+
+    def _esc(v: object) -> str:
+        return _html.escape(str(v)) if v is not None else "—"
+
+    fields_html = "".join(
+        f"<tr><td style='padding:4px 8px;font-weight:600;white-space:nowrap'>{label}</td>"
+        f"<td style='padding:4px 8px'>{_esc(value)}</td></tr>"
+        for label, value in [
+            ("Company", app.firmanavn),
+            ("Contact", app.kontaktperson),
+            ("Email", app.email),
+            ("Website", app.website),
+            ("Country", app.country),
+            ("Industry", app.industry),
+            ("Business description", app.virksomhedsinfo),
+            ("Competitors", app.competitors),
+            ("Application goal", app.application_goal),
+        ]
+    )
+
+    html_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#1a1a1a">
+  <h2 style="color:#111">New AIScore Application Requires Review</h2>
+  <table style="border-collapse:collapse;width:100%;margin-bottom:16px">
+    {fields_html}
+  </table>
+  <p>
+    <a href="{_esc(review_url)}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none">
+      Review Application
+    </a>
+  </p>
+</body>
+</html>"""
+
+    try:
+        await send_email(
+            to=admin_email,
+            subject="New AIScore Application Requires Review",
+            html_body=html_body,
+        )
+    except Exception as exc:
+        log.error("application.review_email_failed", application_id=str(app.id), error=str(exc))
+
+
+@router.post("/applications", response_model=ApplicationResponse, status_code=201)
+@limiter.limit("5/minute")
+async def submit_application_public(
+    request: Request,
+    body: ApplicationCreatePublic,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public endpoint — new application flow with English field names.
+
+    Creates the application as APPLIED, immediately transitions to UNDER_REVIEW,
+    and sends an admin notification email via Resend.
+    """
+    from src.config import get_settings
+    now = datetime.now(timezone.utc)
+
+    app = CustomerApplication(
+        firmanavn=body.company_name,
+        website=body.website,
+        kontaktperson=body.contact_name,
+        email=str(body.contact_email),
+        telefon=None,
+        virksomhedsinfo=body.business_description,
+        country=body.country,
+        industry=body.industry,
+        business_description=body.business_description,
+        competitors=body.competitors,
+        application_goal=body.application_goal,
+        submitted_at=now,
+        status=CustomerApplicationStatus.APPLIED,
+    )
+    db.add(app)
+    await db.flush()
+
+    db.add(CustomerApplicationStateLog(
+        application_id=app.id,
+        from_status=None,
+        to_status=CustomerApplicationStatus.APPLIED,
+        changed_by="system",
+        note="Application submitted via public endpoint",
+    ))
+
+    # Immediately move to UNDER_REVIEW
+    app.status = CustomerApplicationStatus.UNDER_REVIEW
+    app.updated_at = now
+    db.add(CustomerApplicationStateLog(
+        application_id=app.id,
+        from_status=CustomerApplicationStatus.APPLIED,
+        to_status=CustomerApplicationStatus.UNDER_REVIEW,
+        changed_by="system",
+        note="Auto-transitioned to UNDER_REVIEW on submission",
+    ))
+
+    await db.commit()
+    await db.refresh(app)
+
+    settings = get_settings()
+    admin_review_email = getattr(settings, "admin_review_email", "amministrazionemfce@gmail.com")
+    app_base_url = getattr(settings, "app_base_url", "https://app.aiscore.dk")
+    background_tasks.add_task(_send_admin_review_email, app, app_base_url, admin_review_email)
+
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == app.id)
+    )
+    return result.scalar_one()
+
+
+# ─────────────────────────────────────────────
 # Admin: list and manage applications
 # ─────────────────────────────────────────────
 
@@ -194,6 +320,97 @@ async def get_application(request: Request, application_id: uuid.UUID, db: Async
     """Admin — get a single application with full state log."""
     app = await _get_application_or_404(application_id, db)
     return app
+
+
+@router.post(
+    "/admin/applications/{application_id}/approve",
+    response_model=ApplicationResponse,
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("30/minute")
+async def approve_application(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_admin_key),
+):
+    """Admin — approve an application in UNDER_REVIEW → APPROVED."""
+    app = await _get_application_or_404(application_id, db)
+
+    if app.status != CustomerApplicationStatus.UNDER_REVIEW:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Only UNDER_REVIEW applications can be approved. Current: {app.status.value}",
+        )
+
+    now = datetime.now(timezone.utc)
+    prev_status = app.status
+    app.status = CustomerApplicationStatus.APPROVED
+    app.approved_at = now
+    app.approved_by = admin_id
+    app.updated_at = now
+    db.add(CustomerApplicationStateLog(
+        application_id=app.id,
+        from_status=prev_status,
+        to_status=CustomerApplicationStatus.APPROVED,
+        changed_by=admin_id,
+        note="Application approved",
+    ))
+    await db.commit()
+
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == app.id)
+    )
+    return result.scalar_one()
+
+
+@router.post(
+    "/admin/applications/{application_id}/reject",
+    response_model=ApplicationResponse,
+    dependencies=[Depends(require_admin_key)],
+)
+@limiter.limit("30/minute")
+async def reject_application(
+    request: Request,
+    application_id: uuid.UUID,
+    body: ApplicationRejectRequest = ApplicationRejectRequest(),
+    db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_admin_key),
+):
+    """Admin — reject an application (APPLIED or UNDER_REVIEW → REJECTED)."""
+    app = await _get_application_or_404(application_id, db)
+
+    allowed_from = {CustomerApplicationStatus.APPLIED, CustomerApplicationStatus.UNDER_REVIEW}
+    if app.status not in allowed_from:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Only APPLIED or UNDER_REVIEW applications can be rejected. Current: {app.status.value}",
+        )
+
+    now = datetime.now(timezone.utc)
+    prev_status = app.status
+    app.status = CustomerApplicationStatus.REJECTED
+    app.rejected_at = now
+    app.rejected_by = admin_id
+    app.rejection_reason = body.rejection_reason
+    app.updated_at = now
+    db.add(CustomerApplicationStateLog(
+        application_id=app.id,
+        from_status=prev_status,
+        to_status=CustomerApplicationStatus.REJECTED,
+        changed_by=admin_id,
+        note=body.rejection_reason or "Application rejected",
+    ))
+    await db.commit()
+
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == app.id)
+    )
+    return result.scalar_one()
 
 
 @router.patch("/admin/applications/{application_id}/status", response_model=ApplicationResponse)

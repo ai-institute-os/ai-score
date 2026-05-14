@@ -156,8 +156,20 @@ class CustomerApplication(Base):
     website: Mapped[str] = mapped_column(String, nullable=False)
     kontaktperson: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False)
-    telefon: Mapped[str] = mapped_column(String, nullable=False)
+    telefon: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     virksomhedsinfo: Mapped[str] = mapped_column(Text, nullable=False)
+    # New fields for the public /api/applications endpoint
+    country: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    industry: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    business_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    competitors: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    application_goal: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    rejected_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    approved_by: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    rejected_by: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[CustomerApplicationStatus] = mapped_column(
         SAEnum(CustomerApplicationStatus, name="customer_application_status"),
         nullable=False,

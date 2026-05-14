@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # Internal alert recipients
     qc_alert_email: str = "research@aiscore.dk"
     admin_email: str = "dennis@aiscore.dk"
+    admin_review_email: str = "amministrazionemfce@gmail.com"
+
+    # Base URL for admin review links in emails
+    app_base_url: str = "https://app.aiscore.dk"
 
     # Calendly webhook signing secret
     calendly_webhook_secret: str = ""
