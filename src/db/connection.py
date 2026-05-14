@@ -19,6 +19,8 @@ def make_engine(database_url: str | None = None):
         pool_size=10,
         max_overflow=20,
         pool_pre_ping=True,
+        pool_timeout=10,
+        connect_args={"timeout": 10},
         echo=False,
     )
 
