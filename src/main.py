@@ -122,6 +122,18 @@ async def admin_orders():
     return FileResponse(str(_static_dir / "admin_orders.html"))
 
 
+@app.get("/admin/applications", include_in_schema=False)
+async def admin_applications_list():
+    """Serve the applications list page."""
+    return FileResponse(str(_static_dir / "admin_applications.html"))
+
+
+@app.get("/admin/applications/{application_id}/review", include_in_schema=False)
+async def admin_application_review(application_id: str):
+    """Serve the single-application review page."""
+    return FileResponse(str(_static_dir / "admin_review.html"))
+
+
 _templates_dir = Path(__file__).parent / "templates"
 
 

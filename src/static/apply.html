@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="da">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ansøg om AIScore</title>
+  <title>Apply for AIScore</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -13,16 +13,16 @@
       color: #1d1d1f;
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 2rem 1rem;
+      padding: 3rem 1rem 4rem;
     }
 
     .card {
       background: #fff;
       border-radius: 18px;
       box-shadow: 0 4px 32px rgba(0,0,0,0.08);
-      max-width: 560px;
+      max-width: 600px;
       width: 100%;
       padding: 3rem 2.5rem;
     }
@@ -49,6 +49,28 @@
       line-height: 1.5;
     }
 
+    .section-heading {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6e6e73;
+      margin: 1.75rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #f0f0f5;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 500px) {
+      .field-row { grid-template-columns: 1fr; }
+      .card { padding: 2rem 1.5rem; }
+    }
+
     .field {
       margin-bottom: 1.25rem;
     }
@@ -61,7 +83,14 @@
       color: #1d1d1f;
     }
 
-    input, textarea {
+    .label-optional {
+      font-weight: 400;
+      color: #6e6e73;
+      font-size: 0.8rem;
+      margin-left: 0.3rem;
+    }
+
+    input, textarea, select {
       width: 100%;
       padding: 0.65rem 0.9rem;
       border: 1.5px solid #d2d2d7;
@@ -69,19 +98,32 @@
       font-size: 0.95rem;
       color: #1d1d1f;
       background: #fff;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
       outline: none;
       font-family: inherit;
     }
 
-    input:focus, textarea:focus {
+    input:focus, textarea:focus, select:focus {
       border-color: #0071e3;
       box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
+    }
+
+    input.field-error, textarea.field-error, select.field-error {
+      border-color: #ff3b30;
+      box-shadow: 0 0 0 3px rgba(255,59,48,0.12);
     }
 
     textarea {
       resize: vertical;
       min-height: 120px;
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236e6e73' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.9rem center;
+      padding-right: 2.2rem;
     }
 
     .btn {
@@ -101,7 +143,7 @@
 
     .btn:hover { background: #0077ed; }
     .btn:active { transform: scale(0.98); }
-    .btn:disabled { background: #a8a8b3; cursor: not-allowed; }
+    .btn:disabled { background: #a8a8b3; cursor: not-allowed; transform: none; }
 
     .success {
       display: none;
@@ -110,131 +152,228 @@
     }
 
     .success-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
+      font-size: 3.5rem;
+      margin-bottom: 1.25rem;
     }
 
     .success h2 {
       font-size: 1.4rem;
       font-weight: 700;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
     }
 
     .success p {
       color: #6e6e73;
       font-size: 0.95rem;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
-    .error-msg {
+    .error-banner {
       display: none;
       background: #fff0f0;
       border: 1.5px solid #ff3b30;
       border-radius: 10px;
-      padding: 0.75rem 1rem;
-      color: #ff3b30;
+      padding: 0.9rem 1rem;
+      color: #cc2200;
       font-size: 0.875rem;
       margin-top: 1rem;
+      line-height: 1.5;
+    }
+
+    .error-banner ul {
+      margin-top: 0.4rem;
+      margin-left: 1.2rem;
+    }
+
+    .error-banner li {
+      margin-top: 0.15rem;
     }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="logo">AIScore</div>
-    <h1>Ansøg om en AIScore-analyse</h1>
+    <h1>Apply for an AIScore Analysis</h1>
     <p class="subtitle">
-      AIScore kortlægger, hvordan AI-systemer som ChatGPT, Gemini og Perplexity opfatter og anbefaler din virksomhed. Udfyld formularen — vi vender tilbage inden for 1–2 hverdage.
+      AIScore maps how AI systems like ChatGPT, Gemini, and Perplexity perceive and recommend your company. Fill in the form — we will get back to you within 1–2 business days.
     </p>
 
-    <form id="applyForm">
+    <form id="applyForm" novalidate>
+
+      <div class="section-heading">Company Information</div>
+
       <div class="field">
-        <label for="firmanavn">Virksomhedsnavn *</label>
-        <input type="text" id="firmanavn" name="firmanavn" required placeholder="Eks. Acme ApS" />
+        <label for="company_name">Company name *</label>
+        <input type="text" id="company_name" name="company_name" placeholder="e.g. Acme Ltd." autocomplete="organization" />
       </div>
 
       <div class="field">
-        <label for="website">Website *</label>
-        <input type="url" id="website" name="website" required placeholder="https://example.dk" />
+        <label for="website">Company website *</label>
+        <input type="url" id="website" name="website" placeholder="https://example.com" autocomplete="url" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="country">Country / market *</label>
+          <input type="text" id="country" name="country" placeholder="e.g. Denmark" />
+        </div>
+        <div class="field">
+          <label for="industry">Industry / category *</label>
+          <input type="text" id="industry" name="industry" placeholder="e.g. SaaS, Retail" />
+        </div>
       </div>
 
       <div class="field">
-        <label for="kontaktperson">Kontaktperson *</label>
-        <input type="text" id="kontaktperson" name="kontaktperson" required placeholder="Fulde navn" />
-      </div>
-
-      <div class="field">
-        <label for="email">E-mail *</label>
-        <input type="email" id="email" name="email" required placeholder="navn@virksomhed.dk" />
-      </div>
-
-      <div class="field">
-        <label for="telefon">Telefon *</label>
-        <input type="tel" id="telefon" name="telefon" required placeholder="+45 12 34 56 78" />
-      </div>
-
-      <div class="field">
-        <label for="virksomhedsinfo">Om virksomheden *</label>
+        <label for="business_description">Short description of the business *</label>
         <textarea
-          id="virksomhedsinfo"
-          name="virksomhedsinfo"
-          required
+          id="business_description"
+          name="business_description"
+          placeholder="Describe what your company does and what makes it unique…"
           minlength="10"
-          placeholder="Beskriv kort hvad jeres virksomhed laver, og hvorfor I er interesseret i AIScore..."
         ></textarea>
       </div>
 
-      <button type="submit" class="btn" id="submitBtn">Send ansøgning</button>
-      <div class="error-msg" id="errorMsg"></div>
+      <div class="field">
+        <label for="competitors">Main competitors <span class="label-optional">(optional)</span></label>
+        <input type="text" id="competitors" name="competitors" placeholder="e.g. Competitor A, Competitor B" />
+      </div>
+
+      <div class="section-heading">Contact Information</div>
+
+      <div class="field">
+        <label for="contact_name">Contact person name *</label>
+        <input type="text" id="contact_name" name="contact_name" placeholder="Full name" autocomplete="name" />
+      </div>
+
+      <div class="field">
+        <label for="contact_email">Contact email *</label>
+        <input type="email" id="contact_email" name="contact_email" placeholder="name@company.com" autocomplete="email" />
+      </div>
+
+      <div class="section-heading">Your Goal</div>
+
+      <div class="field">
+        <label for="application_goal">Reason for applying / goal of AIScore *</label>
+        <textarea
+          id="application_goal"
+          name="application_goal"
+          placeholder="What do you want to learn or achieve with AIScore? E.g. understand how AI systems perceive our brand vs. competitors…"
+          style="min-height: 100px;"
+        ></textarea>
+      </div>
+
+      <div class="error-banner" id="errorBanner"></div>
+
+      <button type="submit" class="btn" id="submitBtn">Submit application</button>
     </form>
 
     <div class="success" id="successBox">
       <div class="success-icon">✅</div>
-      <h2>Ansøgning modtaget</h2>
+      <h2>Application submitted</h2>
       <p>
-        Vi har modtaget din ansøgning og vender tilbage på <strong id="confirmedEmail"></strong>
-        inden for 1–2 hverdage med næste skridt.
+        Thank you. Your application has been submitted and is now under review. We will contact you once it has been approved.
       </p>
     </div>
   </div>
 
   <script>
-    document.getElementById("applyForm").addEventListener("submit", async (e) => {
+    const REQUIRED_FIELDS = [
+      { id: 'company_name',        label: 'Company name' },
+      { id: 'website',             label: 'Company website' },
+      { id: 'country',             label: 'Country / market' },
+      { id: 'industry',            label: 'Industry / category' },
+      { id: 'business_description',label: 'Short description of the business' },
+      { id: 'contact_name',        label: 'Contact person name' },
+      { id: 'contact_email',       label: 'Contact email' },
+      { id: 'application_goal',    label: 'Reason for applying / goal of AIScore' },
+    ];
+
+    function validate() {
+      const missing = [];
+      REQUIRED_FIELDS.forEach(({ id, label }) => {
+        const el = document.getElementById(id);
+        const val = el.value.trim();
+        if (!val) {
+          el.classList.add('field-error');
+          missing.push(label);
+        } else {
+          el.classList.remove('field-error');
+        }
+      });
+
+      // Extra: email format check
+      const emailEl = document.getElementById('contact_email');
+      if (emailEl.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value.trim())) {
+        emailEl.classList.add('field-error');
+        if (!missing.includes('Contact email')) missing.push('Contact email (invalid format)');
+      }
+
+      // Extra: business_description min length
+      const descEl = document.getElementById('business_description');
+      if (descEl.value.trim() && descEl.value.trim().length < 10) {
+        descEl.classList.add('field-error');
+        if (!missing.includes('Short description of the business')) missing.push('Short description of the business (minimum 10 characters)');
+      }
+
+      return missing;
+    }
+
+    // Clear error state on input
+    REQUIRED_FIELDS.forEach(({ id }) => {
+      document.getElementById(id).addEventListener('input', function() {
+        this.classList.remove('field-error');
+      });
+    });
+
+    document.getElementById('applyForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const btn = document.getElementById("submitBtn");
-      const errorMsg = document.getElementById("errorMsg");
-      errorMsg.style.display = "none";
+      const btn = document.getElementById('submitBtn');
+      const banner = document.getElementById('errorBanner');
+
+      const missing = validate();
+      if (missing.length) {
+        banner.innerHTML =
+          'Your application cannot be submitted yet. Please complete the following missing fields:' +
+          '<ul>' + missing.map(m => `<li>${m}</li>`).join('') + '</ul>';
+        banner.style.display = 'block';
+        return;
+      }
+
+      banner.style.display = 'none';
       btn.disabled = true;
-      btn.textContent = "Sender...";
+      btn.textContent = 'Submitting…';
 
       const payload = {
-        firmanavn: document.getElementById("firmanavn").value.trim(),
-        website: document.getElementById("website").value.trim(),
-        kontaktperson: document.getElementById("kontaktperson").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        telefon: document.getElementById("telefon").value.trim(),
-        virksomhedsinfo: document.getElementById("virksomhedsinfo").value.trim(),
+        company_name:         document.getElementById('company_name').value.trim(),
+        contact_name:         document.getElementById('contact_name').value.trim(),
+        contact_email:        document.getElementById('contact_email').value.trim(),
+        website:              document.getElementById('website').value.trim(),
+        country:              document.getElementById('country').value.trim(),
+        industry:             document.getElementById('industry').value.trim(),
+        business_description: document.getElementById('business_description').value.trim(),
+        competitors:          document.getElementById('competitors').value.trim() || null,
+        application_goal:     document.getElementById('application_goal').value.trim(),
       };
 
       try {
-        const res = await fetch("/api/v1/apply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const res = await fetch('/api/v1/applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.detail || `Server fejl (${res.status})`);
+          throw new Error(data.detail || `Server error (${res.status})`);
         }
 
-        document.getElementById("confirmedEmail").textContent = payload.email;
-        document.getElementById("applyForm").style.display = "none";
-        document.getElementById("successBox").style.display = "block";
+        document.getElementById('applyForm').style.display = 'none';
+        document.getElementById('successBox').style.display = 'block';
       } catch (err) {
-        errorMsg.textContent = err.message || "Noget gik galt. Prøv igen.";
-        errorMsg.style.display = "block";
+        banner.innerHTML = err.message || 'Something went wrong. Please try again.';
+        banner.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = "Send ansøgning";
+        btn.textContent = 'Submit application';
       }
     });
   </script>
