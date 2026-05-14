@@ -163,6 +163,14 @@ async def run_migrations(database_url: str | None = None) -> None:
                     # (respects dollar-quoted blocks like DO $$ ... $$; and $tag$...$tag$)
                     statements = _split_sql(sql_content)
                     for stmt in statements:
+                        if not stmt:
+                            continue
+                        # Skip comment-only blocks — asyncpg rejects queries with no SQL command
+                        if all(
+                            not line.strip() or line.strip().startswith("--")
+                            for line in stmt.splitlines()
+                        ):
+                            continue
                         await conn.execute(text(stmt))
                     await conn.execute(
                         text("INSERT INTO schema_migrations (filename) VALUES (:filename)"),
