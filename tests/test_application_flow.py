@@ -11,7 +11,7 @@ from src.db.models import CustomerApplicationStatus
 
 
 def test_application_create_public_schema_validates_required_fields():
-    """ApplicationCreatePublic must accept all required fields."""
+    """ApplicationCreatePublic must accept all required fields including application_goal."""
     body = ApplicationCreatePublic(
         company_name="Test ApS",
         contact_name="Jane Doe",
@@ -20,14 +20,15 @@ def test_application_create_public_schema_validates_required_fields():
         country="Denmark",
         industry="SaaS",
         business_description="We build software for enterprises worldwide.",
+        application_goal="Improve AI visibility",
     )
     assert body.company_name == "Test ApS"
     assert body.competitors is None
-    assert body.application_goal is None
+    assert body.application_goal == "Improve AI visibility"
 
 
 def test_application_create_public_schema_optional_fields():
-    """Optional fields competitors and application_goal are accepted."""
+    """Optional field competitors is accepted alongside required fields."""
     body = ApplicationCreatePublic(
         company_name="Test ApS",
         contact_name="Jane Doe",
@@ -36,8 +37,8 @@ def test_application_create_public_schema_optional_fields():
         country="Denmark",
         industry="SaaS",
         business_description="We build software for enterprises worldwide.",
-        competitors="CompetitorA, CompetitorB",
         application_goal="Improve AI visibility",
+        competitors="CompetitorA, CompetitorB",
     )
     assert body.competitors == "CompetitorA, CompetitorB"
     assert body.application_goal == "Improve AI visibility"
@@ -55,6 +56,23 @@ def test_application_create_public_schema_rejects_missing_required():
             country="Denmark",
             industry="SaaS",
             business_description="We build software for enterprises worldwide.",
+            application_goal="Improve AI visibility",
+        )
+
+
+def test_application_create_public_schema_rejects_missing_application_goal():
+    """application_goal is required — omitting it raises ValidationError."""
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError):
+        ApplicationCreatePublic(
+            company_name="Test ApS",
+            contact_name="Jane Doe",
+            contact_email="jane@example.com",
+            website="https://example.com",
+            country="Denmark",
+            industry="SaaS",
+            business_description="We build software for enterprises worldwide.",
+            # application_goal intentionally omitted
         )
 
 

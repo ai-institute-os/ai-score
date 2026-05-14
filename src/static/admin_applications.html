@@ -361,9 +361,38 @@ const STATUS_LABELS = {
   READY_FOR_REVIEW_CALL: 'Ready for Review',
 };
 
+function getAdminKey() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('key')) {
+    localStorage.setItem('aiScore_adminKey', params.get('key'));
+    history.replaceState({}, '', window.location.pathname);
+  }
+  return localStorage.getItem('aiScore_adminKey') || '';
+}
+
 async function loadData() {
+  let key = getAdminKey();
+  if (!key) {
+    const entered = prompt('Enter your admin API key:');
+    if (!entered) {
+      toast('Admin key required to load applications.', 'error');
+      return;
+    }
+    localStorage.setItem('aiScore_adminKey', entered.trim());
+    key = entered.trim();
+  }
+
   try {
-    const res = await fetch('/api/v1/admin/applications?limit=200');
+    const res = await fetch('/api/v1/admin/applications?limit=200', {
+      headers: { 'X-Admin-Key': key },
+    });
+    if (res.status === 401) {
+      localStorage.removeItem('aiScore_adminKey');
+      toast('Invalid admin key — refresh and try again.', 'error');
+      allApplications = [];
+      renderTable();
+      return;
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     allApplications = await res.json();
   } catch (err) {
