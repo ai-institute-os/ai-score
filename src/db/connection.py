@@ -150,26 +150,27 @@ async def run_migrations(database_url: str | None = None) -> None:
         applied = {row[0] for row in result.fetchall()}
 
     sql_files = sorted(migrations_dir.glob("*.sql"))
-    for sql_file in sql_files:
-        if sql_file.name in applied:
-            log.debug("migration.skipped", filename=sql_file.name)
-            continue
+    try:
+        for sql_file in sql_files:
+            if sql_file.name in applied:
+                log.debug("migration.skipped", filename=sql_file.name)
+                continue
 
-        sql_content = sql_file.read_text(encoding="utf-8")
-        try:
-            async with engine.begin() as conn:
-                # asyncpg rejects multi-statement strings — split on top-level semicolons
-                # (respects dollar-quoted blocks like DO $$ ... $$; and $tag$...$tag$)
-                statements = _split_sql(sql_content)
-                for stmt in statements:
-                    await conn.execute(text(stmt))
-                await conn.execute(
-                    text("INSERT INTO schema_migrations (filename) VALUES (:filename)"),
-                    {"filename": sql_file.name},
-                )
-            log.info("migration.applied", filename=sql_file.name)
-        except Exception as exc:
-            log.error("migration.failed", filename=sql_file.name, error=str(exc))
-            raise RuntimeError(f"Migration {sql_file.name} failed: {exc}") from exc
-
-    await engine.dispose()
+            sql_content = sql_file.read_text(encoding="utf-8")
+            try:
+                async with engine.begin() as conn:
+                    # asyncpg rejects multi-statement strings — split on top-level semicolons
+                    # (respects dollar-quoted blocks like DO $$ ... $$; and $tag$...$tag$)
+                    statements = _split_sql(sql_content)
+                    for stmt in statements:
+                        await conn.execute(text(stmt))
+                    await conn.execute(
+                        text("INSERT INTO schema_migrations (filename) VALUES (:filename)"),
+                        {"filename": sql_file.name},
+                    )
+                log.info("migration.applied", filename=sql_file.name)
+            except Exception as exc:
+                log.error("migration.failed", filename=sql_file.name, error=str(exc))
+                raise RuntimeError(f"Migration {sql_file.name} failed: {exc}") from exc
+    finally:
+        await engine.dispose()

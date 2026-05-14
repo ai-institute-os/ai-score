@@ -1,10 +1,18 @@
 -- AISelect subscription tracking
 -- Stores Stripe subscription state per customer (tier, status, billing period).
 
-CREATE TYPE subscription_tier AS ENUM ('free', 'starter', 'pro', 'enterprise');
-CREATE TYPE subscription_status AS ENUM (
-    'active', 'trialing', 'past_due', 'cancelled', 'incomplete', 'incomplete_expired'
-);
+-- PostgreSQL has no CREATE TYPE IF NOT EXISTS — use DO blocks to skip when already present
+DO $$ BEGIN
+    CREATE TYPE subscription_tier AS ENUM ('free', 'starter', 'pro', 'enterprise');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE subscription_status AS ENUM (
+        'active', 'trialing', 'past_due', 'cancelled', 'incomplete', 'incomplete_expired'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS aiselect_subscriptions (
     id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),

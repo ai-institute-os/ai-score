@@ -2,23 +2,27 @@
 -- States: APPLIED → UNDER_REVIEW → APPROVED → CALLED → AWAITING_PAYMENT → PAID → IN_PRODUCTION → QC_REVIEW → QC_PASSED → READY_FOR_REVIEW_CALL
 -- REJECTED is a terminal state reachable from APPLIED or UNDER_REVIEW
 
-CREATE TYPE customer_application_status AS ENUM (
-    'APPLIED',
-    'UNDER_REVIEW',
-    'APPROVED',
-    'REJECTED',
-    'CALLED',
-    'AWAITING_PAYMENT',
-    'PAID',
-    'IN_PRODUCTION',
-    'QC_REVIEW',
-    'QC_PASSED',
-    'QC_FAILED',
-    'ESCALATED',
-    'RETRY',
-    'CANCELLED',
-    'READY_FOR_REVIEW_CALL'
-);
+-- PostgreSQL has no CREATE TYPE IF NOT EXISTS — use DO block to skip when already present
+DO $$ BEGIN
+    CREATE TYPE customer_application_status AS ENUM (
+        'APPLIED',
+        'UNDER_REVIEW',
+        'APPROVED',
+        'REJECTED',
+        'CALLED',
+        'AWAITING_PAYMENT',
+        'PAID',
+        'IN_PRODUCTION',
+        'QC_REVIEW',
+        'QC_PASSED',
+        'QC_FAILED',
+        'ESCALATED',
+        'RETRY',
+        'CANCELLED',
+        'READY_FOR_REVIEW_CALL'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS customer_applications (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
