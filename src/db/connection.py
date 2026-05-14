@@ -14,6 +14,8 @@ class Base(DeclarativeBase):
 
 def make_engine(database_url: str | None = None):
     url = database_url or get_settings().database_url
+    if url.startswith("postgresql://") or url.startswith("postgres://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1).replace("postgres://", "postgresql+asyncpg://", 1)
     return create_async_engine(
         url,
         pool_size=10,
