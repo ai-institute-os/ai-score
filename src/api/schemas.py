@@ -248,6 +248,10 @@ class ApplicationResponse(BaseModel):
     agent_researched_at: Optional[datetime] = None
     agent_research_error: Optional[str] = None
     questions_generated_at: Optional[datetime] = None
+    # Per-field AI verification
+    agent_verification_status: str = "PENDING"
+    agent_verification_results: Optional[dict] = None
+    agent_verified_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     state_logs: list[StateLogEntry] = []

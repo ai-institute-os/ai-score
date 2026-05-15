@@ -218,6 +218,10 @@ class CustomerApplication(Base):
     agent_researched_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     agent_research_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     questions_generated_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    # Per-field AI verification — runs as a separate phase before Generate Questions
+    agent_verification_status: Mapped[str] = mapped_column(String, nullable=False, default="PENDING")
+    agent_verification_results: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    agent_verified_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

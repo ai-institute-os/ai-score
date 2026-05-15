@@ -262,6 +262,15 @@ async def _run_research_background(application_id: uuid.UUID) -> None:
         log.error("research.trigger_failed", application_id=str(application_id), error=str(exc))
 
 
+async def _run_verification_background(application_id: uuid.UUID) -> None:
+    """Wrapper that runs the async verification task from a background thread context."""
+    try:
+        from src.agent.verification import run_application_verification
+        await run_application_verification(application_id)
+    except Exception as exc:
+        log.error("verification.trigger_failed", application_id=str(application_id), error=str(exc))
+
+
 # ─────────────────────────────────────────────
 # Admin: list and manage applications
 # ─────────────────────────────────────────────
@@ -351,6 +360,37 @@ async def retry_research(
     await db.commit()
 
     background_tasks.add_task(_run_research_background, application_id)
+
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == application_id)
+    )
+    return result.scalar_one()
+
+
+@router.post("/admin/applications/{application_id}/verify", response_model=ApplicationResponse)
+@limiter.limit("10/minute")
+async def verify_application(
+    request: Request,
+    application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
+):
+    """Admin — trigger per-field AI verification for an application.
+
+    Runs as a background task. Sets agent_verification_status to IN_PROGRESS
+    immediately, then COMPLETED (no ERROR fields) or FAILED after the LLM call.
+    """
+    app = await _get_application_or_404(application_id, db)
+
+    app.agent_verification_status = "PENDING"
+    app.agent_verification_results = None
+    app.agent_verified_at = None
+    await db.commit()
+
+    background_tasks.add_task(_run_verification_background, application_id)
 
     result = await db.execute(
         select(CustomerApplication)
