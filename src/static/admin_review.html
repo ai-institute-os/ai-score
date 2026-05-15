@@ -1291,7 +1291,7 @@ function renderAgentResearch(app) {
 async function retryResearch(btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
   try {
-    const res = await fetch(`/api/admin/applications/${appId}/retry-research`, { method: 'POST' });
+    const res = await fetch(`/api/v1/admin/applications/${appId}/retry-research`, { method: 'POST' });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       throw new Error(d.detail || `HTTP ${res.status}`);
