@@ -186,7 +186,7 @@
 
     #statusNote { min-height: 60px; }
 
-    /* ── Agent Research ── */
+    /* ── Agent Research (legacy spinner) ── */
     @keyframes research-spin { to { transform: rotate(360deg); } }
 
     .research-status-badge {
@@ -213,18 +213,6 @@
       animation: research-spin 0.8s linear infinite;
       flex-shrink: 0;
     }
-
-    .research-fit-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.2rem 0.65rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 700;
-    }
-    .fit-approve   { background: #f0fdf4; color: #15803d; }
-    .fit-reject    { background: #fef2f2; color: #dc2626; }
-    .fit-more-info { background: #fffbeb; color: #a16207; }
 
     .research-placeholder {
       padding: 1rem 1.25rem;
@@ -271,6 +259,40 @@
       margin-top: 0.1rem;
     }
     .collapsible-toggle:hover { text-decoration: underline; }
+
+    /* ── Application Verification ── */
+    .verification-field {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.65rem 1.25rem;
+      border-bottom: 1px solid var(--bg);
+    }
+    .verification-field:last-child { border-bottom: none; }
+    .verification-icon { flex-shrink: 0; margin-top: 0.1rem; line-height: 1; }
+    .verification-field-info { flex: 1; min-width: 0; }
+    .verification-field-label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+    .verification-field-note  { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+    .verification-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+    }
+    .verification-badge-verified { background: #f0fdf4; color: #15803d; }
+    .verification-badge-failed   { background: #fef2f2; color: #dc2626; }
+
+    .cta-btn-secondary[disabled],
+    .cta-btn-secondary.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
 
     /* ── Vertical Progress Wizard ── */
     .wizard-card {
@@ -577,12 +599,12 @@
             </div>
           </div>
 
-          <!-- Agent Research Card -->
+          <!-- Application Verification Card -->
           <div class="review-card" id="agentResearchCard" style="display:none;">
             <div class="card-header" style="justify-content:space-between;">
               <span style="display:flex;align-items:center;gap:0.4rem;">
-                <i data-lucide="bot" class="icon-xs"></i>
-                Agent Research
+                <i data-lucide="shield-check" class="icon-xs"></i>
+                Application Verification
               </span>
               <span id="agentResearchStatusBadge"></span>
             </div>
@@ -666,7 +688,7 @@ const VALID_TRANSITIONS = {
 const WIZARD_STEPS = [
   { id: 'APPLIED',               label: 'Applied',               icon: 'mail-open'       },
   { id: 'UNDER_REVIEW',          label: 'Under Review',          icon: 'eye'             },
-  { id: 'AGENT_RESEARCH',        label: 'Agent Research',        icon: 'bot'             },
+  { id: 'AGENT_RESEARCH',        label: 'Verification',          icon: 'shield-check'    },
   { id: 'APPROVED',              label: 'Approved',              icon: 'check-circle-2'  },
   { id: 'CALL_BOOKING',          label: 'Call Booking',          icon: 'calendar'        },
   { id: 'CALLED',                label: 'Called',                icon: 'phone'           },
@@ -695,8 +717,9 @@ const STATUS_STEP_INDEX = {
 function getWizardActiveIndex(app) {
   const s = app.status;
   if (s === 'UNDER_REVIEW') {
+    const vs = (app.agent_verification_status || '').toUpperCase();
     const rs = (app.agent_research_status || '').toUpperCase();
-    if (rs === 'IN_PROGRESS') return { idx: 2, researchActive: true };
+    if (vs === 'IN_PROGRESS' || rs === 'IN_PROGRESS') return { idx: 2, researchActive: true };
   }
   return { idx: STATUS_STEP_INDEX[s] ?? 0, researchActive: false };
 }
@@ -845,10 +868,13 @@ function renderApp(app) {
     setText('fResearchStatus', rsMap[rs] || rs);
   }
 
-  renderAgentResearch(app);
+  renderVerification(app);
   renderInterviewQuestions(app);
   renderActionPanel(app);
   renderProgressWizard(app);
+  if ((app.agent_verification_status || '').toUpperCase() === 'IN_PROGRESS') {
+    startVerificationPolling();
+  }
 
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('pageContent').style.display = 'block';
@@ -882,18 +908,22 @@ function renderInterviewQuestions(app) {
       </div>`;
   } else {
     badge.innerHTML = '';
+    const verified = isVerificationPassed(app);
     const researchStatus = (app.agent_research_status || '').toUpperCase();
     const btnLabel = researchStatus === 'FAILED' ? 'Retry Agent Research' : 'Generate Questions';
-    const btnIcon = researchStatus === 'FAILED' ? 'refresh-cw' : 'play';
+    const btnIcon  = researchStatus === 'FAILED' ? 'refresh-cw' : 'play';
+    const disabledAttr = verified ? '' : 'disabled title="Run verification first"';
+    const disabledCls  = verified ? '' : ' disabled';
     content.innerHTML = `
       <div class="research-placeholder">
         No interview questions have been generated yet.
       </div>
       <div style="padding:0 1.25rem 1rem;">
-        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+        <button class="cta-btn cta-btn-secondary${disabledCls}" ${disabledAttr} onclick="retryResearch(this)">
           <i data-lucide="${btnIcon}" class="icon-sm"></i>
           ${esc(btnLabel)}
         </button>
+        ${!verified ? `<span style="display:block;margin-top:0.5rem;font-size:0.75rem;color:var(--text-muted);">Complete verification first to enable question generation.</span>` : ''}
       </div>`;
   }
 
@@ -934,13 +964,17 @@ function renderActionPanel(app) {
     titleEl.textContent = 'Review Actions';
     descEl.textContent = 'This application is under review. Approve or reject it below.';
     const hasQuestions = Array.isArray(app.agent_interview_questions) && app.agent_interview_questions.length > 0;
-    const researchWarning = (app.agent_research_status === 'IN_PROGRESS')
+    const verified = isVerificationPassed(app);
+    const vStatus = (app.agent_verification_status || '').toUpperCase();
+    const verificationWarning = (vStatus === 'IN_PROGRESS')
       ? `<div class="research-warning">
            <i data-lucide="clock" class="icon-xs"></i>
-           Agent research is still running. You can still approve or reject manually.
+           Verification is running. You can still approve or reject manually.
          </div>`
       : '';
-    container.innerHTML = researchWarning + `
+    const genQDisabled = verified ? '' : 'disabled title="Run verification first"';
+    const genQCls = verified ? '' : ' disabled';
+    container.innerHTML = verificationWarning + `
       <div class="cta-group">
         <div class="cta-row">
           <button class="cta-btn cta-btn-approve" onclick="quickApprove()">
@@ -958,7 +992,7 @@ function renderActionPanel(app) {
             Run / Retry Agent Research
           </button>
           ${!hasQuestions ? `
-          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+          <button class="cta-btn cta-btn-secondary${genQCls}" ${genQDisabled} onclick="retryResearch(this)">
             <i data-lucide="message-square-text" class="icon-sm"></i>
             Generate Interview Questions
           </button>` : ''}
@@ -1128,7 +1162,166 @@ function toast(msg, type = '') {
   setTimeout(() => t.remove(), 3500);
 }
 
-// ─── Agent Research ───────────────────────────────
+// ─── Application Verification ────────────────────
+
+const VERIFICATION_FIELDS = [
+  { key: 'website',              label: 'Company Website'      },
+  { key: 'category',             label: 'Category / Industry'  },
+  { key: 'business_description', label: 'Business Description' },
+  { key: 'competitors',          label: 'Competitors'          },
+  { key: 'contact_info',         label: 'Contact Info'         },
+];
+
+function isVerificationPassed(app) {
+  return app.agent_verification_results?.overall?.passed === true;
+}
+
+function verificationFieldIcon(status) {
+  if (status === 'ok')
+    return `<i data-lucide="check-circle" style="width:16px;height:16px;color:#16a34a;"></i>`;
+  if (status === 'warning')
+    return `<i data-lucide="alert-triangle" style="width:16px;height:16px;color:#d97706;"></i>`;
+  if (status === 'failed')
+    return `<i data-lucide="x-circle" style="width:16px;height:16px;color:#dc2626;"></i>`;
+  return `<i data-lucide="minus-circle" style="width:16px;height:16px;color:#94a3b8;"></i>`;
+}
+
+function renderVerification(app) {
+  const card    = document.getElementById('agentResearchCard');
+  const content = document.getElementById('agentResearchContent');
+  const badge   = document.getElementById('agentResearchStatusBadge');
+  if (!card) return;
+
+  const vStatus = (app.agent_verification_status || 'PENDING').toUpperCase();
+  card.style.display = '';
+
+  const statusMap = {
+    PENDING:     { label: 'Pending',    cls: 'research-status-pending',     spinner: false },
+    IN_PROGRESS: { label: 'Verifying…', cls: 'research-status-in_progress', spinner: true  },
+    COMPLETED:   { label: 'Completed',  cls: 'research-status-completed',   spinner: false },
+    FAILED:      { label: 'Failed',     cls: 'research-status-failed',      spinner: false },
+  };
+  const si = statusMap[vStatus] || statusMap.PENDING;
+  badge.innerHTML = `<span class="research-status-badge ${si.cls}">${si.spinner ? '<span class="research-spinner"></span>' : ''}${esc(si.label)}</span>`;
+
+  if (vStatus === 'COMPLETED') {
+    const results = app.agent_verification_results || {};
+    const overall = results.overall || {};
+    const passed  = overall.passed === true;
+
+    const overallBadge = passed
+      ? `<span class="verification-badge verification-badge-verified">✓ VERIFIED</span>`
+      : `<span class="verification-badge verification-badge-failed">✗ VERIFICATION FAILED</span>`;
+
+    const fieldsHtml = VERIFICATION_FIELDS.map(f => {
+      const field = results[f.key] || {};
+      return `
+        <div class="verification-field">
+          <div class="verification-icon">${verificationFieldIcon(field.status)}</div>
+          <div class="verification-field-info">
+            <div class="verification-field-label">${esc(f.label)}</div>
+            ${field.note ? `<div class="verification-field-note">${esc(field.note)}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    content.innerHTML = `
+      <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--bg);display:flex;align-items:center;gap:0.75rem;">
+        ${overallBadge}
+        ${app.agent_verified_at ? `<span style="font-size:0.75rem;color:var(--text-muted);">${timeAgo(app.agent_verified_at)}</span>` : ''}
+      </div>
+      ${fieldsHtml}
+      <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--bg);">
+        <button class="cta-btn cta-btn-secondary" onclick="runVerification(this)">
+          <i data-lucide="refresh-cw" class="icon-sm"></i>
+          Re-run Verification
+        </button>
+      </div>`;
+
+  } else if (vStatus === 'IN_PROGRESS') {
+    content.innerHTML = `
+      <div class="research-placeholder">
+        <span class="research-spinner"></span>
+        Verifying application info…
+      </div>`;
+
+  } else if (vStatus === 'FAILED') {
+    content.innerHTML = `
+      <div class="research-placeholder" style="color:var(--error);">
+        Verification failed${app.agent_verification_error ? ': ' + esc(app.agent_verification_error) : ''}.
+      </div>
+      <div style="padding:0 1.25rem 1rem;">
+        <button class="cta-btn cta-btn-secondary" onclick="runVerification(this)">
+          <i data-lucide="refresh-cw" class="icon-sm"></i>
+          Retry Verification
+        </button>
+      </div>`;
+
+  } else {
+    content.innerHTML = `
+      <div class="research-placeholder">
+        Verification not started.
+      </div>
+      <div style="padding:0 1.25rem 1rem;">
+        <button class="cta-btn cta-btn-secondary" onclick="runVerification(this)">
+          <i data-lucide="shield-check" class="icon-sm"></i>
+          Run Verification
+        </button>
+      </div>`;
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+let _verificationPollTimer = null;
+
+function startVerificationPolling() {
+  stopVerificationPolling();
+  _verificationPollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/v1/admin/applications/${appId}`);
+      if (!res.ok) return;
+      const app = await res.json();
+      const vs = (app.agent_verification_status || '').toUpperCase();
+      renderVerification(app);
+      renderInterviewQuestions(app);
+      renderActionPanel(app);
+      renderProgressWizard(app);
+      if (vs !== 'IN_PROGRESS') {
+        stopVerificationPolling();
+        appData = app;
+      }
+    } catch (_) { /* silent poll failure */ }
+  }, 3000);
+}
+
+function stopVerificationPolling() {
+  if (_verificationPollTimer) { clearInterval(_verificationPollTimer); _verificationPollTimer = null; }
+}
+
+async function runVerification(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/verify`, { method: 'POST' });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${res.status}`);
+    }
+    toast('Verification started', 'success');
+    const appRes = await fetch(`/api/v1/admin/applications/${appId}`);
+    if (appRes.ok) { appData = await appRes.json(); renderVerification(appData); }
+    startVerificationPolling();
+  } catch (err) {
+    toast('Failed to start verification: ' + err.message, 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="shield-check" class="icon-sm"></i> Run Verification';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
+// ─── Agent Research (legacy) ──────────────────────
 
 function timeAgo(iso) {
   if (!iso) return '—';
@@ -1145,9 +1338,8 @@ function timeAgo(iso) {
 function buildCollapsibleList(items, ordered) {
   if (!items || !items.length) return '<span style="color:var(--text-muted);">—</span>';
   const visible = items.slice(0, 5);
-  const hidden = items.slice(5);
+  const hidden  = items.slice(5);
   const id = 'cl_' + Math.random().toString(36).slice(2);
-
   function renderItems(arr, startIdx) {
     return arr.map((item, i) => {
       const n = startIdx + i + 1;
@@ -1156,7 +1348,6 @@ function buildCollapsibleList(items, ordered) {
         : `<li><span class="research-list-num">•</span>${esc(item)}</li>`;
     }).join('');
   }
-
   let html = `<ul class="research-list">${renderItems(visible, 0)}</ul>`;
   if (hidden.length) {
     html += `<ul class="research-list" id="${id}" style="display:none;">${renderItems(hidden, visible.length)}</ul>`;
@@ -1171,121 +1362,6 @@ function toggleCollapsibleList(id, btn) {
   const showing = el.style.display !== 'none';
   el.style.display = showing ? 'none' : '';
   btn.textContent = showing ? `Show ${btn.dataset.count} more…` : 'Show less';
-}
-
-function renderAgentResearch(app) {
-  const card = document.getElementById('agentResearchCard');
-  const content = document.getElementById('agentResearchContent');
-  const badge = document.getElementById('agentResearchStatusBadge');
-  if (!card) return;
-
-  const status = (app.agent_research_status || 'PENDING').toUpperCase();
-  card.style.display = '';
-
-  const statusMap = {
-    PENDING:     { label: 'Pending',     cls: 'research-status-pending',     spinner: false },
-    IN_PROGRESS: { label: 'In Progress', cls: 'research-status-in_progress', spinner: true  },
-    COMPLETED:   { label: 'Completed',   cls: 'research-status-completed',   spinner: false },
-    FAILED:      { label: 'Failed',      cls: 'research-status-failed',      spinner: false },
-  };
-  const si = statusMap[status] || statusMap.PENDING;
-  badge.innerHTML = `<span class="research-status-badge ${si.cls}">${si.spinner ? '<span class="research-spinner"></span>' : ''}${esc(si.label)}</span>`;
-
-  if (status === 'COMPLETED') {
-    const fitMap = {
-      RECOMMEND_APPROVE:      { label: 'Recommend Approve',      cls: 'fit-approve'   },
-      NEEDS_MORE_INFORMATION: { label: 'Needs More Information', cls: 'fit-more-info' },
-      RECOMMEND_REJECT:       { label: 'Recommend Reject',       cls: 'fit-reject'    },
-    };
-    const fit = fitMap[app.agent_fit_recommendation] || null;
-    const questions  = Array.isArray(app.agent_interview_questions) ? app.agent_interview_questions : [];
-    const directions = Array.isArray(app.agent_prompt_directions)   ? app.agent_prompt_directions   : [];
-
-    content.innerHTML = `
-      <div class="field-grid">
-        <div class="field-item">
-          <div class="field-label">Fit Recommendation</div>
-          <div class="field-value">${fit ? `<span class="research-fit-badge ${fit.cls}">${esc(fit.label)}</span>` : '—'}</div>
-        </div>
-        <div class="field-item">
-          <div class="field-label">Researched</div>
-          <div class="field-value">${timeAgo(app.agent_researched_at)}</div>
-        </div>
-      </div>
-      <div class="field-full">
-        <div class="field-label">Fit Reason</div>
-        <div class="textarea-val">${esc(app.agent_fit_reason) || '—'}</div>
-      </div>
-      <div class="field-full">
-        <div class="field-label">Website Summary</div>
-        <div class="textarea-val">${esc(app.agent_website_summary) || '—'}</div>
-      </div>
-      <div class="field-full">
-        <div class="field-label">Business Summary</div>
-        <div class="textarea-val">${esc(app.agent_business_summary) || '—'}</div>
-      </div>
-      <div class="field-grid">
-        <div class="field-item">
-          <div class="field-label">Target Audience</div>
-          <div class="textarea-val" style="margin-top:0;">${esc(app.agent_target_audience) || '—'}</div>
-        </div>
-        <div class="field-item">
-          <div class="field-label">Products / Services</div>
-          <div class="textarea-val" style="margin-top:0;">${esc(app.agent_products_services) || '—'}</div>
-        </div>
-      </div>
-      <div class="field-full">
-        <div class="field-label">Market Context</div>
-        <div class="textarea-val">${esc(app.agent_market_context) || '—'}</div>
-      </div>
-      <div class="field-full">
-        <div class="field-label">Competitor Notes</div>
-        <div class="textarea-val">${esc(app.agent_competitor_notes) || '—'}</div>
-      </div>
-      ${app.agent_missing_information ? `
-      <div class="field-full">
-        <div class="field-label">Missing Information</div>
-        <div class="textarea-val">${esc(app.agent_missing_information)}</div>
-      </div>` : ''}
-      <div class="field-full">
-        <div class="field-label">Suggested Prompt Directions</div>
-        <div style="margin-top:0.25rem;">${buildCollapsibleList(directions, false)}</div>
-      </div>
-    `;
-
-  } else if (status === 'IN_PROGRESS') {
-    content.innerHTML = `
-      <div class="research-placeholder">
-        <span class="research-spinner"></span>
-        Agent research in progress…
-      </div>`;
-
-  } else if (status === 'FAILED') {
-    content.innerHTML = `
-      <div class="research-placeholder" style="color:var(--error);">
-        Agent research failed${app.agent_research_error ? ': ' + esc(app.agent_research_error) : ''}.
-      </div>
-      <div style="padding:0 1.25rem 1rem;">
-        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-          <i data-lucide="refresh-cw" class="icon-sm"></i>
-          Retry Research
-        </button>
-      </div>`;
-
-  } else {
-    content.innerHTML = `
-      <div class="research-placeholder">
-        Agent research not yet started.
-      </div>
-      <div style="padding:0 1.25rem 1rem;">
-        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-          <i data-lucide="play" class="icon-sm"></i>
-          Start Research
-        </button>
-      </div>`;
-  }
-
-  if (window.lucide) lucide.createIcons();
 }
 
 async function retryResearch(btn) {
