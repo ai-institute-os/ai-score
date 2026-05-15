@@ -198,6 +198,103 @@
     #statusNote {
       min-height: 60px;
     }
+
+    /* ── Agent Research ── */
+    @keyframes research-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .research-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.65rem;
+      border-radius: 20px;
+      letter-spacing: 0.03em;
+    }
+    .research-status-pending   { background: #f1f5f9; color: #64748b; }
+    .research-status-in_progress { background: #fefce8; color: #a16207; }
+    .research-status-completed { background: #f0fdf4; color: #15803d; }
+    .research-status-failed    { background: #fef2f2; color: #dc2626; }
+
+    .research-spinner {
+      width: 10px; height: 10px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      display: inline-block;
+      animation: research-spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .research-fit-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .fit-approve   { background: #f0fdf4; color: #15803d; }
+    .fit-reject    { background: #fef2f2; color: #dc2626; }
+    .fit-more-info { background: #fffbeb; color: #a16207; }
+
+    .research-placeholder {
+      padding: 1rem 1.25rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .research-warning {
+      background: #fefce8;
+      border: 1.5px solid #fde047;
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.9rem;
+      font-size: 0.8rem;
+      color: #854d0e;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .research-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.25rem 0 0;
+    }
+    .research-list li {
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--bg);
+      font-size: 0.875rem;
+      color: var(--text);
+      display: flex;
+      gap: 0.5rem;
+    }
+    .research-list li:last-child { border-bottom: none; }
+    .research-list-num {
+      font-weight: 700;
+      color: var(--text-muted);
+      min-width: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .collapsible-toggle {
+      background: none;
+      border: none;
+      font-size: 0.78rem;
+      color: var(--primary);
+      cursor: pointer;
+      padding: 0.3rem 0;
+      display: block;
+      margin-top: 0.1rem;
+    }
+    .collapsible-toggle:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -372,6 +469,18 @@
         </div>
       </div>
 
+      <!-- Agent Research -->
+      <div class="review-card" id="agentResearchCard" style="display:none;">
+        <div class="card-header" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:0.4rem;">
+            <i data-lucide="bot" class="icon-xs"></i>
+            Agent Research
+          </span>
+          <span id="agentResearchStatusBadge"></span>
+        </div>
+        <div id="agentResearchContent"></div>
+      </div>
+
       <!-- Status-based Action Panel -->
       <div class="action-panel" id="actionPanel">
         <h2 id="actionTitle">Actions</h2>
@@ -474,6 +583,7 @@ function renderApp(app) {
   setHtml('fStatusField', statusChip(app.status));
   setText('fGoal',        app.application_goal);
 
+  renderAgentResearch(app);
   renderActionPanel(app);
 
   document.getElementById('loadingMsg').style.display = 'none';
@@ -496,7 +606,13 @@ function renderActionPanel(app) {
   if (status === 'UNDER_REVIEW') {
     titleEl.textContent = 'Review Actions';
     descEl.textContent = 'This application is under review. Approve or reject it below.';
-    container.innerHTML = `
+    const researchWarning = (app.agent_research_status === 'IN_PROGRESS')
+      ? `<div class="research-warning">
+           <i data-lucide="clock" class="icon-xs"></i>
+           Agent research is still running. You can still approve or reject manually.
+         </div>`
+      : '';
+    container.innerHTML = researchWarning + `
       <div class="cta-row" style="margin-top:0.75rem;">
         <button class="cta-btn cta-btn-approve" onclick="quickApprove()">
           <i data-lucide="check" class="icon-sm"></i>
@@ -679,6 +795,188 @@ function toast(msg, type = '') {
   t.textContent = msg;
   wrap.appendChild(t);
   setTimeout(() => t.remove(), 3500);
+}
+
+// ─── Agent Research ───────────────────────────────
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + ' minute' + (mins !== 1 ? 's' : '') + ' ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + ' hour' + (hrs !== 1 ? 's' : '') + ' ago';
+  const days = Math.floor(hrs / 24);
+  return days + ' day' + (days !== 1 ? 's' : '') + ' ago';
+}
+
+function buildCollapsibleList(items, ordered) {
+  if (!items || !items.length) return '<span style="color:var(--text-muted);">—</span>';
+  const visible = items.slice(0, 5);
+  const hidden = items.slice(5);
+  const id = 'cl_' + Math.random().toString(36).slice(2);
+
+  function renderItems(arr, startIdx) {
+    return arr.map((item, i) => {
+      const n = startIdx + i + 1;
+      return ordered
+        ? `<li><span class="research-list-num">${n}.</span>${esc(item)}</li>`
+        : `<li><span class="research-list-num">•</span>${esc(item)}</li>`;
+    }).join('');
+  }
+
+  let html = `<ul class="research-list">${renderItems(visible, 0)}</ul>`;
+  if (hidden.length) {
+    html += `<ul class="research-list" id="${id}" style="display:none;">${renderItems(hidden, visible.length)}</ul>`;
+    html += `<button class="collapsible-toggle" onclick="toggleCollapsibleList('${id}', this)" data-count="${hidden.length}">Show ${hidden.length} more…</button>`;
+  }
+  return html;
+}
+
+function toggleCollapsibleList(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const showing = el.style.display !== 'none';
+  el.style.display = showing ? 'none' : '';
+  btn.textContent = showing ? `Show ${btn.dataset.count} more…` : 'Show less';
+}
+
+function renderAgentResearch(app) {
+  const card = document.getElementById('agentResearchCard');
+  const content = document.getElementById('agentResearchContent');
+  const badge = document.getElementById('agentResearchStatusBadge');
+  if (!card) return;
+
+  const status = (app.agent_research_status || 'PENDING').toUpperCase();
+  card.style.display = '';
+
+  const statusMap = {
+    PENDING:     { label: 'Pending',     cls: 'research-status-pending',     spinner: false },
+    IN_PROGRESS: { label: 'In Progress', cls: 'research-status-in_progress', spinner: true  },
+    COMPLETED:   { label: 'Completed',   cls: 'research-status-completed',   spinner: false },
+    FAILED:      { label: 'Failed',      cls: 'research-status-failed',      spinner: false },
+  };
+  const si = statusMap[status] || statusMap.PENDING;
+  badge.innerHTML = `<span class="research-status-badge ${si.cls}">${si.spinner ? '<span class="research-spinner"></span>' : ''}${esc(si.label)}</span>`;
+
+  if (status === 'COMPLETED') {
+    const fitMap = {
+      RECOMMEND_APPROVE:        { label: 'Recommend Approve',       cls: 'fit-approve'   },
+      NEEDS_MORE_INFORMATION:   { label: 'Needs More Information',  cls: 'fit-more-info' },
+      RECOMMEND_REJECT:         { label: 'Recommend Reject',        cls: 'fit-reject'    },
+    };
+    const fit = fitMap[app.agent_fit_recommendation] || null;
+    const questions  = Array.isArray(app.agent_interview_questions) ? app.agent_interview_questions : [];
+    const directions = Array.isArray(app.agent_prompt_directions)   ? app.agent_prompt_directions   : [];
+
+    content.innerHTML = `
+      <div class="field-grid">
+        <div class="field-item">
+          <div class="field-label">Fit Recommendation</div>
+          <div class="field-value">${fit ? `<span class="research-fit-badge ${fit.cls}">${esc(fit.label)}</span>` : '—'}</div>
+        </div>
+        <div class="field-item">
+          <div class="field-label">Researched</div>
+          <div class="field-value">${timeAgo(app.agent_researched_at)}</div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label">Fit Reason</div>
+        <div class="textarea-val">${esc(app.agent_fit_reason) || '—'}</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label">Website Summary</div>
+        <div class="textarea-val">${esc(app.agent_website_summary) || '—'}</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label">Business Summary</div>
+        <div class="textarea-val">${esc(app.agent_business_summary) || '—'}</div>
+      </div>
+      <div class="field-grid">
+        <div class="field-item">
+          <div class="field-label">Target Audience</div>
+          <div class="textarea-val" style="margin-top:0;">${esc(app.agent_target_audience) || '—'}</div>
+        </div>
+        <div class="field-item">
+          <div class="field-label">Products / Services</div>
+          <div class="textarea-val" style="margin-top:0;">${esc(app.agent_products_services) || '—'}</div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label">Market Context</div>
+        <div class="textarea-val">${esc(app.agent_market_context) || '—'}</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label">Competitor Notes</div>
+        <div class="textarea-val">${esc(app.agent_competitor_notes) || '—'}</div>
+      </div>
+      ${app.agent_missing_information ? `
+      <div class="field-full">
+        <div class="field-label">Missing Information</div>
+        <div class="textarea-val">${esc(app.agent_missing_information)}</div>
+      </div>` : ''}
+      <div class="field-full">
+        <div class="field-label">Interview Questions</div>
+        <div style="margin-top:0.25rem;">${buildCollapsibleList(questions, true)}</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label">Suggested Prompt Directions</div>
+        <div style="margin-top:0.25rem;">${buildCollapsibleList(directions, false)}</div>
+      </div>
+    `;
+
+  } else if (status === 'IN_PROGRESS') {
+    content.innerHTML = `
+      <div class="research-placeholder">
+        <span class="research-spinner"></span>
+        Agent research in progress…
+      </div>`;
+
+  } else if (status === 'FAILED') {
+    content.innerHTML = `
+      <div class="research-placeholder" style="color:var(--error);">
+        Agent research failed${app.agent_research_error ? ': ' + esc(app.agent_research_error) : ''}.
+      </div>
+      <div style="padding:0 1.25rem 1rem;">
+        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+          <i data-lucide="refresh-cw" class="icon-sm"></i>
+          Retry Research
+        </button>
+      </div>`;
+
+  } else {
+    // PENDING
+    content.innerHTML = `
+      <div class="research-placeholder">
+        Agent research not yet started.
+      </div>
+      <div style="padding:0 1.25rem 1rem;">
+        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+          <i data-lucide="play" class="icon-sm"></i>
+          Start Research
+        </button>
+      </div>`;
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+async function retryResearch(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
+  try {
+    const res = await fetch(`/api/admin/applications/${appId}/retry-research`, { method: 'POST' });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${res.status}`);
+    }
+    toast('Research started', 'success');
+    const appRes = await fetch(`/api/v1/admin/applications/${appId}`);
+    if (appRes.ok) renderAgentResearch(await appRes.json());
+  } catch (err) {
+    toast('Failed to start research: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" class="icon-sm"></i> Retry Research'; if (window.lucide) lucide.createIcons(); }
+  }
 }
 
 // ─── Sidebar ──────────────────────────────────────
