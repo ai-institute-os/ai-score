@@ -212,9 +212,12 @@ class CustomerApplication(Base):
     agent_fit_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     agent_missing_information: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     agent_interview_questions: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    agent_question_categories: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     agent_prompt_directions: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    agent_research_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     agent_researched_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     agent_research_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    questions_generated_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

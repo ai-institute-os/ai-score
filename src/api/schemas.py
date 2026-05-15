@@ -242,9 +242,12 @@ class ApplicationResponse(BaseModel):
     agent_fit_reason: Optional[str] = None
     agent_missing_information: Optional[str] = None
     agent_interview_questions: Optional[list] = None
+    agent_question_categories: Optional[list] = None
     agent_prompt_directions: Optional[list] = None
+    agent_research_summary: Optional[str] = None
     agent_researched_at: Optional[datetime] = None
     agent_research_error: Optional[str] = None
+    questions_generated_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     state_logs: list[StateLogEntry] = []

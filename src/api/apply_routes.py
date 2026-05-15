@@ -28,6 +28,7 @@ from src.api.schemas import (
     ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
 )
 from src.api.rate_limit import limiter
+from src.api.auth import require_admin_key
 
 log = structlog.get_logger()
 router = APIRouter()
@@ -2079,6 +2080,407 @@ async def download_report_pdf(
 
     safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in app.firmanavn)
     filename = f"AIScore-rapport-{safe_name}.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ─────────────────────────────────────────────
+# Admin: Interview Questions PDF download
+# ─────────────────────────────────────────────
+
+def _render_interview_questions_html(app: "CustomerApplication") -> str:
+    """Build a professional HTML document for interview questions PDF."""
+    from datetime import date, datetime as dt
+
+    today = date.today().strftime("%-d. %B %Y")
+    for en, da in [
+        ("January", "januar"), ("February", "februar"), ("March", "marts"),
+        ("April", "april"), ("May", "maj"), ("June", "juni"),
+        ("July", "juli"), ("August", "august"), ("September", "september"),
+        ("October", "oktober"), ("November", "november"), ("December", "december"),
+    ]:
+        today = today.replace(en, da)
+
+    app_date = ""
+    if app.submitted_at:
+        app_date = app.submitted_at.strftime("%-d. %B %Y")
+        for en, da in [
+            ("January", "januar"), ("February", "februar"), ("March", "marts"),
+            ("April", "april"), ("May", "maj"), ("June", "juni"),
+            ("July", "juli"), ("August", "august"), ("September", "september"),
+            ("October", "oktober"), ("November", "november"), ("December", "december"),
+        ]:
+            app_date = app_date.replace(en, da)
+    elif app.created_at:
+        app_date = app.created_at.strftime("%-d. %B %Y")
+        for en, da in [
+            ("January", "januar"), ("February", "februar"), ("March", "marts"),
+            ("April", "april"), ("May", "maj"), ("June", "juni"),
+            ("July", "juli"), ("August", "august"), ("September", "september"),
+            ("October", "oktober"), ("November", "november"), ("December", "december"),
+        ]:
+            app_date = app_date.replace(en, da)
+
+    # Build interview questions HTML
+    questions_html = ""
+    questions = app.agent_interview_questions or []
+    if questions:
+        # Group by category if categories metadata available
+        categorized: dict[str, list] = {}
+        for q in questions:
+            if isinstance(q, dict):
+                cat = q.get("category", "Generelt")
+                text = q.get("question", str(q))
+            else:
+                cat = "Generelt"
+                text = str(q)
+            categorized.setdefault(cat, []).append(text)
+
+        for cat, qs in categorized.items():
+            questions_html += f'<h3 class="category-heading">{cat}</h3><ol class="question-list">'
+            for q_text in qs:
+                questions_html += f"<li>{q_text}</li>"
+            questions_html += "</ol>"
+    else:
+        questions_html = '<p class="no-questions">Ingen interviewspørgsmål er genereret endnu.</p>'
+
+    # Research summary section
+    summary_html = ""
+    summary = app.agent_research_summary or app.agent_business_summary or ""
+    if summary:
+        summary_html = f"""
+        <section class="summary-section">
+            <h2>Research Summary</h2>
+            <p>{summary}</p>
+        </section>"""
+
+    status_display = app.status.value.replace("_", " ").title() if app.status else "—"
+    website = app.website or "—"
+    contact = app.kontaktperson or "—"
+    company = app.firmanavn or "—"
+
+    return f"""<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIScore — Interviewspørgsmål — {company}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+
+  body {{
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background: #fff;
+  }}
+
+  .page {{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 56px;
+  }}
+
+  /* Header */
+  .header {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid #4f46e5;
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+  }}
+
+  .brand {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }}
+
+  .brand-logo {{
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+  }}
+
+  .brand-name {{
+    font-size: 22px;
+    font-weight: 700;
+    color: #4f46e5;
+    letter-spacing: -0.5px;
+  }}
+
+  .brand-tagline {{
+    font-size: 10px;
+    color: #6b7280;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }}
+
+  .header-date {{
+    font-size: 10pt;
+    color: #6b7280;
+    text-align: right;
+  }}
+
+  /* Application info card */
+  .info-card {{
+    background: #f8f9ff;
+    border: 1px solid #e0e4ff;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }}
+
+  .info-card h2 {{
+    font-size: 13pt;
+    font-weight: 600;
+    color: #4f46e5;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e0e4ff;
+    padding-bottom: 8px;
+  }}
+
+  .info-grid {{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 24px;
+  }}
+
+  .info-row {{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }}
+
+  .info-label {{
+    font-size: 9pt;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }}
+
+  .info-value {{
+    font-size: 11pt;
+    color: #1a1a2e;
+    font-weight: 500;
+  }}
+
+  .status-badge {{
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 9pt;
+    font-weight: 600;
+    background: #d1fae5;
+    color: #065f46;
+  }}
+
+  /* Questions section */
+  .questions-section h2 {{
+    font-size: 16pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+  }}
+
+  .questions-section .section-desc {{
+    font-size: 10pt;
+    color: #6b7280;
+    margin-bottom: 24px;
+  }}
+
+  .category-heading {{
+    font-size: 12pt;
+    font-weight: 600;
+    color: #4f46e5;
+    margin: 24px 0 10px 0;
+    padding-left: 12px;
+    border-left: 4px solid #4f46e5;
+  }}
+
+  .question-list {{
+    list-style: decimal;
+    padding-left: 24px;
+  }}
+
+  .question-list li {{
+    font-size: 11pt;
+    color: #1a1a2e;
+    line-height: 1.6;
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    background: #fafafa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    list-style-position: outside;
+  }}
+
+  .no-questions {{
+    font-style: italic;
+    color: #9ca3af;
+    padding: 20px;
+    text-align: center;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+  }}
+
+  /* Summary section */
+  .summary-section {{
+    margin-top: 36px;
+    padding-top: 24px;
+    border-top: 2px solid #e5e7eb;
+  }}
+
+  .summary-section h2 {{
+    font-size: 14pt;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+  }}
+
+  .summary-section p {{
+    font-size: 11pt;
+    color: #374151;
+    line-height: 1.7;
+  }}
+
+  /* Footer */
+  .footer {{
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }}
+
+  .footer-brand {{
+    font-size: 10pt;
+    font-weight: 600;
+    color: #4f46e5;
+  }}
+
+  .footer-meta {{
+    font-size: 9pt;
+    color: #9ca3af;
+  }}
+
+  .confidential {{
+    font-size: 9pt;
+    color: #9ca3af;
+    font-style: italic;
+    text-align: center;
+    margin-top: 8px;
+  }}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="brand">
+      <div class="brand-logo">AI</div>
+      <div>
+        <div class="brand-name">AIScore</div>
+        <div class="brand-tagline">AI Institute ApS</div>
+      </div>
+    </div>
+    <div class="header-date">
+      Genereret: {today}
+    </div>
+  </header>
+
+  <div class="info-card">
+    <h2>Ansøgningsinformation</h2>
+    <div class="info-grid">
+      <div class="info-row">
+        <span class="info-label">Virksomhed</span>
+        <span class="info-value">{company}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Website</span>
+        <span class="info-value">{website}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Kontaktperson</span>
+        <span class="info-value">{contact}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Ansøgningsdato</span>
+        <span class="info-value">{app_date}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status</span>
+        <span class="info-value"><span class="status-badge">{status_display}</span></span>
+      </div>
+    </div>
+  </div>
+
+  <section class="questions-section">
+    <h2>Genererede Interviewspørgsmål</h2>
+    <p class="section-desc">
+      Nedenstående spørgsmål er genereret af AIScore-agenten baseret på virksomhedens
+      profil, branche og konkurrencesituation. Brug dem som udgangspunkt for kundeinterviewet.
+    </p>
+    {questions_html}
+  </section>
+
+  {summary_html}
+
+  <footer class="footer">
+    <span class="footer-brand">AIScore — AI Institute ApS</span>
+    <span class="footer-meta">Fortroligt internt dokument · {today}</span>
+  </footer>
+  <p class="confidential">Dette dokument er fortroligt og kun til intern brug.</p>
+
+</div>
+</body>
+</html>"""
+
+
+@router.get(
+    "/admin/applications/{application_id}/interview-questions/pdf",
+    include_in_schema=True,
+    summary="Admin — download interviewspørgsmål som PDF",
+)
+@limiter.limit("10/minute")
+async def download_interview_questions_pdf(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
+):
+    """Renders interview questions for *application_id* to a professional PDF using Puppeteer."""
+    from src.pdf_renderer import render_html_to_pdf
+
+    app = await _get_application_or_404(application_id, db)
+    html = _render_interview_questions_html(app)
+
+    try:
+        pdf_bytes = await render_html_to_pdf(html)
+    except RuntimeError as exc:
+        log.error("interview_questions_pdf.render_failed", application_id=str(application_id), error=str(exc))
+        raise HTTPException(status_code=500, detail=f"PDF-generering fejlede: {exc}")
+
+    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in app.firmanavn)
+    filename = f"AIScore-interviewspoergsmaal-{safe_name}.pdf"
 
     return Response(
         content=pdf_bytes,
