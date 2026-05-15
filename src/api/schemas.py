@@ -230,6 +230,21 @@ class ApplicationResponse(BaseModel):
     overall_score: Optional[int] = None
     queries_run: Optional[int] = None
     rank: Optional[int] = None
+    # Agent research
+    agent_research_status: str = "PENDING"
+    agent_website_summary: Optional[str] = None
+    agent_business_summary: Optional[str] = None
+    agent_target_audience: Optional[str] = None
+    agent_products_services: Optional[str] = None
+    agent_market_context: Optional[str] = None
+    agent_competitor_notes: Optional[str] = None
+    agent_fit_recommendation: Optional[str] = None
+    agent_fit_reason: Optional[str] = None
+    agent_missing_information: Optional[str] = None
+    agent_interview_questions: Optional[list] = None
+    agent_prompt_directions: Optional[list] = None
+    agent_researched_at: Optional[datetime] = None
+    agent_research_error: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     state_logs: list[StateLogEntry] = []

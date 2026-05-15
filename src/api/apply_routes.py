@@ -240,12 +240,25 @@ async def submit_application_public(
     app_base_url = getattr(settings, "app_base_url", "https://app.aiscore.dk")
     background_tasks.add_task(_send_admin_review_email, app, app_base_url, admin_review_email)
 
+    # Trigger background agent research — does not block submission
+    saved_app_id = app.id
+    background_tasks.add_task(_run_research_background, saved_app_id)
+
     result = await db.execute(
         select(CustomerApplication)
         .options(selectinload(CustomerApplication.state_logs))
         .where(CustomerApplication.id == app.id)
     )
     return result.scalar_one()
+
+
+async def _run_research_background(application_id: uuid.UUID) -> None:
+    """Wrapper that runs the async research task from a background thread context."""
+    try:
+        from src.agent.research import run_application_research
+        await run_application_research(application_id)
+    except Exception as exc:
+        log.error("research.trigger_failed", application_id=str(application_id), error=str(exc))
 
 
 # ─────────────────────────────────────────────
@@ -319,6 +332,31 @@ async def get_application(request: Request, application_id: uuid.UUID, db: Async
     """Admin — get a single application with full state log."""
     app = await _get_application_or_404(application_id, db)
     return app
+
+
+@router.post("/admin/applications/{application_id}/retry-research", response_model=ApplicationResponse)
+@limiter.limit("10/minute")
+async def retry_research(
+    request: Request,
+    application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — re-trigger agent research for an application (resets status to PENDING)."""
+    app = await _get_application_or_404(application_id, db)
+
+    app.agent_research_status = "PENDING"
+    app.agent_research_error = None
+    await db.commit()
+
+    background_tasks.add_task(_run_research_background, application_id)
+
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == application_id)
+    )
+    return result.scalar_one()
 
 
 @router.post(
