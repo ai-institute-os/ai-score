@@ -189,8 +189,9 @@ async def admin_orders():
 
 @app.get("/admin/applications", include_in_schema=False)
 async def admin_applications_list():
-    """Serve the applications list page."""
-    return FileResponse(str(_static_dir / "admin_applications.html"))
+    """Redirect the old applications list page to the main admin dashboard."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/admin", status_code=301)
 
 
 @app.get("/admin/applications/{application_id}/review", include_in_schema=False)

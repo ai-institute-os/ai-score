@@ -8,35 +8,6 @@
   <style>
     body { min-height: 100vh; font-size: 14px; line-height: 1.5; }
 
-    .main {
-      padding-top: calc(var(--nav-h) + 2rem);
-      padding-bottom: 4rem;
-      max-width: 780px;
-      margin: 0 auto;
-      padding-left: 2rem;
-      padding-right: 2rem;
-    }
-
-    @media (max-width: 560px) {
-      .main { padding-left: 1rem; padding-right: 1rem; }
-    }
-
-    /* ── Status transitions ── */
-    .status-options { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
-    .status-option {
-      padding: 0.35rem 0.85rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1.5px solid var(--border);
-      background: var(--card);
-      color: var(--text-muted);
-      transition: all 0.12s;
-    }
-    .status-option:hover { border-color: var(--primary); color: var(--primary); }
-    .status-option.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-
     /* ── Application detail cards ── */
     .review-card {
       background: var(--card);
@@ -112,10 +83,27 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 1.5rem 1.25rem;
+      margin-bottom: 2rem;
     }
 
     .action-panel h2 { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
-    .action-panel > p { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.25rem; }
+    .action-panel > p { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.75rem; }
+
+    /* ── Status transitions ── */
+    .status-options { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .status-option {
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--text-muted);
+      transition: all 0.12s;
+    }
+    .status-option:hover { border-color: var(--primary); color: var(--primary); }
+    .status-option.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
 
     .already-done {
       background: var(--bg);
@@ -126,118 +114,274 @@
       margin-top: 0.75rem;
     }
 
+    /* ── CTA buttons (status-based) ── */
+    .cta-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.12s;
+    }
+    .cta-btn-approve {
+      background: var(--success);
+      color: #fff;
+    }
+    .cta-btn-approve:hover { background: #16a34a; }
+
+    .cta-btn-reject {
+      background: var(--error);
+      color: #fff;
+    }
+    .cta-btn-reject:hover { background: #dc2626; }
+
+    .cta-btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+    .cta-btn-secondary:hover { background: var(--bg); border-color: #cbd5e1; }
+
+    .cta-btn-secondary.disabled,
+    .cta-btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .cta-coming-soon {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-subtle);
+      background: var(--bg);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      margin-left: 0.5rem;
+    }
+
+    .rejection-reason-box {
+      background: var(--error-light);
+      border: 1.5px solid rgba(239,68,68,0.2);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      font-size: 0.875rem;
+      color: #b91c1c;
+      margin-top: 0.75rem;
+    }
+
+    .cta-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
     /* ── Center loading/error ── */
     .center-msg { text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
     #pageContent { display: none; }
+
+    /* ── Sidebar status select ── */
+    #statusNote {
+      min-height: 60px;
+    }
   </style>
 </head>
 <body>
 
+<!-- ── Sidebar overlay (mobile) ─────────────────── -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ── Top navigation ──────────────────────────── -->
 <nav class="topnav">
+  <button class="sidebar-hamburger" id="sidebarHamburger" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+    <i data-lucide="menu" class="icon-sm"></i>
+  </button>
   <a class="topnav-logo" href="/apply">
     <i data-lucide="bar-chart-2" class="icon-sm"></i>
     AIScore
   </a>
   <span class="topnav-sep">/</span>
-  <a class="topnav-link" href="/admin/applications">Applications</a>
+  <a class="topnav-link" href="/admin">Applications</a>
   <span class="topnav-sep">/</span>
   <span class="topnav-title" id="navCompany">Review</span>
   <div class="topnav-right">
-    <a class="topnav-link" href="/admin/applications">
+    <a class="topnav-link" href="/admin">
       <i data-lucide="arrow-left" class="icon-xs"></i>
       Back to list
     </a>
   </div>
 </nav>
 
-<main class="main">
-  <div id="loadingMsg" class="center-msg">
-    <div class="spinner"></div>
-    <p style="margin-top:0.75rem;">Loading application…</p>
-  </div>
+<!-- ── Layout ──────────────────────────────────── -->
+<div class="admin-layout">
 
-  <div id="errorMsg" class="center-msg" style="display:none;"></div>
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-body">
 
-  <div id="pageContent">
-    <div class="page-header">
-      <div>
-        <h1 id="appCompany">—</h1>
-        <div style="margin-top:0.35rem;" id="appStatusChip"></div>
+      <div class="sidebar-label">Navigation</div>
+      <div class="sidebar-section">
+        <a class="sidebar-item active" href="/admin" data-label="Alle ansøgninger">
+          <i data-lucide="layout-list" class="icon-sm"></i>
+          <span class="sidebar-text">Alle ansøgninger</span>
+        </a>
+        <a class="sidebar-item" href="/admin/orders" data-label="Betalte ordrer">
+          <i data-lucide="receipt" class="icon-sm"></i>
+          <span class="sidebar-text">Betalte ordrer</span>
+        </a>
       </div>
-      <div style="color:var(--text-muted);font-size:0.8rem;" id="appSubmittedAt"></div>
-    </div>
 
-    <!-- Application details -->
-    <div class="review-card">
-      <div class="card-header">
-        <i data-lucide="building-2" class="icon-xs"></i>
-        Company Information
-      </div>
-      <div class="field-grid">
-        <div class="field-item">
-          <div class="field-label">Company name</div>
-          <div class="field-value" id="fCompany">—</div>
-        </div>
-        <div class="field-item">
-          <div class="field-label">Website</div>
-          <div class="field-value" id="fWebsite">—</div>
-        </div>
-        <div class="field-item">
-          <div class="field-label">Country / market</div>
-          <div class="field-value" id="fCountry">—</div>
-        </div>
-        <div class="field-item">
-          <div class="field-label">Industry</div>
-          <div class="field-value" id="fIndustry">—</div>
-        </div>
-      </div>
-      <div class="field-full">
-        <div class="field-label">Short description</div>
-        <div class="textarea-val" id="fDescription">—</div>
-      </div>
-      <div class="field-full">
-        <div class="field-label">Main competitors <span style="font-weight:400;text-transform:none;">(if known)</span></div>
-        <div class="field-value" id="fCompetitors">—</div>
+      <div class="sidebar-label">Status filter</div>
+      <div class="sidebar-section">
+        <a class="sidebar-item" href="/admin#APPLIED" data-label="Ansøgt">
+          <i data-lucide="mail-open" class="icon-sm"></i>
+          <span class="sidebar-text">Ansøgt</span>
+        </a>
+        <a class="sidebar-item" href="/admin#UNDER_REVIEW" data-label="Under review">
+          <i data-lucide="eye" class="icon-sm"></i>
+          <span class="sidebar-text">Under review</span>
+        </a>
+        <a class="sidebar-item" href="/admin#APPROVED" data-label="Godkendt">
+          <i data-lucide="check-circle-2" class="icon-sm"></i>
+          <span class="sidebar-text">Godkendt</span>
+        </a>
+        <a class="sidebar-item" href="/admin#CALLED" data-label="Møde booket">
+          <i data-lucide="calendar-days" class="icon-sm"></i>
+          <span class="sidebar-text">Møde booket</span>
+        </a>
+        <a class="sidebar-item" href="/admin#REJECTED" data-label="Afvist">
+          <i data-lucide="ban" class="icon-sm"></i>
+          <span class="sidebar-text">Afvist</span>
+        </a>
       </div>
     </div>
 
-    <div class="review-card">
-      <div class="card-header">
-        <i data-lucide="user" class="icon-xs"></i>
-        Contact Information
-      </div>
-      <div class="field-grid">
-        <div class="field-item">
-          <div class="field-label">Contact person</div>
-          <div class="field-value" id="fContact">—</div>
+    <div class="sidebar-footer">
+      <button class="sidebar-collapse-btn sidebar-collapse-btn-bottom" id="sidebarCollapseBtn" onclick="toggleCollapse()" title="Kollaps sidebar">
+        <i data-lucide="chevrons-left" class="icon-xs"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="admin-main">
+
+    <div id="loadingMsg" class="center-msg">
+      <div class="spinner"></div>
+      <p style="margin-top:0.75rem;">Loading application…</p>
+    </div>
+
+    <div id="errorMsg" class="center-msg" style="display:none;"></div>
+
+    <div id="pageContent">
+      <div class="page-header">
+        <div>
+          <h1 id="appCompany">—</h1>
+          <div style="margin-top:0.35rem;display:flex;align-items:center;gap:0.75rem;">
+            <span id="appStatusChip"></span>
+            <span style="color:var(--text-muted);font-size:0.8rem;" id="appSubmittedAt"></span>
+          </div>
         </div>
-        <div class="field-item">
-          <div class="field-label">Contact email</div>
-          <div class="field-value" id="fEmail">—</div>
+        <a class="btn btn-ghost" href="/admin">
+          <i data-lucide="arrow-left" class="icon-sm"></i>
+          Back to list
+        </a>
+      </div>
+
+      <!-- Application details -->
+      <div class="review-card">
+        <div class="card-header">
+          <i data-lucide="building-2" class="icon-xs"></i>
+          Company Information
+        </div>
+        <div class="field-grid">
+          <div class="field-item">
+            <div class="field-label">Company name</div>
+            <div class="field-value" id="fCompany">—</div>
+          </div>
+          <div class="field-item">
+            <div class="field-label">Website</div>
+            <div class="field-value" id="fWebsite">—</div>
+          </div>
+          <div class="field-item">
+            <div class="field-label">Country / market</div>
+            <div class="field-value" id="fCountry">—</div>
+          </div>
+          <div class="field-item">
+            <div class="field-label">Industry</div>
+            <div class="field-value" id="fIndustry">—</div>
+          </div>
+        </div>
+        <div class="field-full">
+          <div class="field-label">Short description</div>
+          <div class="textarea-val" id="fDescription">—</div>
+        </div>
+        <div class="field-full">
+          <div class="field-label">Main competitors <span style="font-weight:400;text-transform:none;">(if known)</span></div>
+          <div class="field-value" id="fCompetitors">—</div>
         </div>
       </div>
-    </div>
 
-    <div class="review-card">
-      <div class="card-header">
-        <i data-lucide="target" class="icon-xs"></i>
-        Goal
+      <div class="review-card">
+        <div class="card-header">
+          <i data-lucide="user" class="icon-xs"></i>
+          Contact Information
+        </div>
+        <div class="field-grid">
+          <div class="field-item">
+            <div class="field-label">Contact person</div>
+            <div class="field-value" id="fContact">—</div>
+          </div>
+          <div class="field-item">
+            <div class="field-label">Contact email</div>
+            <div class="field-value" id="fEmail">—</div>
+          </div>
+          <div class="field-item">
+            <div class="field-label">Application date</div>
+            <div class="field-value" id="fAppDate">—</div>
+          </div>
+          <div class="field-item">
+            <div class="field-label">Status</div>
+            <div class="field-value" id="fStatusField">—</div>
+          </div>
+        </div>
       </div>
-      <div class="field-full">
-        <div class="field-label">Reason for applying / goal of AIScore</div>
-        <div class="textarea-val" id="fGoal">—</div>
+
+      <div class="review-card">
+        <div class="card-header">
+          <i data-lucide="target" class="icon-xs"></i>
+          Goal
+        </div>
+        <div class="field-full">
+          <div class="field-label">Reason for applying / goal of AIScore</div>
+          <div class="textarea-val" id="fGoal">—</div>
+        </div>
+      </div>
+
+      <!-- Status-based Action Panel -->
+      <div class="action-panel" id="actionPanel">
+        <h2 id="actionTitle">Actions</h2>
+        <p id="actionDesc">Select the next action for this application.</p>
+        <div id="actionContent"></div>
       </div>
     </div>
 
-    <!-- Action panel -->
-    <div class="action-panel" id="actionPanel">
-      <h2>Change Status</h2>
-      <p>Select the next status for this application and confirm.</p>
-
-      <div id="actionContent"></div>
-    </div>
-  </div>
-</main>
+  </main>
+</div>
 
 <div class="toast-wrap" id="toastWrap"></div>
 
@@ -295,8 +439,14 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function setText(id, val) { document.getElementById(id).textContent = val || '—'; }
-function setHtml(id, val) { document.getElementById(id).innerHTML = val; }
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val || '—';
+}
+function setHtml(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = val;
+}
 
 function renderApp(app) {
   appData = app;
@@ -305,8 +455,8 @@ function renderApp(app) {
   document.getElementById('appCompany').textContent = app.firmanavn || '—';
   setHtml('appStatusChip', statusChip(app.status));
 
-  const sub = app.submitted_at || app.created_at;
-  document.getElementById('appSubmittedAt').textContent = sub ? 'Submitted ' + fmtDate(sub) : '';
+  const appDate = app.submitted_at || app.created_at;
+  document.getElementById('appSubmittedAt').textContent = appDate ? 'Submitted ' + fmtDate(appDate) : '';
 
   setText('fCompany',     app.firmanavn);
   setHtml('fWebsite',     app.website
@@ -320,60 +470,171 @@ function renderApp(app) {
   setHtml('fEmail',       app.email
     ? `<a href="mailto:${esc(app.email)}">${esc(app.email)}</a>`
     : '—');
+  setText('fAppDate',     appDate ? fmtDate(appDate) : '—');
+  setHtml('fStatusField', statusChip(app.status));
   setText('fGoal',        app.application_goal);
 
-  renderActionPanel(app.status);
+  renderActionPanel(app);
 
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('pageContent').style.display = 'block';
   if (window.lucide) lucide.createIcons();
 }
 
-function renderActionPanel(status) {
-  const container = document.getElementById('actionContent');
-  const nextStatuses = VALID_TRANSITIONS[status] || [];
+function getLatestNote(app) {
+  const logs = (app.state_logs || []).slice().reverse();
+  const rejLog = logs.find(l => l.to_status === 'REJECTED' && l.note);
+  return rejLog ? rejLog.note : null;
+}
 
-  if (!nextStatuses.length) {
+function renderActionPanel(app) {
+  const status = app.status;
+  const container = document.getElementById('actionContent');
+  const titleEl = document.getElementById('actionTitle');
+  const descEl = document.getElementById('actionDesc');
+
+  if (status === 'UNDER_REVIEW') {
+    titleEl.textContent = 'Review Actions';
+    descEl.textContent = 'This application is under review. Approve or reject it below.';
     container.innerHTML = `
-      <div class="already-done">
-        ${statusChip(status)} &nbsp; This status has no further transitions.
-      </div>`;
-    if (window.lucide) lucide.createIcons();
-    return;
+      <div class="cta-row" style="margin-top:0.75rem;">
+        <button class="cta-btn cta-btn-approve" onclick="quickApprove()">
+          <i data-lucide="check" class="icon-sm"></i>
+          Approve
+        </button>
+        <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
+          <i data-lucide="x" class="icon-sm"></i>
+          Reject
+        </button>
+      </div>
+      <div id="rejectDialog" style="display:none;margin-top:1rem;background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
+        <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Rejection reason (optional)</label>
+        <textarea id="rejectNote" placeholder="Enter reason for rejection…" style="min-height:80px;"></textarea>
+        <div style="margin-top:0.75rem;display:flex;gap:0.5rem;">
+          <button class="btn btn-danger" onclick="confirmReject()">Confirm Rejection</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('rejectDialog').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    `;
+
+  } else if (status === 'APPROVED') {
+    titleEl.textContent = 'Next Steps — Book a Call';
+    descEl.textContent = 'This application is approved. Schedule a call with the applicant.';
+    container.innerHTML = `
+      <div class="cta-group">
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary disabled" disabled title="Calendly integration coming soon">
+            <i data-lucide="calendar" class="icon-sm"></i>
+            Book Calendly Call
+          </button>
+          <span class="cta-coming-soon">Coming soon</span>
+        </div>
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary disabled" disabled title="Google Meet integration coming soon">
+            <i data-lucide="video" class="icon-sm"></i>
+            Create Google Meet
+          </button>
+          <span class="cta-coming-soon">Coming soon</span>
+        </div>
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary disabled" disabled title="Email integration coming soon">
+            <i data-lucide="mail" class="icon-sm"></i>
+            Send Booking Email
+          </button>
+          <span class="cta-coming-soon">Coming soon</span>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:0.25rem 0;" />
+        <div>
+          <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Already completed a call manually?</p>
+          <button class="cta-btn cta-btn-secondary" onclick="markAsCalled()">
+            <i data-lucide="phone-call" class="icon-sm"></i>
+            Mark as Called
+          </button>
+        </div>
+      </div>
+    `;
+
+  } else if (status === 'REJECTED') {
+    titleEl.textContent = 'Application Rejected';
+    descEl.textContent = 'This application has been rejected. No further actions are available.';
+    const note = getLatestNote(app);
+    container.innerHTML = note
+      ? `<div class="rejection-reason-box">
+           <strong>Rejection reason:</strong> ${esc(note)}
+         </div>`
+      : `<div class="already-done">No rejection reason was recorded.</div>`;
+
+  } else if (status === 'CALLED') {
+    titleEl.textContent = 'Call Completed — Next Step';
+    descEl.textContent = 'The call has been completed. Move to awaiting payment or back to approved if follow-up is needed.';
+    container.innerHTML = `
+      <div class="cta-row" style="margin-top:0.75rem;">
+        <button class="cta-btn cta-btn-approve" onclick="changeStatus('AWAITING_PAYMENT')">
+          <i data-lucide="credit-card" class="icon-sm"></i>
+          Move to Awaiting Payment
+        </button>
+        <button class="cta-btn cta-btn-secondary" onclick="changeStatus('APPROVED')">
+          <i data-lucide="arrow-left" class="icon-sm"></i>
+          Back to Approved
+        </button>
+      </div>
+    `;
+
+  } else {
+    const nextStatuses = VALID_TRANSITIONS[status] || [];
+    if (!nextStatuses.length) {
+      titleEl.textContent = 'Status';
+      descEl.textContent = '';
+      container.innerHTML = `
+        <div class="already-done">
+          ${statusChip(status)} &nbsp; This status has no further transitions.
+        </div>`;
+    } else {
+      titleEl.textContent = 'Change Status';
+      descEl.textContent = 'Select the next status for this application and confirm.';
+      container.innerHTML = `
+        <div class="status-options" id="statusOptions">
+          ${nextStatuses.map(s => `
+            <button class="status-option" data-status="${esc(s)}" onclick="selectStatus(this)">
+              ${esc(STATUS_LABELS[s] || s)}
+            </button>`).join('')}
+        </div>
+        <div style="margin-top:1rem;">
+          <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Note (optional)</label>
+          <textarea id="statusNote" placeholder="Internal note…"></textarea>
+        </div>
+        <div style="margin-top:0.75rem;">
+          <button class="btn btn-primary" id="btnConfirm" onclick="confirmStatus()" disabled>Confirm Status Change</button>
+        </div>`;
+    }
   }
 
-  container.innerHTML = `
-    <div class="status-options" id="statusOptions">
-      ${nextStatuses.map(s => `
-        <button class="status-option" data-status="${esc(s)}" onclick="selectStatus(this)">
-          ${esc(STATUS_LABELS[s] || s)}
-        </button>`).join('')}
-    </div>
-    <div style="margin-top:1rem;">
-      <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Note (optional)</label>
-      <textarea id="statusNote" placeholder="Internal note…" style="min-height:60px;"></textarea>
-    </div>
-    <div style="margin-top:0.75rem;">
-      <button class="btn btn-primary" id="btnConfirm" onclick="confirmStatus()" disabled>Confirm Status Change</button>
-    </div>`;
+  if (window.lucide) lucide.createIcons();
 }
 
-function selectStatus(el) {
-  document.querySelectorAll('.status-option').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('btnConfirm').disabled = false;
+function openRejectDialog() {
+  const d = document.getElementById('rejectDialog');
+  if (d) d.style.display = 'block';
 }
 
-async function confirmStatus() {
-  const selected = document.querySelector('.status-option.selected');
-  if (!selected) return;
+async function quickApprove() {
+  await doStatusChange('APPROVED', '');
+}
 
-  const newStatus = selected.dataset.status;
-  const note = document.getElementById('statusNote')?.value?.trim() || '';
-  const btn = document.getElementById('btnConfirm');
-  btn.disabled = true;
-  btn.textContent = 'Saving…';
+async function confirmReject() {
+  const note = document.getElementById('rejectNote')?.value?.trim() || '';
+  await doStatusChange('REJECTED', note);
+}
 
+async function markAsCalled() {
+  await doStatusChange('CALLED', '');
+}
+
+async function changeStatus(newStatus, note = '') {
+  await doStatusChange(newStatus, note);
+}
+
+async function doStatusChange(newStatus, note) {
   try {
     const res = await fetch(`/api/v1/admin/applications/${appId}/status`, {
       method: 'PATCH',
@@ -389,9 +650,26 @@ async function confirmStatus() {
     renderApp(updated);
   } catch (err) {
     toast('Failed: ' + err.message, 'error');
-    btn.disabled = false;
-    btn.textContent = 'Confirm Status Change';
   }
+}
+
+function selectStatus(el) {
+  document.querySelectorAll('.status-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const btn = document.getElementById('btnConfirm');
+  if (btn) btn.disabled = false;
+}
+
+async function confirmStatus() {
+  const selected = document.querySelector('.status-option.selected');
+  if (!selected) return;
+
+  const newStatus = selected.dataset.status;
+  const note = document.getElementById('statusNote')?.value?.trim() || '';
+  const btn = document.getElementById('btnConfirm');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  await doStatusChange(newStatus, note);
 }
 
 function toast(msg, type = '') {
@@ -401,6 +679,32 @@ function toast(msg, type = '') {
   t.textContent = msg;
   wrap.appendChild(t);
   setTimeout(() => t.remove(), 3500);
+}
+
+// ─── Sidebar ──────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('adminSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const open = sidebar.classList.toggle('open');
+  overlay.classList.toggle('active', open);
+}
+
+function closeSidebar() {
+  document.getElementById('adminSidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
+function toggleCollapse() {
+  const sidebar = document.getElementById('adminSidebar');
+  const main = document.querySelector('.admin-main');
+  const btn = document.getElementById('sidebarCollapseBtn');
+  const collapsed = sidebar.classList.toggle('collapsed');
+  main.classList.toggle('sidebar-collapsed', collapsed);
+  const icon = btn.querySelector('i');
+  if (icon) {
+    icon.setAttribute('data-lucide', collapsed ? 'chevrons-right' : 'chevrons-left');
+    if (window.lucide) lucide.createIcons();
+  }
 }
 
 async function init() {

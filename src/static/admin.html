@@ -96,23 +96,9 @@
     }
     .dim-answer:focus { border-color: var(--primary); }
 
-    /* ── View link in table ── */
-    .review-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--primary);
-      background: var(--primary-light);
-      border: 1px solid rgba(59,130,246,0.2);
-      text-decoration: none;
-      white-space: nowrap;
-      transition: background 0.1s;
-    }
-    .review-btn:hover { background: rgba(59,130,246,0.14); }
+    /* ── Clickable table rows ── */
+    tbody tr.row-link { cursor: pointer; }
+    tbody tr.row-link:hover { background: rgba(59,130,246,0.05); }
 
     /* ── Report questions ── */
     .report-q-section { margin-top: 1.25rem; border-top: 1px solid var(--bg); padding-top: 1rem; }
@@ -161,11 +147,6 @@
 
   <!-- Sidebar -->
   <aside class="admin-sidebar" id="adminSidebar">
-    <div class="sidebar-top-bar">
-      <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleCollapse()" title="Kollaps sidebar">
-        <i data-lucide="chevrons-left" class="icon-xs"></i>
-      </button>
-    </div>
     <div class="admin-sidebar-body">
 
       <div class="sidebar-label">Genveje</div>
@@ -263,7 +244,11 @@
       </div>
     </div>
 
-    <div class="sidebar-footer">AIScore Admin</div>
+    <div class="sidebar-footer">
+      <button class="sidebar-collapse-btn sidebar-collapse-btn-bottom" id="sidebarCollapseBtn" onclick="toggleCollapse()" title="Kollaps sidebar">
+        <i data-lucide="chevrons-left" class="icon-xs"></i>
+      </button>
+    </div>
   </aside>
 
   <!-- Main -->
@@ -321,14 +306,12 @@
             <th>E-mail / Tlf.</th>
             <th>Website</th>
             <th>Status</th>
-            <th>Oprettet</th>
-            <th>Opdateret</th>
-            <th style="width:80px;">Handlinger</th>
+            <th>Ansøgningsdato</th>
           </tr>
         </thead>
         <tbody id="tableBody">
           <tr class="loading-row">
-            <td colspan="8">
+            <td colspan="6">
               <div class="spinner"></div>
               <p style="margin-top:0.75rem;">Indlæser ansøgninger…</p>
             </td>
@@ -510,7 +493,7 @@ function renderTable() {
   const tbody = document.getElementById('tableBody');
 
   if (slice.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8">
+    tbody.innerHTML = `<tr><td colspan="6">
       <div class="empty-state">
         <div class="icon"><i data-lucide="inbox" style="width:40px;height:40px;opacity:0.35;"></i></div>
         <p>Ingen ansøgninger matcher filteret.</p>
@@ -521,8 +504,12 @@ function renderTable() {
     return;
   }
 
-  tbody.innerHTML = slice.map(a => `
-    <tr>
+  tbody.innerHTML = slice.map(a => {
+    const appDate = a.submitted_at || a.created_at;
+    const reviewUrl = `/admin/applications/${esc(a.id)}/review`;
+    return `
+    <tr class="row-link" onclick="window.location.href='${reviewUrl}'" role="link" tabindex="0"
+        onkeydown="if(event.key==='Enter')window.location.href='${reviewUrl}'">
       <td>
         <div class="td-company">${esc(a.firmanavn)}</div>
       </td>
@@ -532,21 +519,15 @@ function renderTable() {
         <div class="td-sub">${esc(a.telefon || '—')}</div>
       </td>
       <td>
-        <a class="td-link" href="${esc(a.website)}" target="_blank" rel="noopener">
+        <a class="td-link" href="${esc(a.website)}" target="_blank" rel="noopener"
+           onclick="event.stopPropagation()">
           ${esc(a.website.replace(/^https?:\/\//,'').replace(/\/$/,''))}
         </a>
       </td>
       <td>${statusChip(a.status)}</td>
-      <td><div>${fmtDate(a.created_at)}</div><div class="td-sub">${fmtTime(a.created_at)}</div></td>
-      <td><div>${fmtDate(a.updated_at)}</div><div class="td-sub">${fmtTime(a.updated_at)}</div></td>
-      <td class="td-actions" style="white-space:nowrap;">
-        <a class="review-btn" href="/admin/applications/${esc(a.id)}/review">
-          <i data-lucide="arrow-right" class="icon-xs"></i>
-          Åbn
-        </a>
-      </td>
+      <td><div>${fmtDate(appDate)}</div><div class="td-sub">${fmtTime(appDate)}</div></td>
     </tr>
-  `).join('');
+  `;}).join('');
 
   renderPagination(total, totalPages);
   if (window.lucide) lucide.createIcons();
@@ -948,13 +929,15 @@ function exportCSV() {
   const data = getFilteredSorted();
   if (!data.length) { toast('Ingen data at eksportere', 'error'); return; }
 
-  const headers = ['Firma','Kontakt','E-mail','Telefon','Website','Status','Oprettet','Opdateret'];
-  const rows = data.map(a => [
-    a.firmanavn, a.kontaktperson, a.email, a.telefon, a.website,
-    STATUS_LABELS[a.status] || a.status,
-    fmtDate(a.created_at) + ' ' + fmtTime(a.created_at),
-    fmtDate(a.updated_at) + ' ' + fmtTime(a.updated_at),
-  ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  const headers = ['Firma','Kontakt','E-mail','Telefon','Website','Status','Ansøgningsdato'];
+  const rows = data.map(a => {
+    const appDate = a.submitted_at || a.created_at;
+    return [
+      a.firmanavn, a.kontaktperson, a.email, a.telefon, a.website,
+      STATUS_LABELS[a.status] || a.status,
+      fmtDate(appDate) + ' ' + fmtTime(appDate),
+    ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',');
+  });
 
   const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });

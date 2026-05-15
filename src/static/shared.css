@@ -1,4 +1,11 @@
 /* AIScore — Shared Design System */
+
+/* ── Page fade-in (prevents navigation flicker) ── */
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+body { animation: page-fade-in 0.12s ease; }
 /* Fonts: Manrope (headings) + Inter (body) via Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
 
@@ -418,6 +425,9 @@ tbody tr {
 }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: rgba(59,130,246,0.025); }
+tbody tr.clickable-row { cursor: pointer; }
+tbody tr.clickable-row:hover { background: rgba(59,130,246,0.06); }
+tbody tr.clickable-row:focus { outline: 2px solid var(--primary); outline-offset: -2px; background: rgba(59,130,246,0.06); }
 
 td {
   padding: 0.8rem 1rem;
@@ -673,11 +683,19 @@ td {
 }
 
 .sidebar-footer {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-top: 1px solid var(--border);
   margin-top: auto;
-  font-size: 0.75rem;
-  color: var(--text-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Collapse button at the bottom of sidebar */
+.sidebar-collapse-btn-bottom {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto;
 }
 
 .admin-main {
@@ -787,12 +805,11 @@ td {
   border: 1px solid var(--border);
   cursor: pointer;
   color: var(--text-muted);
-  margin-left: auto;
   transition: background 0.12s, color 0.12s, transform 0.2s;
   flex-shrink: 0;
 }
 .sidebar-collapse-btn:hover { background: var(--bg); color: var(--text); }
-.admin-sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); margin-left: 0; margin: 0 auto; }
+.admin-sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
 
 .sidebar-top-bar {
   display: flex;
@@ -816,7 +833,7 @@ td {
 }
 .admin-sidebar.collapsed .sidebar-item .sidebar-text { display: none; }
 .admin-sidebar.collapsed .sidebar-count { display: none; }
-.admin-sidebar.collapsed .sidebar-footer { display: none; }
+.admin-sidebar.collapsed .sidebar-footer { display: flex; padding: 0.75rem 0; }
 .admin-sidebar.collapsed .sidebar-item { position: relative; }
 .admin-sidebar.collapsed .sidebar-item:hover::after {
   content: attr(data-label);
@@ -864,7 +881,7 @@ td {
   .admin-sidebar.collapsed .sidebar-item .sidebar-text { display: inline; }
   .admin-sidebar.collapsed .sidebar-count { display: inline-flex; }
   .admin-sidebar.collapsed .sidebar-footer { display: block; }
-  .admin-sidebar.collapsed .sidebar-collapse-btn { display: none; }
+  .admin-sidebar.collapsed .sidebar-collapse-btn { display: flex; }
 
   .admin-main { margin-left: 0 !important; padding: 1.25rem 1rem 4rem; }
 
