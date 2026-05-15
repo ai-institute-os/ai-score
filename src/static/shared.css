@@ -617,7 +617,9 @@ td {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  scrollbar-width: none;
 }
+.admin-sidebar::-webkit-scrollbar { display: none; }
 
 .admin-sidebar-body {
   padding: 1.25rem 0;

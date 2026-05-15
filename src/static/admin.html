@@ -168,14 +168,6 @@
     </div>
     <div class="admin-sidebar-body">
 
-      <div class="sidebar-label">Oversigt</div>
-      <div class="sidebar-section">
-        <a class="sidebar-item" data-view="dashboard" onclick="setView('dashboard')" data-label="Dashboard">
-          <i data-lucide="layout-dashboard" class="icon-sm"></i>
-          <span class="sidebar-text">Dashboard</span>
-        </a>
-      </div>
-
       <div class="sidebar-label">Genveje</div>
       <div class="sidebar-section">
         <a class="sidebar-item" href="/admin/orders" data-label="Betalte ordrer">
@@ -286,36 +278,6 @@
           <i data-lucide="download" class="icon-sm"></i>
           Eksporter CSV
         </button>
-      </div>
-    </div>
-
-    <!-- Dashboard KPI section (only visible when Dashboard view is active) -->
-    <div id="dashboardSection" style="display:none;">
-      <div class="kpi-grid kpi-grid-4">
-        <div class="kpi-card" style="--kpi-color: var(--primary);">
-          <div class="kpi-icon-bg"><i data-lucide="users" style="width:40px;height:40px;"></i></div>
-          <div class="kpi-label">Totale leads</div>
-          <div class="kpi-value" id="kpi-total">—</div>
-          <div class="kpi-sub">Alle indkommende ansøgninger</div>
-        </div>
-        <div class="kpi-card" style="--kpi-color: var(--success);">
-          <div class="kpi-icon-bg"><i data-lucide="credit-card" style="width:40px;height:40px;"></i></div>
-          <div class="kpi-label">Betalte kunder</div>
-          <div class="kpi-value" id="kpi-paid">—</div>
-          <div class="kpi-sub" id="kpi-conversion">Konverteringsrate: —</div>
-        </div>
-        <div class="kpi-card" style="--kpi-color: var(--warning);">
-          <div class="kpi-icon-bg"><i data-lucide="activity" style="width:40px;height:40px;"></i></div>
-          <div class="kpi-label">Aktiv pipeline</div>
-          <div class="kpi-value" id="kpi-active">—</div>
-          <div class="kpi-sub">Under behandling</div>
-        </div>
-        <div class="kpi-card" style="--kpi-color: var(--error);">
-          <div class="kpi-icon-bg"><i data-lucide="alert-triangle" style="width:40px;height:40px;"></i></div>
-          <div class="kpi-label">Kræver handling</div>
-          <div class="kpi-value" id="kpi-action">—</div>
-          <div class="kpi-sub">Eskaleret eller afventer</div>
-        </div>
       </div>
     </div>
 
@@ -449,7 +411,6 @@ async function loadData() {
     console.warn('API unavailable, using demo data:', err);
     allApplications = getDemoData();
   }
-  updateKPIs();
   updateSidebarCounts();
   renderTable();
 }
@@ -475,21 +436,6 @@ function getDemoData() {
   }));
 }
 
-// ─── KPI calculations ─────────────────────────────
-function updateKPIs() {
-  const total = allApplications.length;
-  const paid  = allApplications.filter(a => ['PAID','IN_PRODUCTION','QC_REVIEW','QC_PASSED','ESCALATED','RETRY','READY_FOR_REVIEW_CALL'].includes(a.status)).length;
-  const active = allApplications.filter(a => !['REJECTED','CANCELLED'].includes(a.status)).length;
-  const needAction = allApplications.filter(a => ['ESCALATED','AWAITING_PAYMENT','QC_FAILED'].includes(a.status)).length;
-  const convRate = total > 0 ? Math.round((paid / total) * 100) : 0;
-
-  document.getElementById('kpi-total').textContent = total;
-  document.getElementById('kpi-paid').textContent = paid;
-  document.getElementById('kpi-conversion').textContent = `Konverteringsrate: ${convRate}%`;
-  document.getElementById('kpi-active').textContent = active;
-  document.getElementById('kpi-action').textContent = needAction;
-}
-
 function updateSidebarCounts() {
   const countBy = {};
   allApplications.forEach(a => { countBy[a.status] = (countBy[a.status] || 0) + 1; });
@@ -511,14 +457,6 @@ function setFilter(el, status) {
     c.classList.toggle('active', c.dataset.status === status);
   });
 
-  // Show table, hide dashboard KPIs
-  const dashSection = document.getElementById('dashboardSection');
-  const tableWrap = document.querySelector('.table-wrap');
-  const toolbar = document.querySelector('.toolbar');
-  if (dashSection) dashSection.style.display = 'none';
-  if (tableWrap) tableWrap.style.display = '';
-  if (toolbar) toolbar.style.display = '';
-
   const navTitle = document.getElementById('navTitle');
   if (navTitle) navTitle.textContent = status ? (STATUS_LABELS[status] || status) : 'Leads';
 
@@ -534,14 +472,6 @@ function setFilterChip(el, status) {
   document.querySelectorAll('.sidebar-item').forEach(i => {
     i.classList.toggle('active', i.dataset.filter === status);
   });
-
-  const dashSection = document.getElementById('dashboardSection');
-  const tableWrap = document.querySelector('.table-wrap');
-  const toolbar = document.querySelector('.toolbar');
-  if (dashSection) dashSection.style.display = 'none';
-  if (tableWrap) tableWrap.style.display = '';
-  if (toolbar) toolbar.style.display = '';
-
   renderTable();
 }
 
@@ -1060,26 +990,6 @@ function toggleCollapse() {
     icon.setAttribute('data-lucide', collapsed ? 'chevrons-right' : 'chevrons-left');
     if (window.lucide) lucide.createIcons();
   }
-}
-
-// ─── Dashboard view ───────────────────────────────
-function setView(view) {
-  const dashSection = document.getElementById('dashboardSection');
-  const tableWrap = document.querySelector('.table-wrap');
-  const toolbar = document.querySelector('.toolbar');
-  const navTitle = document.getElementById('navTitle');
-
-  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-  const viewEl = document.querySelector(`[data-view="${view}"]`);
-  if (viewEl) viewEl.classList.add('active');
-
-  if (view === 'dashboard') {
-    dashSection.style.display = '';
-    if (tableWrap) tableWrap.style.display = 'none';
-    if (toolbar) toolbar.style.display = 'none';
-    if (navTitle) navTitle.textContent = 'Dashboard';
-  }
-  closeSidebar();
 }
 
 // ─── Init ─────────────────────────────────────────
