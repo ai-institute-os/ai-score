@@ -3,61 +3,337 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Apply for AIScore</title>
+  <title>Apply for AIScore — AI Brand Intelligence</title>
+  <link rel="stylesheet" href="/static/shared.css" />
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ── Split layout ───────────────────────────── */
+    html, body { height: 100%; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #f5f5f7;
-      color: #1d1d1f;
+      display: flex;
       min-height: 100vh;
+      background: var(--bg-dark);
+    }
+
+    .split {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* ── Left panel ─────────────────────────────── */
+    .panel-left {
+      flex: 0 0 48%;
+      background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 4rem 3.5rem;
+      min-height: 100vh;
+    }
+
+    /* Decorative gradient blobs */
+    .panel-left::before {
+      content: '';
+      position: absolute;
+      top: -120px; right: -80px;
+      width: 500px; height: 500px;
+      background: radial-gradient(ellipse, rgba(139,92,246,0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .panel-left::after {
+      content: '';
+      position: absolute;
+      bottom: -100px; left: -60px;
+      width: 400px; height: 400px;
+      background: radial-gradient(ellipse, rgba(59,130,246,0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .left-content {
+      position: relative;
+      z-index: 1;
+      color: var(--text-on-dark);
+      max-width: 480px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 3rem;
+    }
+
+    .brand-logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(139,92,246,0.4);
+    }
+
+    .brand-logo-text {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #fff;
+    }
+
+    .left-headline {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #fff;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+    }
+
+    .left-headline span {
+      background: linear-gradient(120deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .left-desc {
+      font-size: 1rem;
+      color: #94a3b8;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+      max-width: 400px;
+    }
+
+    /* ── CSS Dashboard Visual ───────────────────── */
+    .ai-visual {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 2.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .visual-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .visual-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+    }
+
+    .visual-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #4ade80;
+      background: rgba(74,222,128,0.1);
+      border: 1px solid rgba(74,222,128,0.2);
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+    }
+
+    /* Score ring */
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .score-ring {
+      flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+      position: relative;
+    }
+
+    .score-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .score-ring-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-number {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .score-unit {
+      font-size: 0.55rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .score-meta {
+      flex: 1;
+    }
+
+    .score-meta-name {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 0.25rem;
+    }
+
+    .score-meta-sub {
+      font-size: 0.75rem;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    /* AI bars */
+    .ai-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .ai-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .ai-bar-label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    .ai-bar-track {
+      flex: 1;
+      height: 5px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .ai-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .ai-bar-pct {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #94a3b8;
+      width: 32px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── Benefit list ───────────────────────────── */
+    .benefit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+    }
+
+    .benefit-item {
       display: flex;
       align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .benefit-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.2);
+      display: flex;
+      align-items: center;
       justify-content: center;
-      padding: 3rem 1rem 4rem;
+      flex-shrink: 0;
+      color: #a78bfa;
     }
 
-    .card {
-      background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
-      max-width: 600px;
-      width: 100%;
-      padding: 3rem 2.5rem;
+    .benefit-text {
+      padding-top: 0.1rem;
     }
 
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      color: #0071e3;
-      margin-bottom: 0.5rem;
+    .benefit-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 0.1rem;
     }
 
-    h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      margin-bottom: 0.5rem;
-    }
-
-    .subtitle {
-      color: #6e6e73;
-      font-size: 0.95rem;
-      margin-bottom: 2rem;
+    .benefit-desc {
+      font-size: 0.78rem;
+      color: #64748b;
       line-height: 1.5;
     }
 
-    .section-heading {
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #6e6e73;
-      margin: 1.75rem 0 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid #f0f0f5;
+    /* ── Right panel ────────────────────────────── */
+    .panel-right {
+      flex: 1;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 3rem 3rem 3rem 2.5rem;
+      overflow-y: auto;
+    }
+
+    .form-header {
+      margin-bottom: 2rem;
+    }
+
+    .form-title {
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .form-card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .field {
+      margin-bottom: 1.25rem;
     }
 
     .field-row {
@@ -66,226 +342,439 @@
       gap: 1rem;
     }
 
-    @media (max-width: 500px) {
-      .field-row { grid-template-columns: 1fr; }
-      .card { padding: 2rem 1.5rem; }
+    .field-icon-wrap {
+      position: relative;
     }
 
-    .field {
-      margin-bottom: 1.25rem;
+    .field-icon-wrap input,
+    .field-icon-wrap textarea {
+      padding-left: 2.5rem;
     }
 
-    label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 600;
-      margin-bottom: 0.4rem;
-      color: #1d1d1f;
+    .field-icon {
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-subtle);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
     }
 
-    .label-optional {
-      font-weight: 400;
-      color: #6e6e73;
-      font-size: 0.8rem;
-      margin-left: 0.3rem;
+    textarea + .field-icon,
+    .field-icon-wrap textarea ~ .field-icon {
+      top: 0.85rem;
+      transform: none;
     }
 
-    input, textarea, select {
+    .submit-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
       width: 100%;
-      padding: 0.65rem 0.9rem;
-      border: 1.5px solid #d2d2d7;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      color: #1d1d1f;
-      background: #fff;
-      transition: border-color 0.15s, box-shadow 0.15s;
-      outline: none;
-      font-family: inherit;
-    }
-
-    input:focus, textarea:focus, select:focus {
-      border-color: #0071e3;
-      box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
-    }
-
-    input.field-error, textarea.field-error, select.field-error {
-      border-color: #ff3b30;
-      box-shadow: 0 0 0 3px rgba(255,59,48,0.12);
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 120px;
-    }
-
-    select {
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236e6e73' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.9rem center;
-      padding-right: 2.2rem;
-    }
-
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 0.85rem;
-      background: #0071e3;
+      padding: 0.9rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
       color: #fff;
       border: none;
-      border-radius: 12px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-      margin-top: 0.5rem;
+      transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+      margin-top: 0.75rem;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+      letter-spacing: -0.01em;
     }
 
-    .btn:hover { background: #0077ed; }
-    .btn:active { transform: scale(0.98); }
-    .btn:disabled { background: #a8a8b3; cursor: not-allowed; transform: none; }
+    .submit-btn:hover {
+      opacity: 0.92;
+      box-shadow: 0 6px 20px rgba(59,130,246,0.45);
+    }
 
-    .success {
+    .submit-btn:active { transform: scale(0.99); }
+
+    .submit-btn:disabled {
+      background: var(--text-subtle);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Success state ──────────────────────────── */
+    .success-box {
       display: none;
       text-align: center;
-      padding: 2rem 0;
+      padding: 3rem 2rem;
     }
 
-    .success-icon {
-      font-size: 3.5rem;
-      margin-bottom: 1.25rem;
+    .success-icon-wrap {
+      width: 72px;
+      height: 72px;
+      background: var(--success-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      color: var(--success);
     }
 
-    .success h2 {
-      font-size: 1.4rem;
-      font-weight: 700;
+    .success-box h2 {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 800;
       margin-bottom: 0.75rem;
+      color: var(--text);
     }
 
-    .success p {
-      color: #6e6e73;
+    .success-box p {
+      color: var(--text-muted);
       font-size: 0.95rem;
-      line-height: 1.6;
+      line-height: 1.65;
+      max-width: 360px;
+      margin: 0 auto;
     }
 
-    .error-banner {
-      display: none;
-      background: #fff0f0;
-      border: 1.5px solid #ff3b30;
-      border-radius: 10px;
-      padding: 0.9rem 1rem;
-      color: #cc2200;
-      font-size: 0.875rem;
+    /* ── Privacy note ───────────────────────────── */
+    .privacy-note {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       margin-top: 1rem;
-      line-height: 1.5;
+      font-size: 0.75rem;
+      color: var(--text-subtle);
     }
 
-    .error-banner ul {
-      margin-top: 0.4rem;
-      margin-left: 1.2rem;
+    .privacy-note svg { flex-shrink: 0; }
+
+    /* ── Responsive ─────────────────────────────── */
+    @media (max-width: 900px) {
+      .split { flex-direction: column; }
+
+      .panel-left {
+        flex: none;
+        min-height: auto;
+        padding: 2.5rem 2rem;
+      }
+
+      .left-headline { font-size: 1.8rem; }
+      .left-content { max-width: 100%; }
+
+      .ai-visual { display: none; }
+
+      .benefit-list { display: none; }
+
+      .panel-right {
+        padding: 2rem 1.5rem 3rem;
+      }
     }
 
-    .error-banner li {
-      margin-top: 0.15rem;
+    @media (max-width: 480px) {
+      .panel-left { padding: 2rem 1.25rem; }
+      .panel-right { padding: 1.5rem 1.25rem 3rem; }
+      .field-row { grid-template-columns: 1fr; }
+      .form-card { padding: 1.5rem 1.25rem; }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">AIScore</div>
-    <h1>Apply for an AIScore Analysis</h1>
-    <p class="subtitle">
-      AIScore maps how AI systems like ChatGPT, Gemini, and Perplexity perceive and recommend your company. Fill in the form — we will get back to you within 1–2 business days.
-    </p>
+  <div class="split">
 
-    <form id="applyForm" novalidate>
+    <!-- ── LEFT PANEL ───────────────────────────── -->
+    <div class="panel-left">
+      <div class="left-content">
 
-      <div class="section-heading">Company Information</div>
-
-      <div class="field">
-        <label for="company_name">Company name *</label>
-        <input type="text" id="company_name" name="company_name" placeholder="e.g. Acme Ltd." autocomplete="organization" />
-      </div>
-
-      <div class="field">
-        <label for="website">Company website *</label>
-        <input type="url" id="website" name="website" placeholder="https://example.com" autocomplete="url" />
-      </div>
-
-      <div class="field-row">
-        <div class="field">
-          <label for="country">Country / market *</label>
-          <input type="text" id="country" name="country" placeholder="e.g. Denmark" />
+        <!-- Brand logo -->
+        <div class="brand-logo">
+          <div class="brand-logo-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4l3 3"/>
+            </svg>
+          </div>
+          <span class="brand-logo-text">AIScore</span>
         </div>
-        <div class="field">
-          <label for="industry">Industry / category *</label>
-          <input type="text" id="industry" name="industry" placeholder="e.g. SaaS, Retail" />
+
+        <!-- Headline -->
+        <h1 class="left-headline">
+          Know how AI<br>
+          <span>sees your brand</span>
+        </h1>
+
+        <p class="left-desc">
+          AIScore maps how AI systems like ChatGPT, Gemini, and Perplexity perceive, describe, and recommend your company — so you can act on it.
+        </p>
+
+        <!-- CSS Dashboard Visual -->
+        <div class="ai-visual">
+          <div class="visual-header">
+            <span class="visual-title">AI Visibility Report</span>
+            <span class="visual-badge">LIVE</span>
+          </div>
+
+          <div class="score-row">
+            <div class="score-ring">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/>
+                <circle cx="36" cy="36" r="30" fill="none"
+                  stroke="url(#scoreGrad)" stroke-width="7"
+                  stroke-dasharray="188.5"
+                  stroke-dashoffset="47"
+                  stroke-linecap="round"/>
+                <defs>
+                  <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#3b82f6"/>
+                    <stop offset="100%" stop-color="#8b5cf6"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="score-ring-label">
+                <span class="score-number">74</span>
+                <span class="score-unit">score</span>
+              </div>
+            </div>
+            <div class="score-meta">
+              <div class="score-meta-name">AI Visibility Index</div>
+              <div class="score-meta-sub">How often AI systems mention and recommend your brand across queries</div>
+            </div>
+          </div>
+
+          <div class="ai-bars">
+            <div class="ai-bar-item">
+              <span class="ai-bar-label">ChatGPT</span>
+              <div class="ai-bar-track"><div class="ai-bar-fill" style="width:82%"></div></div>
+              <span class="ai-bar-pct">82%</span>
+            </div>
+            <div class="ai-bar-item">
+              <span class="ai-bar-label">Gemini</span>
+              <div class="ai-bar-track"><div class="ai-bar-fill" style="width:67%"></div></div>
+              <span class="ai-bar-pct">67%</span>
+            </div>
+            <div class="ai-bar-item">
+              <span class="ai-bar-label">Perplexity</span>
+              <div class="ai-bar-track"><div class="ai-bar-fill" style="width:59%"></div></div>
+              <span class="ai-bar-pct">59%</span>
+            </div>
+            <div class="ai-bar-item">
+              <span class="ai-bar-label">Claude</span>
+              <div class="ai-bar-track"><div class="ai-bar-fill" style="width:71%"></div></div>
+              <span class="ai-bar-pct">71%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Benefit list -->
+        <div class="benefit-list">
+          <div class="benefit-item">
+            <div class="benefit-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </div>
+            <div class="benefit-text">
+              <div class="benefit-title">Understand your AI position</div>
+              <div class="benefit-desc">See exactly how AI systems describe your brand vs. competitors</div>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon" style="background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.2);color:#60a5fa;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+            </div>
+            <div class="benefit-text">
+              <div class="benefit-title">Track recommendation share</div>
+              <div class="benefit-desc">Measure how often AI recommends you over alternatives</div>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon" style="background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.2);color:#22d3ee;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div class="benefit-text">
+              <div class="benefit-title">Actionable improvement plan</div>
+              <div class="benefit-desc">Get concrete steps to increase your AI visibility score</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── RIGHT PANEL ──────────────────────────── -->
+    <div class="panel-right">
+
+      <div class="form-header">
+        <h2 class="form-title">Apply for an AIScore Analysis</h2>
+        <p class="form-subtitle">
+          Fill in your company details — we review every application and get back to you within 1–2 business days.
+        </p>
+      </div>
+
+      <div class="form-card">
+        <form id="applyForm" novalidate>
+
+          <!-- Company Information -->
+          <div class="section-heading">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+            Company Information
+          </div>
+
+          <div class="field">
+            <label for="company_name">Company name <span class="label-required">*</span></label>
+            <div class="field-icon-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+              </span>
+              <input type="text" id="company_name" name="company_name"
+                placeholder="e.g. Acme Ltd."
+                autocomplete="organization" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="website">Company website <span class="label-required">*</span></label>
+            <div class="field-icon-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+              </span>
+              <input type="url" id="website" name="website"
+                placeholder="https://example.com"
+                autocomplete="url" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="country">Country / market <span class="label-required">*</span></label>
+              <div class="field-icon-wrap">
+                <span class="field-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20"/></svg>
+                </span>
+                <input type="text" id="country" name="country" placeholder="e.g. Denmark" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="industry">Industry / category <span class="label-required">*</span></label>
+              <div class="field-icon-wrap">
+                <span class="field-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </span>
+                <input type="text" id="industry" name="industry" placeholder="e.g. SaaS, Retail" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="business_description">Short description of the business <span class="label-required">*</span></label>
+            <textarea
+              id="business_description"
+              name="business_description"
+              placeholder="Describe what your company does and what makes it unique…"
+              minlength="10"
+            ></textarea>
+          </div>
+
+          <div class="field">
+            <label for="competitors">Main competitors <span class="label-optional">(optional)</span></label>
+            <div class="field-icon-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              </span>
+              <input type="text" id="competitors" name="competitors"
+                placeholder="e.g. Competitor A, Competitor B" />
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="section-heading">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Contact Information
+          </div>
+
+          <div class="field">
+            <label for="contact_name">Contact person name <span class="label-required">*</span></label>
+            <div class="field-icon-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <input type="text" id="contact_name" name="contact_name"
+                placeholder="Full name"
+                autocomplete="name" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="contact_email">Contact email <span class="label-required">*</span></label>
+            <div class="field-icon-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input type="email" id="contact_email" name="contact_email"
+                placeholder="name@company.com"
+                autocomplete="email" />
+            </div>
+          </div>
+
+          <!-- Goal -->
+          <div class="section-heading">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            Your Goal
+          </div>
+
+          <div class="field">
+            <label for="application_goal">Reason for applying / goal of AIScore <span class="label-required">*</span></label>
+            <textarea
+              id="application_goal"
+              name="application_goal"
+              placeholder="What do you want to learn or achieve with AIScore? E.g. understand how AI systems perceive our brand vs. competitors…"
+              style="min-height: 100px;"
+            ></textarea>
+          </div>
+
+          <div class="error-banner" id="errorBanner"></div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Submit application
+          </button>
+
+          <div class="privacy-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Your information is handled confidentially and never shared with third parties.
+          </div>
+        </form>
+
+        <!-- Success state -->
+        <div class="success-box" id="successBox">
+          <div class="success-icon-wrap">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2>Application submitted</h2>
+          <p>
+            Thank you — your application is now under review. We will contact you within 1–2 business days once it has been assessed.
+          </p>
         </div>
       </div>
 
-      <div class="field">
-        <label for="business_description">Short description of the business *</label>
-        <textarea
-          id="business_description"
-          name="business_description"
-          placeholder="Describe what your company does and what makes it unique…"
-          minlength="10"
-        ></textarea>
-      </div>
-
-      <div class="field">
-        <label for="competitors">Main competitors <span class="label-optional">(optional)</span></label>
-        <input type="text" id="competitors" name="competitors" placeholder="e.g. Competitor A, Competitor B" />
-      </div>
-
-      <div class="section-heading">Contact Information</div>
-
-      <div class="field">
-        <label for="contact_name">Contact person name *</label>
-        <input type="text" id="contact_name" name="contact_name" placeholder="Full name" autocomplete="name" />
-      </div>
-
-      <div class="field">
-        <label for="contact_email">Contact email *</label>
-        <input type="email" id="contact_email" name="contact_email" placeholder="name@company.com" autocomplete="email" />
-      </div>
-
-      <div class="section-heading">Your Goal</div>
-
-      <div class="field">
-        <label for="application_goal">Reason for applying / goal of AIScore *</label>
-        <textarea
-          id="application_goal"
-          name="application_goal"
-          placeholder="What do you want to learn or achieve with AIScore? E.g. understand how AI systems perceive our brand vs. competitors…"
-          style="min-height: 100px;"
-        ></textarea>
-      </div>
-
-      <div class="error-banner" id="errorBanner"></div>
-
-      <button type="submit" class="btn" id="submitBtn">Submit application</button>
-    </form>
-
-    <div class="success" id="successBox">
-      <div class="success-icon">✅</div>
-      <h2>Application submitted</h2>
-      <p>
-        Thank you. Your application has been submitted and is now under review. We will contact you once it has been approved.
-      </p>
     </div>
   </div>
 
   <script>
     const REQUIRED_FIELDS = [
-      { id: 'company_name',        label: 'Company name' },
-      { id: 'website',             label: 'Company website' },
-      { id: 'country',             label: 'Country / market' },
-      { id: 'industry',            label: 'Industry / category' },
-      { id: 'business_description',label: 'Short description of the business' },
-      { id: 'contact_name',        label: 'Contact person name' },
-      { id: 'contact_email',       label: 'Contact email' },
-      { id: 'application_goal',    label: 'Reason for applying / goal of AIScore' },
+      { id: 'company_name',         label: 'Company name' },
+      { id: 'website',              label: 'Company website' },
+      { id: 'country',              label: 'Country / market' },
+      { id: 'industry',             label: 'Industry / category' },
+      { id: 'business_description', label: 'Short description of the business' },
+      { id: 'contact_name',         label: 'Contact person name' },
+      { id: 'contact_email',        label: 'Contact email' },
+      { id: 'application_goal',     label: 'Reason for applying / goal of AIScore' },
     ];
 
     function validate() {
@@ -301,47 +790,53 @@
         }
       });
 
-      // Extra: email format check
       const emailEl = document.getElementById('contact_email');
       if (emailEl.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEl.value.trim())) {
         emailEl.classList.add('field-error');
         if (!missing.includes('Contact email')) missing.push('Contact email (invalid format)');
       }
 
-      // Extra: business_description min length
       const descEl = document.getElementById('business_description');
       if (descEl.value.trim() && descEl.value.trim().length < 10) {
         descEl.classList.add('field-error');
-        if (!missing.includes('Short description of the business')) missing.push('Short description of the business (minimum 10 characters)');
+        if (!missing.includes('Short description of the business'))
+          missing.push('Short description of the business (minimum 10 characters)');
       }
 
       return missing;
     }
 
-    // Clear error state on input
     REQUIRED_FIELDS.forEach(({ id }) => {
       document.getElementById(id).addEventListener('input', function() {
         this.classList.remove('field-error');
       });
     });
 
+    let submitting = false;
+
     document.getElementById('applyForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const btn = document.getElementById('submitBtn');
+      if (submitting) return;
+
+      const btn    = document.getElementById('submitBtn');
       const banner = document.getElementById('errorBanner');
 
       const missing = validate();
       if (missing.length) {
         banner.innerHTML =
-          'Your application cannot be submitted yet. Please complete the following missing fields:' +
+          '<strong>Please complete the following fields:</strong>' +
           '<ul>' + missing.map(m => `<li>${m}</li>`).join('') + '</ul>';
         banner.style.display = 'block';
         return;
       }
 
       banner.style.display = 'none';
+      submitting = true;
       btn.disabled = true;
-      btn.textContent = 'Submitting…';
+      btn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.7s linear infinite"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".3"/><path d="M21 12a9 9 0 00-9-9"/></svg>
+        Submitting…
+      `;
 
       const payload = {
         company_name:         document.getElementById('company_name').value.trim(),
@@ -370,12 +865,22 @@
         document.getElementById('applyForm').style.display = 'none';
         document.getElementById('successBox').style.display = 'block';
       } catch (err) {
-        banner.innerHTML = err.message || 'Something went wrong. Please try again.';
+        const msg = err.message && !err.message.startsWith('Server error')
+          ? err.message
+          : 'We could not submit your application right now. Please try again in a moment, or contact support if the problem continues.';
+        banner.innerHTML = msg;
         banner.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = 'Submit application';
+        submitting = false;
+        btn.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Submit application
+        `;
       }
     });
   </script>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </body>
 </html>
