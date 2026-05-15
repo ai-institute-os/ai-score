@@ -21,11 +21,21 @@
       .main { padding-left: 1rem; padding-right: 1rem; }
     }
 
-    /* ── Status chip (without dot for review page header) ── */
-    .chip-applied      { background: rgba(59,130,246,0.1);  color: #1d4ed8; }
-    .chip-under_review { background: rgba(245,158,11,0.12); color: #b45309; }
-    .chip-approved     { background: rgba(34,197,94,0.12);  color: #15803d; }
-    .chip-rejected     { background: rgba(239,68,68,0.1);   color: #b91c1c; }
+    /* ── Status transitions ── */
+    .status-options { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .status-option {
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--text-muted);
+      transition: all 0.12s;
+    }
+    .status-option:hover { border-color: var(--primary); color: var(--primary); }
+    .status-option.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
 
     /* ── Application detail cards ── */
     .review-card {
@@ -105,35 +115,7 @@
     }
 
     .action-panel h2 { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
-    .action-panel > p { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem; }
-
-    .action-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-
-    .btn-approve {
-      background: var(--success);
-      color: #fff;
-      flex: 1;
-    }
-    .btn-approve:hover:not(:disabled) { background: #16a34a; }
-
-    .btn-reject {
-      background: var(--card);
-      color: var(--error);
-      border: 1.5px solid var(--error);
-      flex: 1;
-    }
-    .btn-reject:hover:not(:disabled) { background: var(--error-light); }
-
-    .reject-form { display: none; margin-top: 1rem; }
-    .reject-form textarea {
-      margin-bottom: 0.75rem;
-    }
-    .reject-confirm-row { display: flex; gap: 0.5rem; }
-
-    .btn-reject-confirm { background: var(--error); color: #fff; flex: 1; }
-    .btn-reject-confirm:hover:not(:disabled) { background: #dc2626; }
-
-    .btn-cancel { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+    .action-panel > p { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.25rem; }
 
     .already-done {
       background: var(--bg);
@@ -141,7 +123,7 @@
       padding: 1rem 1.25rem;
       font-size: 0.875rem;
       color: var(--text-muted);
-      margin-top: 1rem;
+      margin-top: 0.75rem;
     }
 
     /* ── Center loading/error ── */
@@ -249,29 +231,10 @@
 
     <!-- Action panel -->
     <div class="action-panel" id="actionPanel">
-      <h2>Review Decision</h2>
-      <p>Approve to move this application forward, or reject it with an optional reason.</p>
+      <h2>Change Status</h2>
+      <p>Select the next status for this application and confirm.</p>
 
-      <div id="actionButtons" class="action-row">
-        <button class="btn btn-approve" id="btnApprove" onclick="doApprove()">
-          <i data-lucide="check" class="icon-sm"></i>
-          Approve
-        </button>
-        <button class="btn btn-reject" id="btnReject" onclick="showRejectForm()">
-          <i data-lucide="x" class="icon-sm"></i>
-          Reject
-        </button>
-      </div>
-
-      <div class="reject-form" id="rejectForm">
-        <textarea id="rejectionReason" placeholder="Reason for rejection (optional)…"></textarea>
-        <div class="reject-confirm-row">
-          <button class="btn btn-reject-confirm" id="btnRejectConfirm" onclick="doReject()">Confirm Rejection</button>
-          <button class="btn btn-cancel" onclick="hideRejectForm()">Cancel</button>
-        </div>
-      </div>
-
-      <div class="already-done" id="alreadyDone" style="display:none;"></div>
+      <div id="actionContent"></div>
     </div>
   </div>
 </main>
@@ -283,13 +246,40 @@
 let appId = null;
 let appData = null;
 
+const STATUS_LABELS = {
+  APPLIED: 'Applied',
+  UNDER_REVIEW: 'Under Review',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  CALLED: 'Meeting Booked',
+  AWAITING_PAYMENT: 'Awaiting Payment',
+  PAID: 'Paid',
+  IN_PRODUCTION: 'In Production',
+  QC_REVIEW: 'QC Review',
+  QC_PASSED: 'QC Passed',
+  QC_FAILED: 'QC Failed',
+  ESCALATED: 'Escalated',
+  RETRY: 'Retry',
+  CANCELLED: 'Cancelled',
+  READY_FOR_REVIEW_CALL: 'Ready for Review',
+};
+
+const VALID_TRANSITIONS = {
+  APPLIED: ['UNDER_REVIEW', 'REJECTED'],
+  UNDER_REVIEW: ['APPROVED', 'REJECTED'],
+  APPROVED: ['CALLED'],
+  CALLED: ['AWAITING_PAYMENT', 'APPROVED'],
+  AWAITING_PAYMENT: ['PAID'],
+  PAID: ['IN_PRODUCTION'],
+  IN_PRODUCTION: ['QC_REVIEW'],
+  QC_REVIEW: ['QC_PASSED', 'QC_FAILED'],
+  QC_PASSED: ['READY_FOR_REVIEW_CALL'],
+  ESCALATED: ['RETRY'],
+};
+
 function statusChip(status) {
-  const labels = {
-    APPLIED: 'Applied', UNDER_REVIEW: 'Under Review',
-    APPROVED: 'Approved', REJECTED: 'Rejected',
-  };
   const cls = 'chip chip-' + status.toLowerCase();
-  return `<span class="${cls}">${labels[status] || status}</span>`;
+  return `<span class="${cls}">${esc(STATUS_LABELS[status] || status)}</span>`;
 }
 
 function fmtDate(iso) {
@@ -310,7 +300,7 @@ function setHtml(id, val) { document.getElementById(id).innerHTML = val; }
 
 function renderApp(app) {
   appData = app;
-  document.title = `Review — ${app.firmanavn || 'Application'} — AIScore`;
+  document.title = `${app.firmanavn || 'Application'} — AIScore Admin`;
   document.getElementById('navCompany').textContent = app.firmanavn || '—';
   document.getElementById('appCompany').textContent = app.firmanavn || '—';
   setHtml('appStatusChip', statusChip(app.status));
@@ -332,95 +322,75 @@ function renderApp(app) {
     : '—');
   setText('fGoal',        app.application_goal);
 
-  updateActionPanel(app.status);
+  renderActionPanel(app.status);
 
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('pageContent').style.display = 'block';
   if (window.lucide) lucide.createIcons();
 }
 
-function updateActionPanel(status) {
-  const buttons = document.getElementById('actionButtons');
-  const done    = document.getElementById('alreadyDone');
-  const rejectF = document.getElementById('rejectForm');
+function renderActionPanel(status) {
+  const container = document.getElementById('actionContent');
+  const nextStatuses = VALID_TRANSITIONS[status] || [];
 
-  rejectF.style.display = 'none';
-
-  if (status === 'UNDER_REVIEW') {
-    buttons.style.display = 'flex';
-    done.style.display = 'none';
-    document.getElementById('btnApprove').disabled = false;
-    document.getElementById('btnReject').disabled  = false;
-  } else if (status === 'APPROVED') {
-    buttons.style.display = 'none';
-    done.style.display = 'block';
-    done.innerHTML = '&#10003; This application has already been <strong>approved</strong>.';
-  } else if (status === 'REJECTED') {
-    buttons.style.display = 'none';
-    done.style.display = 'block';
-    done.innerHTML = '&#10005; This application has already been <strong>rejected</strong>.';
-  } else {
-    buttons.style.display = 'none';
-    done.style.display = 'block';
-    done.textContent = `This application is in status "${status}" — approve/reject is only available from UNDER_REVIEW.`;
-  }
-}
-
-async function doApprove() {
-  const btn = document.getElementById('btnApprove');
-  btn.disabled = true;
-  btn.textContent = 'Approving…';
-
-  try {
-    const res = await fetch(`/api/v1/admin/applications/${appId}/approve`, { method: 'POST' });
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      throw new Error(d.detail || `HTTP ${res.status}`);
-    }
-    const updated = await res.json();
-    toast('Application approved ✓', 'success');
-    renderApp(updated);
-  } catch (err) {
-    toast('Approval failed: ' + err.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="check" class="icon-sm"></i> Approve';
+  if (!nextStatuses.length) {
+    container.innerHTML = `
+      <div class="already-done">
+        ${statusChip(status)} &nbsp; This status has no further transitions.
+      </div>`;
     if (window.lucide) lucide.createIcons();
+    return;
   }
+
+  container.innerHTML = `
+    <div class="status-options" id="statusOptions">
+      ${nextStatuses.map(s => `
+        <button class="status-option" data-status="${esc(s)}" onclick="selectStatus(this)">
+          ${esc(STATUS_LABELS[s] || s)}
+        </button>`).join('')}
+    </div>
+    <div style="margin-top:1rem;">
+      <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Note (optional)</label>
+      <textarea id="statusNote" placeholder="Internal note…" style="min-height:60px;"></textarea>
+    </div>
+    <div style="margin-top:0.75rem;">
+      <button class="btn btn-primary" id="btnConfirm" onclick="confirmStatus()" disabled>Confirm Status Change</button>
+    </div>`;
 }
 
-function showRejectForm() {
-  document.getElementById('rejectForm').style.display = 'block';
-  document.getElementById('rejectionReason').focus();
+function selectStatus(el) {
+  document.querySelectorAll('.status-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnConfirm').disabled = false;
 }
 
-function hideRejectForm() {
-  document.getElementById('rejectForm').style.display = 'none';
-  document.getElementById('rejectionReason').value = '';
-}
+async function confirmStatus() {
+  const selected = document.querySelector('.status-option.selected');
+  if (!selected) return;
 
-async function doReject() {
-  const reason = document.getElementById('rejectionReason').value.trim();
-  const btn    = document.getElementById('btnRejectConfirm');
+  const newStatus = selected.dataset.status;
+  const note = document.getElementById('statusNote')?.value?.trim() || '';
+  const btn = document.getElementById('btnConfirm');
   btn.disabled = true;
-  btn.textContent = 'Rejecting…';
+  btn.textContent = 'Saving…';
 
   try {
-    const res = await fetch(`/api/v1/admin/applications/${appId}/reject`, {
-      method: 'POST',
+    const res = await fetch(`/api/v1/admin/applications/${appId}/status`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rejection_reason: reason || null }),
+      body: JSON.stringify({ status: newStatus, changed_by: 'admin', note: note || undefined }),
     });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       throw new Error(d.detail || `HTTP ${res.status}`);
     }
     const updated = await res.json();
-    toast('Application rejected', 'success');
+    toast('Status updated to ' + (STATUS_LABELS[newStatus] || newStatus), 'success');
     renderApp(updated);
   } catch (err) {
-    toast('Rejection failed: ' + err.message, 'error');
+    toast('Failed: ' + err.message, 'error');
     btn.disabled = false;
-    btn.textContent = 'Confirm Rejection';
+    btn.textContent = 'Confirm Status Change';
   }
 }
 

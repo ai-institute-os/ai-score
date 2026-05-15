@@ -96,6 +96,24 @@
     }
     .dim-answer:focus { border-color: var(--primary); }
 
+    /* ── View link in table ── */
+    .review-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-light);
+      border: 1px solid rgba(59,130,246,0.2);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.1s;
+    }
+    .review-btn:hover { background: rgba(59,130,246,0.14); }
+
     /* ── Report questions ── */
     .report-q-section { margin-top: 1.25rem; border-top: 1px solid var(--bg); padding-top: 1rem; }
     .report-q-title {
@@ -116,14 +134,20 @@
 </head>
 <body>
 
+<!-- ── Sidebar overlay (mobile) ─────────────────── -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <!-- ── Top navigation ──────────────────────────── -->
 <nav class="topnav">
+  <button class="sidebar-hamburger" id="sidebarHamburger" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+    <i data-lucide="menu" class="icon-sm"></i>
+  </button>
   <a class="topnav-logo" href="/apply">
     <i data-lucide="bar-chart-2" class="icon-sm"></i>
     AIScore
   </a>
   <span class="topnav-sep">/</span>
-  <span class="topnav-title">Admin Dashboard</span>
+  <span class="topnav-title" id="navTitle">Leads</span>
   <div class="topnav-right">
     <span class="topnav-badge" id="navLiveBadge">Live</span>
     <button class="btn btn-ghost" onclick="loadData()" title="Genindlæs data" style="padding:0.4rem 0.65rem;">
@@ -136,99 +160,112 @@
 <div class="admin-layout">
 
   <!-- Sidebar -->
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-top-bar">
+      <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleCollapse()" title="Kollaps sidebar">
+        <i data-lucide="chevrons-left" class="icon-xs"></i>
+      </button>
+    </div>
     <div class="admin-sidebar-body">
+
+      <div class="sidebar-label">Oversigt</div>
+      <div class="sidebar-section">
+        <a class="sidebar-item" data-view="dashboard" onclick="setView('dashboard')" data-label="Dashboard">
+          <i data-lucide="layout-dashboard" class="icon-sm"></i>
+          <span class="sidebar-text">Dashboard</span>
+        </a>
+      </div>
 
       <div class="sidebar-label">Genveje</div>
       <div class="sidebar-section">
-        <a class="sidebar-item" href="/admin/orders">
+        <a class="sidebar-item" href="/admin/orders" data-label="Betalte ordrer">
           <i data-lucide="receipt" class="icon-sm"></i>
-          Betalte ordrer
+          <span class="sidebar-text">Betalte ordrer</span>
         </a>
       </div>
 
       <div class="sidebar-label">Pipeline</div>
       <div class="sidebar-section">
-        <a class="sidebar-item active" data-filter="" onclick="setFilter(this, '')">
+        <a class="sidebar-item active" data-filter="" onclick="setFilter(this, '')" data-label="Alle leads">
           <i data-lucide="layout-list" class="icon-sm"></i>
-          Alle leads
+          <span class="sidebar-text">Alle leads</span>
           <span class="sidebar-count" id="cnt-all">—</span>
         </a>
-        <a class="sidebar-item" data-filter="APPLIED" onclick="setFilter(this, 'APPLIED')">
+        <a class="sidebar-item" data-filter="APPLIED" onclick="setFilter(this, 'APPLIED')" data-label="Ansøgt">
           <i data-lucide="mail-open" class="icon-sm"></i>
-          Ansøgt
+          <span class="sidebar-text">Ansøgt</span>
           <span class="sidebar-count" id="cnt-APPLIED">—</span>
         </a>
-        <a class="sidebar-item" data-filter="UNDER_REVIEW" onclick="setFilter(this, 'UNDER_REVIEW')">
+        <a class="sidebar-item" data-filter="UNDER_REVIEW" onclick="setFilter(this, 'UNDER_REVIEW')" data-label="Under review">
           <i data-lucide="eye" class="icon-sm"></i>
-          Under review
+          <span class="sidebar-text">Under review</span>
           <span class="sidebar-count" id="cnt-UNDER_REVIEW">—</span>
         </a>
-        <a class="sidebar-item" data-filter="APPROVED" onclick="setFilter(this, 'APPROVED')">
+        <a class="sidebar-item" data-filter="APPROVED" onclick="setFilter(this, 'APPROVED')" data-label="Godkendt">
           <i data-lucide="check-circle-2" class="icon-sm"></i>
-          Godkendt
+          <span class="sidebar-text">Godkendt</span>
           <span class="sidebar-count" id="cnt-APPROVED">—</span>
         </a>
-        <a class="sidebar-item" data-filter="CALLED" onclick="setFilter(this, 'CALLED')">
+        <a class="sidebar-item" data-filter="CALLED" onclick="setFilter(this, 'CALLED')" data-label="Møde booket">
           <i data-lucide="calendar-days" class="icon-sm"></i>
-          Møde booket
+          <span class="sidebar-text">Møde booket</span>
           <span class="sidebar-count" id="cnt-CALLED">—</span>
         </a>
       </div>
 
       <div class="sidebar-label">Betaling</div>
       <div class="sidebar-section">
-        <a class="sidebar-item" data-filter="AWAITING_PAYMENT" onclick="setFilter(this, 'AWAITING_PAYMENT')">
+        <a class="sidebar-item" data-filter="AWAITING_PAYMENT" onclick="setFilter(this, 'AWAITING_PAYMENT')" data-label="Afventer betaling">
           <i data-lucide="credit-card" class="icon-sm"></i>
-          Afventer betaling
+          <span class="sidebar-text">Afventer betaling</span>
           <span class="sidebar-count" id="cnt-AWAITING_PAYMENT">—</span>
         </a>
-        <a class="sidebar-item" data-filter="PAID" onclick="setFilter(this, 'PAID')">
+        <a class="sidebar-item" data-filter="PAID" onclick="setFilter(this, 'PAID')" data-label="Betalt">
           <i data-lucide="wallet" class="icon-sm"></i>
-          Betalt
+          <span class="sidebar-text">Betalt</span>
           <span class="sidebar-count" id="cnt-PAID">—</span>
         </a>
       </div>
 
       <div class="sidebar-label">Produktion</div>
       <div class="sidebar-section">
-        <a class="sidebar-item" data-filter="IN_PRODUCTION" onclick="setFilter(this, 'IN_PRODUCTION')">
+        <a class="sidebar-item" data-filter="IN_PRODUCTION" onclick="setFilter(this, 'IN_PRODUCTION')" data-label="I produktion">
           <i data-lucide="settings-2" class="icon-sm"></i>
-          I produktion
+          <span class="sidebar-text">I produktion</span>
           <span class="sidebar-count" id="cnt-IN_PRODUCTION">—</span>
         </a>
-        <a class="sidebar-item" data-filter="QC_REVIEW" onclick="setFilter(this, 'QC_REVIEW')">
+        <a class="sidebar-item" data-filter="QC_REVIEW" onclick="setFilter(this, 'QC_REVIEW')" data-label="QC review">
           <i data-lucide="microscope" class="icon-sm"></i>
-          QC review
+          <span class="sidebar-text">QC review</span>
           <span class="sidebar-count" id="cnt-QC_REVIEW">—</span>
         </a>
-        <a class="sidebar-item" data-filter="QC_PASSED" onclick="setFilter(this, 'QC_PASSED')">
+        <a class="sidebar-item" data-filter="QC_PASSED" onclick="setFilter(this, 'QC_PASSED')" data-label="QC godkendt">
           <i data-lucide="badge-check" class="icon-sm"></i>
-          QC godkendt
+          <span class="sidebar-text">QC godkendt</span>
           <span class="sidebar-count" id="cnt-QC_PASSED">—</span>
         </a>
-        <a class="sidebar-item" data-filter="READY_FOR_REVIEW_CALL" onclick="setFilter(this, 'READY_FOR_REVIEW_CALL')">
+        <a class="sidebar-item" data-filter="READY_FOR_REVIEW_CALL" onclick="setFilter(this, 'READY_FOR_REVIEW_CALL')" data-label="Klar til review">
           <i data-lucide="phone" class="icon-sm"></i>
-          Klar til review
+          <span class="sidebar-text">Klar til review</span>
           <span class="sidebar-count" id="cnt-READY_FOR_REVIEW_CALL">—</span>
         </a>
-        <a class="sidebar-item" data-filter="ESCALATED" onclick="setFilter(this, 'ESCALATED')">
+        <a class="sidebar-item" data-filter="ESCALATED" onclick="setFilter(this, 'ESCALATED')" data-label="Eskaleret">
           <i data-lucide="alert-triangle" class="icon-sm"></i>
-          Eskaleret
+          <span class="sidebar-text">Eskaleret</span>
           <span class="sidebar-count" id="cnt-ESCALATED">—</span>
         </a>
       </div>
 
       <div class="sidebar-label">Afsluttet</div>
       <div class="sidebar-section">
-        <a class="sidebar-item" data-filter="REJECTED" onclick="setFilter(this, 'REJECTED')">
+        <a class="sidebar-item" data-filter="REJECTED" onclick="setFilter(this, 'REJECTED')" data-label="Afvist">
           <i data-lucide="ban" class="icon-sm"></i>
-          Afvist
+          <span class="sidebar-text">Afvist</span>
           <span class="sidebar-count" id="cnt-REJECTED">—</span>
         </a>
-        <a class="sidebar-item" data-filter="CANCELLED" onclick="setFilter(this, 'CANCELLED')">
+        <a class="sidebar-item" data-filter="CANCELLED" onclick="setFilter(this, 'CANCELLED')" data-label="Annulleret">
           <i data-lucide="x-circle" class="icon-sm"></i>
-          Annulleret
+          <span class="sidebar-text">Annulleret</span>
           <span class="sidebar-count" id="cnt-CANCELLED">—</span>
         </a>
       </div>
@@ -252,31 +289,33 @@
       </div>
     </div>
 
-    <!-- KPI widgets -->
-    <div class="kpi-grid kpi-grid-4">
-      <div class="kpi-card" style="--kpi-color: var(--primary);">
-        <div class="kpi-icon-bg"><i data-lucide="users" style="width:40px;height:40px;"></i></div>
-        <div class="kpi-label">Totale leads</div>
-        <div class="kpi-value" id="kpi-total">—</div>
-        <div class="kpi-sub">Alle indkommende ansøgninger</div>
-      </div>
-      <div class="kpi-card" style="--kpi-color: var(--success);">
-        <div class="kpi-icon-bg"><i data-lucide="credit-card" style="width:40px;height:40px;"></i></div>
-        <div class="kpi-label">Betalte kunder</div>
-        <div class="kpi-value" id="kpi-paid">—</div>
-        <div class="kpi-sub" id="kpi-conversion">Konverteringsrate: —</div>
-      </div>
-      <div class="kpi-card" style="--kpi-color: var(--warning);">
-        <div class="kpi-icon-bg"><i data-lucide="activity" style="width:40px;height:40px;"></i></div>
-        <div class="kpi-label">Aktiv pipeline</div>
-        <div class="kpi-value" id="kpi-active">—</div>
-        <div class="kpi-sub">Under behandling</div>
-      </div>
-      <div class="kpi-card" style="--kpi-color: var(--error);">
-        <div class="kpi-icon-bg"><i data-lucide="alert-triangle" style="width:40px;height:40px;"></i></div>
-        <div class="kpi-label">Kræver handling</div>
-        <div class="kpi-value" id="kpi-action">—</div>
-        <div class="kpi-sub">Eskaleret eller afventer</div>
+    <!-- Dashboard KPI section (only visible when Dashboard view is active) -->
+    <div id="dashboardSection" style="display:none;">
+      <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card" style="--kpi-color: var(--primary);">
+          <div class="kpi-icon-bg"><i data-lucide="users" style="width:40px;height:40px;"></i></div>
+          <div class="kpi-label">Totale leads</div>
+          <div class="kpi-value" id="kpi-total">—</div>
+          <div class="kpi-sub">Alle indkommende ansøgninger</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color: var(--success);">
+          <div class="kpi-icon-bg"><i data-lucide="credit-card" style="width:40px;height:40px;"></i></div>
+          <div class="kpi-label">Betalte kunder</div>
+          <div class="kpi-value" id="kpi-paid">—</div>
+          <div class="kpi-sub" id="kpi-conversion">Konverteringsrate: —</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color: var(--warning);">
+          <div class="kpi-icon-bg"><i data-lucide="activity" style="width:40px;height:40px;"></i></div>
+          <div class="kpi-label">Aktiv pipeline</div>
+          <div class="kpi-value" id="kpi-active">—</div>
+          <div class="kpi-sub">Under behandling</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color: var(--error);">
+          <div class="kpi-icon-bg"><i data-lucide="alert-triangle" style="width:40px;height:40px;"></i></div>
+          <div class="kpi-label">Kræver handling</div>
+          <div class="kpi-value" id="kpi-action">—</div>
+          <div class="kpi-sub">Eskaleret eller afventer</div>
+        </div>
       </div>
     </div>
 
@@ -471,6 +510,19 @@ function setFilter(el, status) {
   document.querySelectorAll('.filter-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.status === status);
   });
+
+  // Show table, hide dashboard KPIs
+  const dashSection = document.getElementById('dashboardSection');
+  const tableWrap = document.querySelector('.table-wrap');
+  const toolbar = document.querySelector('.toolbar');
+  if (dashSection) dashSection.style.display = 'none';
+  if (tableWrap) tableWrap.style.display = '';
+  if (toolbar) toolbar.style.display = '';
+
+  const navTitle = document.getElementById('navTitle');
+  if (navTitle) navTitle.textContent = status ? (STATUS_LABELS[status] || status) : 'Leads';
+
+  closeSidebar();
   renderTable();
 }
 
@@ -482,6 +534,14 @@ function setFilterChip(el, status) {
   document.querySelectorAll('.sidebar-item').forEach(i => {
     i.classList.toggle('active', i.dataset.filter === status);
   });
+
+  const dashSection = document.getElementById('dashboardSection');
+  const tableWrap = document.querySelector('.table-wrap');
+  const toolbar = document.querySelector('.toolbar');
+  if (dashSection) dashSection.style.display = 'none';
+  if (tableWrap) tableWrap.style.display = '';
+  if (toolbar) toolbar.style.display = '';
+
   renderTable();
 }
 
@@ -550,12 +610,10 @@ function renderTable() {
       <td><div>${fmtDate(a.created_at)}</div><div class="td-sub">${fmtTime(a.created_at)}</div></td>
       <td><div>${fmtDate(a.updated_at)}</div><div class="td-sub">${fmtTime(a.updated_at)}</div></td>
       <td class="td-actions" style="white-space:nowrap;">
-        <button class="action-btn blue" title="Se detaljer" onclick='openDetail(${JSON.stringify(a)})'>
-          <i data-lucide="eye" class="icon-sm"></i>
-        </button>
-        <button class="action-btn" title="Skift status" onclick='openStatus(${JSON.stringify(a)})'>
-          <i data-lucide="pencil" class="icon-sm"></i>
-        </button>
+        <a class="review-btn" href="/admin/applications/${esc(a.id)}/review">
+          <i data-lucide="arrow-right" class="icon-xs"></i>
+          Åbn
+        </a>
       </td>
     </tr>
   `).join('');
@@ -976,6 +1034,52 @@ function exportCSV() {
   a.click();
   URL.revokeObjectURL(url);
   toast('CSV eksporteret', 'success');
+}
+
+// ─── Sidebar ──────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('adminSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const open = sidebar.classList.toggle('open');
+  overlay.classList.toggle('active', open);
+}
+
+function closeSidebar() {
+  document.getElementById('adminSidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
+function toggleCollapse() {
+  const sidebar = document.getElementById('adminSidebar');
+  const main = document.querySelector('.admin-main');
+  const btn = document.getElementById('sidebarCollapseBtn');
+  const collapsed = sidebar.classList.toggle('collapsed');
+  main.classList.toggle('sidebar-collapsed', collapsed);
+  const icon = btn.querySelector('i');
+  if (icon) {
+    icon.setAttribute('data-lucide', collapsed ? 'chevrons-right' : 'chevrons-left');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+// ─── Dashboard view ───────────────────────────────
+function setView(view) {
+  const dashSection = document.getElementById('dashboardSection');
+  const tableWrap = document.querySelector('.table-wrap');
+  const toolbar = document.querySelector('.toolbar');
+  const navTitle = document.getElementById('navTitle');
+
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  const viewEl = document.querySelector(`[data-view="${view}"]`);
+  if (viewEl) viewEl.classList.add('active');
+
+  if (view === 'dashboard') {
+    dashSection.style.display = '';
+    if (tableWrap) tableWrap.style.display = 'none';
+    if (toolbar) toolbar.style.display = 'none';
+    if (navTitle) navTitle.textContent = 'Dashboard';
+  }
+  closeSidebar();
 }
 
 // ─── Init ─────────────────────────────────────────
