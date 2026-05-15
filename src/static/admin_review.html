@@ -8,6 +8,20 @@
   <style>
     body { min-height: 100vh; font-size: 14px; line-height: 1.5; }
 
+    /* ── Detail layout: 80% content + 20% wizard ── */
+    .detail-layout {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+    .detail-main { flex: 1; min-width: 0; }
+    .detail-wizard { width: 200px; flex-shrink: 0; position: sticky; top: calc(var(--nav-h) + 2rem); }
+
+    @media (max-width: 960px) {
+      .detail-layout { flex-direction: column-reverse; }
+      .detail-wizard { width: 100%; position: static; }
+    }
+
     /* ── Application detail cards ── */
     .review-card {
       background: var(--card);
@@ -115,12 +129,7 @@
     }
 
     /* ── CTA buttons (status-based) ── */
-    .cta-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      margin-top: 0.75rem;
-    }
+    .cta-group { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
 
     .cta-btn {
       display: inline-flex;
@@ -135,30 +144,16 @@
       text-decoration: none;
       transition: all 0.12s;
     }
-    .cta-btn-approve {
-      background: var(--success);
-      color: #fff;
-    }
+    .cta-btn-approve { background: var(--success); color: #fff; }
     .cta-btn-approve:hover { background: #16a34a; }
-
-    .cta-btn-reject {
-      background: var(--error);
-      color: #fff;
-    }
+    .cta-btn-reject { background: var(--error); color: #fff; }
     .cta-btn-reject:hover { background: #dc2626; }
-
-    .cta-btn-secondary {
-      background: var(--card);
-      color: var(--text);
-      border: 1.5px solid var(--border);
-    }
+    .cta-btn-secondary { background: var(--card); color: var(--text); border: 1.5px solid var(--border); }
     .cta-btn-secondary:hover { background: var(--bg); border-color: #cbd5e1; }
-
     .cta-btn-secondary.disabled,
-    .cta-btn-secondary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    .cta-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .cta-btn-pdf { background: var(--primary); color: #fff; }
+    .cta-btn-pdf:hover { background: var(--primary-h); }
 
     .cta-coming-soon {
       display: inline-flex;
@@ -183,26 +178,16 @@
       margin-top: 0.75rem;
     }
 
-    .cta-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
+    .cta-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 
     /* ── Center loading/error ── */
     .center-msg { text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
     #pageContent { display: none; }
 
-    /* ── Sidebar status select ── */
-    #statusNote {
-      min-height: 60px;
-    }
+    #statusNote { min-height: 60px; }
 
     /* ── Agent Research ── */
-    @keyframes research-spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes research-spin { to { transform: rotate(360deg); } }
 
     .research-status-badge {
       display: inline-flex;
@@ -214,10 +199,10 @@
       border-radius: 20px;
       letter-spacing: 0.03em;
     }
-    .research-status-pending   { background: #f1f5f9; color: #64748b; }
+    .research-status-pending     { background: #f1f5f9; color: #64748b; }
     .research-status-in_progress { background: #fefce8; color: #a16207; }
-    .research-status-completed { background: #f0fdf4; color: #15803d; }
-    .research-status-failed    { background: #fef2f2; color: #dc2626; }
+    .research-status-completed   { background: #f0fdf4; color: #15803d; }
+    .research-status-failed      { background: #fef2f2; color: #dc2626; }
 
     .research-spinner {
       width: 10px; height: 10px;
@@ -263,11 +248,7 @@
       gap: 0.5rem;
     }
 
-    .research-list {
-      list-style: none;
-      padding: 0;
-      margin: 0.25rem 0 0;
-    }
+    .research-list { list-style: none; padding: 0; margin: 0.25rem 0 0; }
     .research-list li {
       padding: 0.3rem 0;
       border-bottom: 1px solid var(--bg);
@@ -277,12 +258,7 @@
       gap: 0.5rem;
     }
     .research-list li:last-child { border-bottom: none; }
-    .research-list-num {
-      font-weight: 700;
-      color: var(--text-muted);
-      min-width: 1.25rem;
-      flex-shrink: 0;
-    }
+    .research-list-num { font-weight: 700; color: var(--text-muted); min-width: 1.25rem; flex-shrink: 0; }
 
     .collapsible-toggle {
       background: none;
@@ -295,6 +271,132 @@
       margin-top: 0.1rem;
     }
     .collapsible-toggle:hover { text-decoration: underline; }
+
+    /* ── Vertical Progress Wizard ── */
+    .wizard-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .wizard-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      padding: 0.85rem 1rem 0.65rem;
+      border-bottom: 1px solid var(--bg);
+    }
+
+    .wizard-steps { padding: 0.65rem 0 0.75rem; }
+
+    .wizard-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0 1rem;
+      min-height: 36px;
+      position: relative;
+    }
+
+    .wizard-step-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.2rem 0;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+    }
+
+    .wizard-connector {
+      position: absolute;
+      left: calc(1rem + 8px);
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+
+    .wizard-step:first-child .wizard-connector { top: 50%; }
+    .wizard-step:last-child  .wizard-connector { bottom: 50%; }
+
+    .wizard-step.completed .wizard-connector,
+    .wizard-step.completed + .wizard-step .wizard-connector { background: #22c55e; }
+
+    .wizard-step.active + .wizard-step .wizard-connector { background: var(--border); }
+
+    .wizard-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--card);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      margin-top: 0.1rem;
+    }
+
+    .wizard-step.completed .wizard-icon {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+
+    .wizard-step.active .wizard-icon {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .wizard-step.research-active .wizard-icon {
+      background: #f59e0b;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+    }
+
+    .wizard-step.rejected .wizard-icon {
+      background: var(--error);
+      border-color: var(--error);
+    }
+
+    .wizard-step-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      line-height: 1.35;
+      padding-top: 0.05rem;
+    }
+
+    .wizard-step.completed .wizard-step-label { color: var(--text); font-weight: 600; }
+    .wizard-step.active .wizard-step-label { color: var(--primary); font-weight: 700; }
+    .wizard-step.research-active .wizard-step-label { color: #b45309; font-weight: 700; }
+    .wizard-step.rejected .wizard-step-label { color: var(--error); font-weight: 700; }
+
+    /* ── Interview Questions card ── */
+    .iq-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .iq-item {
+      display: flex;
+      gap: 0.65rem;
+      padding: 0.6rem 1.25rem;
+      border-bottom: 1px solid var(--bg);
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .iq-item:last-child { border-bottom: none; }
+    .iq-num { font-weight: 700; color: var(--text-muted); min-width: 1.5rem; flex-shrink: 0; }
+    .iq-actions { padding: 0.75rem 1.25rem 1rem; display: flex; gap: 0.65rem; flex-wrap: wrap; border-top: 1px solid var(--bg); }
   </style>
 </head>
 <body>
@@ -399,95 +501,124 @@
         </a>
       </div>
 
-      <!-- Application details -->
-      <div class="review-card">
-        <div class="card-header">
-          <i data-lucide="building-2" class="icon-xs"></i>
-          Company Information
-        </div>
-        <div class="field-grid">
-          <div class="field-item">
-            <div class="field-label">Company name</div>
-            <div class="field-value" id="fCompany">—</div>
-          </div>
-          <div class="field-item">
-            <div class="field-label">Website</div>
-            <div class="field-value" id="fWebsite">—</div>
-          </div>
-          <div class="field-item">
-            <div class="field-label">Country / market</div>
-            <div class="field-value" id="fCountry">—</div>
-          </div>
-          <div class="field-item">
-            <div class="field-label">Industry</div>
-            <div class="field-value" id="fIndustry">—</div>
-          </div>
-        </div>
-        <div class="field-full">
-          <div class="field-label">Short description</div>
-          <div class="textarea-val" id="fDescription">—</div>
-        </div>
-        <div class="field-full">
-          <div class="field-label">Main competitors <span style="font-weight:400;text-transform:none;">(if known)</span></div>
-          <div class="field-value" id="fCompetitors">—</div>
-        </div>
-      </div>
+      <!-- 80/20 split: detail cards + wizard -->
+      <div class="detail-layout">
 
-      <div class="review-card">
-        <div class="card-header">
-          <i data-lucide="user" class="icon-xs"></i>
-          Contact Information
-        </div>
-        <div class="field-grid">
-          <div class="field-item">
-            <div class="field-label">Contact person</div>
-            <div class="field-value" id="fContact">—</div>
-          </div>
-          <div class="field-item">
-            <div class="field-label">Contact email</div>
-            <div class="field-value" id="fEmail">—</div>
-          </div>
-          <div class="field-item">
-            <div class="field-label">Application date</div>
-            <div class="field-value" id="fAppDate">—</div>
-          </div>
-          <div class="field-item">
-            <div class="field-label">Status</div>
-            <div class="field-value" id="fStatusField">—</div>
-          </div>
-        </div>
-      </div>
+        <!-- ── Left: 80% content ── -->
+        <div class="detail-main">
 
-      <div class="review-card">
-        <div class="card-header">
-          <i data-lucide="target" class="icon-xs"></i>
-          Goal
-        </div>
-        <div class="field-full">
-          <div class="field-label">Reason for applying / goal of AIScore</div>
-          <div class="textarea-val" id="fGoal">—</div>
-        </div>
-      </div>
+          <!-- Application Information Card -->
+          <div class="review-card">
+            <div class="card-header">
+              <i data-lucide="building-2" class="icon-xs"></i>
+              Application Information
+            </div>
+            <div class="field-grid">
+              <div class="field-item">
+                <div class="field-label">Company name</div>
+                <div class="field-value" id="fCompany">—</div>
+              </div>
+              <div class="field-item">
+                <div class="field-label">Website</div>
+                <div class="field-value" id="fWebsite">—</div>
+              </div>
+              <div class="field-item">
+                <div class="field-label">Country / market</div>
+                <div class="field-value" id="fCountry">—</div>
+              </div>
+              <div class="field-item">
+                <div class="field-label">Industry</div>
+                <div class="field-value" id="fIndustry">—</div>
+              </div>
+              <div class="field-item">
+                <div class="field-label">Contact person</div>
+                <div class="field-value" id="fContact">—</div>
+              </div>
+              <div class="field-item">
+                <div class="field-label">Contact email</div>
+                <div class="field-value" id="fEmail">—</div>
+              </div>
+              <div class="field-item">
+                <div class="field-label">Current status</div>
+                <div class="field-value" id="fStatusField">—</div>
+              </div>
+              <div class="field-item">
+                <div class="field-label">Application date</div>
+                <div class="field-value" id="fAppDate">—</div>
+              </div>
+              <div class="field-item" id="fApprovedDateWrap" style="display:none;">
+                <div class="field-label">Approved date</div>
+                <div class="field-value" id="fApprovedDate">—</div>
+              </div>
+              <div class="field-item" id="fRejectedDateWrap" style="display:none;">
+                <div class="field-label">Rejected date</div>
+                <div class="field-value" id="fRejectedDate">—</div>
+              </div>
+              <div class="field-item" id="fResearchStatusWrap" style="display:none;">
+                <div class="field-label">Agent research</div>
+                <div class="field-value" id="fResearchStatus">—</div>
+              </div>
+            </div>
+            <div class="field-full">
+              <div class="field-label">Business description</div>
+              <div class="textarea-val" id="fDescription">—</div>
+            </div>
+            <div class="field-full">
+              <div class="field-label">Main competitors <span style="font-weight:400;text-transform:none;">(if known)</span></div>
+              <div class="field-value" id="fCompetitors">—</div>
+            </div>
+            <div class="field-full">
+              <div class="field-label">Application goal</div>
+              <div class="textarea-val" id="fGoal">—</div>
+            </div>
+            <div class="field-full" id="fRejectionReasonWrap" style="display:none;">
+              <div class="field-label">Rejection reason</div>
+              <div class="textarea-val" id="fRejectionReason" style="background:var(--error-light);color:#b91c1c;">—</div>
+            </div>
+          </div>
 
-      <!-- Agent Research -->
-      <div class="review-card" id="agentResearchCard" style="display:none;">
-        <div class="card-header" style="justify-content:space-between;">
-          <span style="display:flex;align-items:center;gap:0.4rem;">
-            <i data-lucide="bot" class="icon-xs"></i>
-            Agent Research
-          </span>
-          <span id="agentResearchStatusBadge"></span>
-        </div>
-        <div id="agentResearchContent"></div>
-      </div>
+          <!-- Agent Research Card -->
+          <div class="review-card" id="agentResearchCard" style="display:none;">
+            <div class="card-header" style="justify-content:space-between;">
+              <span style="display:flex;align-items:center;gap:0.4rem;">
+                <i data-lucide="bot" class="icon-xs"></i>
+                Agent Research
+              </span>
+              <span id="agentResearchStatusBadge"></span>
+            </div>
+            <div id="agentResearchContent"></div>
+          </div>
 
-      <!-- Status-based Action Panel -->
-      <div class="action-panel" id="actionPanel">
-        <h2 id="actionTitle">Actions</h2>
-        <p id="actionDesc">Select the next action for this application.</p>
-        <div id="actionContent"></div>
-      </div>
-    </div>
+          <!-- Generated Interview Questions Card -->
+          <div class="review-card" id="interviewQuestionsCard">
+            <div class="card-header" style="justify-content:space-between;">
+              <span style="display:flex;align-items:center;gap:0.4rem;">
+                <i data-lucide="message-square-text" class="icon-xs"></i>
+                Generated Interview Questions
+              </span>
+              <span id="iqBadge"></span>
+            </div>
+            <div id="interviewQuestionsContent"></div>
+          </div>
+
+          <!-- Status-based Action Panel -->
+          <div class="action-panel" id="actionPanel">
+            <h2 id="actionTitle">Actions</h2>
+            <p id="actionDesc">Select the next action for this application.</p>
+            <div id="actionContent"></div>
+          </div>
+        </div>
+
+        <!-- ── Right: 20% vertical progress wizard ── -->
+        <div class="detail-wizard">
+          <div class="wizard-card">
+            <div class="wizard-title">Application Progress</div>
+            <div class="wizard-steps" id="progressWizard"></div>
+          </div>
+        </div>
+
+      </div><!-- /detail-layout -->
+    </div><!-- /pageContent -->
 
   </main>
 </div>
@@ -530,9 +661,94 @@ const VALID_TRANSITIONS = {
   ESCALATED: ['RETRY'],
 };
 
+// ─── Wizard ───────────────────────────────────────
+
+const WIZARD_STEPS = [
+  { id: 'APPLIED',               label: 'Applied',               icon: 'mail-open'       },
+  { id: 'UNDER_REVIEW',          label: 'Under Review',          icon: 'eye'             },
+  { id: 'AGENT_RESEARCH',        label: 'Agent Research',        icon: 'bot'             },
+  { id: 'APPROVED',              label: 'Approved',              icon: 'check-circle-2'  },
+  { id: 'CALL_BOOKING',          label: 'Call Booking',          icon: 'calendar'        },
+  { id: 'CALLED',                label: 'Called',                icon: 'phone'           },
+  { id: 'AWAITING_PAYMENT',      label: 'Awaiting Payment',      icon: 'credit-card'     },
+  { id: 'PAID',                  label: 'Paid',                  icon: 'badge-check'     },
+  { id: 'IN_PRODUCTION',         label: 'In Production',         icon: 'zap'             },
+  { id: 'PDF_REPORT',            label: 'PDF Report',            icon: 'file-text'       },
+  { id: 'QC_REVIEW',             label: 'QC Review',             icon: 'shield-check'    },
+  { id: 'READY_FOR_REVIEW_CALL', label: 'Ready for Review Call', icon: 'video'           },
+];
+
+const STATUS_STEP_INDEX = {
+  APPLIED:               0,
+  UNDER_REVIEW:          1,
+  APPROVED:              3,
+  CALLED:                5,
+  AWAITING_PAYMENT:      6,
+  PAID:                  7,
+  IN_PRODUCTION:         8,
+  QC_REVIEW:             10,
+  QC_PASSED:             11,
+  QC_FAILED:             10,
+  READY_FOR_REVIEW_CALL: 11,
+};
+
+function getWizardActiveIndex(app) {
+  const s = app.status;
+  if (s === 'UNDER_REVIEW') {
+    const rs = (app.agent_research_status || '').toUpperCase();
+    if (rs === 'IN_PROGRESS') return { idx: 2, researchActive: true };
+  }
+  return { idx: STATUS_STEP_INDEX[s] ?? 0, researchActive: false };
+}
+
+function renderProgressWizard(app) {
+  const container = document.getElementById('progressWizard');
+  if (!container) return;
+
+  const isRejected = app.status === 'REJECTED' || app.status === 'CANCELLED';
+  const { idx: currentIdx, researchActive } = getWizardActiveIndex(app);
+
+  let html = '';
+  WIZARD_STEPS.forEach((step, i) => {
+    let state = 'future';
+    if (isRejected) {
+      if (i === 0) state = 'completed';
+      else if (i === 1) state = 'rejected';
+      else state = 'future';
+    } else if (researchActive && i === 2) {
+      state = 'research-active';
+    } else if (i < currentIdx) {
+      state = 'completed';
+    } else if (i === currentIdx) {
+      state = 'active';
+    }
+
+    const iconContent = state === 'completed'
+      ? `<i data-lucide="check" style="width:9px;height:9px;stroke-width:3;color:#fff;"></i>`
+      : state === 'rejected'
+        ? `<i data-lucide="x" style="width:9px;height:9px;stroke-width:3;color:#fff;"></i>`
+        : state === 'active' || state === 'research-active'
+          ? `<i data-lucide="${step.icon}" style="width:9px;height:9px;color:#fff;"></i>`
+          : '';
+
+    html += `
+      <div class="wizard-step ${state}">
+        <div class="wizard-connector"></div>
+        <div class="wizard-step-inner">
+          <div class="wizard-icon">${iconContent}</div>
+          <div class="wizard-step-label">${esc(step.label)}</div>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+  if (window.lucide) lucide.createIcons();
+}
+
+// ─── Helpers ─────────────────────────────────────
+
 function statusChip(status) {
-  const cls = 'chip chip-' + status.toLowerCase();
-  return `<span class="${cls}">${esc(STATUS_LABELS[status] || status)}</span>`;
+  return `<span class="chip chip-${status.toLowerCase()}">${esc(STATUS_LABELS[status] || status)}</span>`;
 }
 
 function fmtDate(iso) {
@@ -557,6 +773,25 @@ function setHtml(id, val) {
   if (el) el.innerHTML = val;
 }
 
+function showEl(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = '';
+}
+
+function getLogDate(app, toStatus) {
+  const logs = (app.state_logs || []);
+  const log = logs.find(l => l.to_status === toStatus);
+  return log ? (log.changed_at || log.created_at) : null;
+}
+
+function getLatestNote(app) {
+  const logs = (app.state_logs || []).slice().reverse();
+  const rejLog = logs.find(l => l.to_status === 'REJECTED' && l.note);
+  return rejLog ? rejLog.note : null;
+}
+
+// ─── Render ───────────────────────────────────────
+
 function renderApp(app) {
   appData = app;
   document.title = `${app.firmanavn || 'Application'} — AIScore Admin`;
@@ -567,35 +802,127 @@ function renderApp(app) {
   const appDate = app.submitted_at || app.created_at;
   document.getElementById('appSubmittedAt').textContent = appDate ? 'Submitted ' + fmtDate(appDate) : '';
 
+  // Application Information Card
   setText('fCompany',     app.firmanavn);
   setHtml('fWebsite',     app.website
     ? `<a href="${esc(app.website)}" target="_blank" rel="noopener">${esc(app.website)}</a>`
     : '—');
   setText('fCountry',     app.country);
   setText('fIndustry',    app.industry);
-  setText('fDescription', app.virksomhedsinfo || app.business_description);
-  setText('fCompetitors', app.competitors || '—');
   setText('fContact',     app.kontaktperson);
   setHtml('fEmail',       app.email
     ? `<a href="mailto:${esc(app.email)}">${esc(app.email)}</a>`
     : '—');
-  setText('fAppDate',     appDate ? fmtDate(appDate) : '—');
   setHtml('fStatusField', statusChip(app.status));
+  setText('fAppDate',     appDate ? fmtDate(appDate) : '—');
+  setText('fDescription', app.virksomhedsinfo || app.business_description);
+  setText('fCompetitors', app.competitors || '—');
   setText('fGoal',        app.application_goal);
 
+  // Conditional fields
+  const approvedAt = getLogDate(app, 'APPROVED');
+  if (approvedAt) {
+    showEl('fApprovedDateWrap');
+    setText('fApprovedDate', fmtDate(approvedAt));
+  }
+
+  const rejectedAt = getLogDate(app, 'REJECTED');
+  if (rejectedAt) {
+    showEl('fRejectedDateWrap');
+    setText('fRejectedDate', fmtDate(rejectedAt));
+  }
+
+  const rejNote = getLatestNote(app);
+  if (rejNote) {
+    showEl('fRejectionReasonWrap');
+    setText('fRejectionReason', rejNote);
+  }
+
+  if (app.agent_research_status) {
+    showEl('fResearchStatusWrap');
+    const rs = (app.agent_research_status || '').toLowerCase();
+    const rsMap = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed', failed: 'Failed' };
+    setText('fResearchStatus', rsMap[rs] || rs);
+  }
+
   renderAgentResearch(app);
+  renderInterviewQuestions(app);
   renderActionPanel(app);
+  renderProgressWizard(app);
 
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('pageContent').style.display = 'block';
   if (window.lucide) lucide.createIcons();
 }
 
-function getLatestNote(app) {
-  const logs = (app.state_logs || []).slice().reverse();
-  const rejLog = logs.find(l => l.to_status === 'REJECTED' && l.note);
-  return rejLog ? rejLog.note : null;
+// ─── Interview Questions ──────────────────────────
+
+function renderInterviewQuestions(app) {
+  const questions = Array.isArray(app.agent_interview_questions) ? app.agent_interview_questions : [];
+  const content = document.getElementById('interviewQuestionsContent');
+  const badge = document.getElementById('iqBadge');
+
+  if (!content) return;
+
+  if (questions.length) {
+    badge.innerHTML = `<span style="background:#f0fdf4;color:#15803d;font-size:0.7rem;font-weight:700;padding:0.15rem 0.55rem;border-radius:20px;">${questions.length} questions</span>`;
+    const items = questions.map((q, i) =>
+      `<li class="iq-item"><span class="iq-num">${i + 1}.</span><span>${esc(q)}</span></li>`
+    ).join('');
+    content.innerHTML = `<ol class="iq-list">${items}</ol>
+      <div class="iq-actions">
+        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+          <i data-lucide="refresh-cw" class="icon-sm"></i>
+          Retry Agent Research
+        </button>
+        <button class="cta-btn cta-btn-pdf" onclick="downloadQuestionsPDF()">
+          <i data-lucide="download" class="icon-sm"></i>
+          Download Questions as PDF
+        </button>
+      </div>`;
+  } else {
+    badge.innerHTML = '';
+    const researchStatus = (app.agent_research_status || '').toUpperCase();
+    const btnLabel = researchStatus === 'FAILED' ? 'Retry Agent Research' : 'Generate Questions';
+    const btnIcon = researchStatus === 'FAILED' ? 'refresh-cw' : 'play';
+    content.innerHTML = `
+      <div class="research-placeholder">
+        No interview questions have been generated yet.
+      </div>
+      <div style="padding:0 1.25rem 1rem;">
+        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+          <i data-lucide="${btnIcon}" class="icon-sm"></i>
+          ${esc(btnLabel)}
+        </button>
+      </div>`;
+  }
+
+  if (window.lucide) lucide.createIcons();
 }
+
+async function downloadQuestionsPDF() {
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/interview-questions/pdf`);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `interview-questions-${appId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('PDF downloaded', 'success');
+  } catch (err) {
+    toast('Failed to download PDF: ' + err.message, 'error');
+  }
+}
+
+// ─── Action Panel ─────────────────────────────────
 
 function renderActionPanel(app) {
   const status = app.status;
@@ -606,6 +933,7 @@ function renderActionPanel(app) {
   if (status === 'UNDER_REVIEW') {
     titleEl.textContent = 'Review Actions';
     descEl.textContent = 'This application is under review. Approve or reject it below.';
+    const hasQuestions = Array.isArray(app.agent_interview_questions) && app.agent_interview_questions.length > 0;
     const researchWarning = (app.agent_research_status === 'IN_PROGRESS')
       ? `<div class="research-warning">
            <i data-lucide="clock" class="icon-xs"></i>
@@ -613,15 +941,28 @@ function renderActionPanel(app) {
          </div>`
       : '';
     container.innerHTML = researchWarning + `
-      <div class="cta-row" style="margin-top:0.75rem;">
-        <button class="cta-btn cta-btn-approve" onclick="quickApprove()">
-          <i data-lucide="check" class="icon-sm"></i>
-          Approve
-        </button>
-        <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
-          <i data-lucide="x" class="icon-sm"></i>
-          Reject
-        </button>
+      <div class="cta-group">
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-approve" onclick="quickApprove()">
+            <i data-lucide="check" class="icon-sm"></i>
+            Approve
+          </button>
+          <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
+            <i data-lucide="x" class="icon-sm"></i>
+            Reject
+          </button>
+        </div>
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+            <i data-lucide="refresh-cw" class="icon-sm"></i>
+            Run / Retry Agent Research
+          </button>
+          ${!hasQuestions ? `
+          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+            <i data-lucide="message-square-text" class="icon-sm"></i>
+            Generate Interview Questions
+          </button>` : ''}
+        </div>
       </div>
       <div id="rejectDialog" style="display:none;margin-top:1rem;background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
         <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Rejection reason (optional)</label>
@@ -630,8 +971,7 @@ function renderActionPanel(app) {
           <button class="btn btn-danger" onclick="confirmReject()">Confirm Rejection</button>
           <button class="btn btn-ghost" onclick="document.getElementById('rejectDialog').style.display='none'">Cancel</button>
         </div>
-      </div>
-    `;
+      </div>`;
 
   } else if (status === 'APPROVED') {
     titleEl.textContent = 'Next Steps — Book a Call';
@@ -659,25 +999,28 @@ function renderActionPanel(app) {
           </button>
           <span class="cta-coming-soon">Coming soon</span>
         </div>
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-pdf" onclick="downloadQuestionsPDF()">
+            <i data-lucide="download" class="icon-sm"></i>
+            Download Questions as PDF
+          </button>
+        </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:0.25rem 0;" />
         <div>
           <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Already completed a call manually?</p>
           <button class="cta-btn cta-btn-secondary" onclick="markAsCalled()">
             <i data-lucide="phone-call" class="icon-sm"></i>
-            Mark as Called
+            Move to Called manually
           </button>
         </div>
-      </div>
-    `;
+      </div>`;
 
   } else if (status === 'REJECTED') {
     titleEl.textContent = 'Application Rejected';
     descEl.textContent = 'This application has been rejected. No further actions are available.';
     const note = getLatestNote(app);
     container.innerHTML = note
-      ? `<div class="rejection-reason-box">
-           <strong>Rejection reason:</strong> ${esc(note)}
-         </div>`
+      ? `<div class="rejection-reason-box"><strong>Rejection reason:</strong> ${esc(note)}</div>`
       : `<div class="already-done">No rejection reason was recorded.</div>`;
 
   } else if (status === 'CALLED') {
@@ -693,8 +1036,7 @@ function renderActionPanel(app) {
           <i data-lucide="arrow-left" class="icon-sm"></i>
           Back to Approved
         </button>
-      </div>
-    `;
+      </div>`;
 
   } else {
     const nextStatuses = VALID_TRANSITIONS[status] || [];
@@ -733,22 +1075,13 @@ function openRejectDialog() {
   if (d) d.style.display = 'block';
 }
 
-async function quickApprove() {
-  await doStatusChange('APPROVED', '');
-}
-
+async function quickApprove() { await doStatusChange('APPROVED', ''); }
 async function confirmReject() {
   const note = document.getElementById('rejectNote')?.value?.trim() || '';
   await doStatusChange('REJECTED', note);
 }
-
-async function markAsCalled() {
-  await doStatusChange('CALLED', '');
-}
-
-async function changeStatus(newStatus, note = '') {
-  await doStatusChange(newStatus, note);
-}
+async function markAsCalled() { await doStatusChange('CALLED', ''); }
+async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
 
 async function doStatusChange(newStatus, note) {
   try {
@@ -779,12 +1112,10 @@ function selectStatus(el) {
 async function confirmStatus() {
   const selected = document.querySelector('.status-option.selected');
   if (!selected) return;
-
   const newStatus = selected.dataset.status;
   const note = document.getElementById('statusNote')?.value?.trim() || '';
   const btn = document.getElementById('btnConfirm');
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
-
   await doStatusChange(newStatus, note);
 }
 
@@ -862,9 +1193,9 @@ function renderAgentResearch(app) {
 
   if (status === 'COMPLETED') {
     const fitMap = {
-      RECOMMEND_APPROVE:        { label: 'Recommend Approve',       cls: 'fit-approve'   },
-      NEEDS_MORE_INFORMATION:   { label: 'Needs More Information',  cls: 'fit-more-info' },
-      RECOMMEND_REJECT:         { label: 'Recommend Reject',        cls: 'fit-reject'    },
+      RECOMMEND_APPROVE:      { label: 'Recommend Approve',      cls: 'fit-approve'   },
+      NEEDS_MORE_INFORMATION: { label: 'Needs More Information', cls: 'fit-more-info' },
+      RECOMMEND_REJECT:       { label: 'Recommend Reject',       cls: 'fit-reject'    },
     };
     const fit = fitMap[app.agent_fit_recommendation] || null;
     const questions  = Array.isArray(app.agent_interview_questions) ? app.agent_interview_questions : [];
@@ -917,10 +1248,6 @@ function renderAgentResearch(app) {
         <div class="textarea-val">${esc(app.agent_missing_information)}</div>
       </div>` : ''}
       <div class="field-full">
-        <div class="field-label">Interview Questions</div>
-        <div style="margin-top:0.25rem;">${buildCollapsibleList(questions, true)}</div>
-      </div>
-      <div class="field-full">
         <div class="field-label">Suggested Prompt Directions</div>
         <div style="margin-top:0.25rem;">${buildCollapsibleList(directions, false)}</div>
       </div>
@@ -946,7 +1273,6 @@ function renderAgentResearch(app) {
       </div>`;
 
   } else {
-    // PENDING
     content.innerHTML = `
       <div class="research-placeholder">
         Agent research not yet started.
@@ -972,14 +1298,19 @@ async function retryResearch(btn) {
     }
     toast('Research started', 'success');
     const appRes = await fetch(`/api/v1/admin/applications/${appId}`);
-    if (appRes.ok) renderAgentResearch(await appRes.json());
+    if (appRes.ok) renderApp(await appRes.json());
   } catch (err) {
     toast('Failed to start research: ' + err.message, 'error');
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" class="icon-sm"></i> Retry Research'; if (window.lucide) lucide.createIcons(); }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="refresh-cw" class="icon-sm"></i> Retry Research';
+      if (window.lucide) lucide.createIcons();
+    }
   }
 }
 
 // ─── Sidebar ──────────────────────────────────────
+
 function toggleSidebar() {
   const sidebar = document.getElementById('adminSidebar');
   const overlay = document.getElementById('sidebarOverlay');
@@ -1004,6 +1335,8 @@ function toggleCollapse() {
     if (window.lucide) lucide.createIcons();
   }
 }
+
+// ─── Init ─────────────────────────────────────────
 
 async function init() {
   const match = window.location.pathname.match(/\/admin\/applications\/([^/]+)\/review/);
