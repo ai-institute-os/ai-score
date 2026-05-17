@@ -1166,10 +1166,10 @@ function toast(msg, type = '') {
 
 const VERIFICATION_FIELDS = [
   { key: 'website',              label: 'Company Website'      },
-  { key: 'category',             label: 'Category / Industry'  },
+  { key: 'industry',             label: 'Category / Industry'  },
   { key: 'business_description', label: 'Business Description' },
   { key: 'competitors',          label: 'Competitors'          },
-  { key: 'contact_info',         label: 'Contact Info'         },
+  { key: 'application_goal',     label: 'Application Goal'     },
 ];
 
 function isVerificationPassed(app) {
@@ -1177,11 +1177,12 @@ function isVerificationPassed(app) {
 }
 
 function verificationFieldIcon(status) {
-  if (status === 'ok')
+  const s = (status || '').toUpperCase();
+  if (s === 'OK')
     return `<i data-lucide="check-circle" style="width:16px;height:16px;color:#16a34a;"></i>`;
-  if (status === 'warning')
+  if (s === 'WARNING')
     return `<i data-lucide="alert-triangle" style="width:16px;height:16px;color:#d97706;"></i>`;
-  if (status === 'failed')
+  if (s === 'ERROR')
     return `<i data-lucide="x-circle" style="width:16px;height:16px;color:#dc2626;"></i>`;
   return `<i data-lucide="minus-circle" style="width:16px;height:16px;color:#94a3b8;"></i>`;
 }
@@ -1220,7 +1221,7 @@ function renderVerification(app) {
           <div class="verification-icon">${verificationFieldIcon(field.status)}</div>
           <div class="verification-field-info">
             <div class="verification-field-label">${esc(f.label)}</div>
-            ${field.note ? `<div class="verification-field-note">${esc(field.note)}</div>` : ''}
+            ${field.message ? `<div class="verification-field-note">${esc(field.message)}</div>` : ''}
           </div>
         </div>`;
     }).join('');
@@ -1246,11 +1247,28 @@ function renderVerification(app) {
       </div>`;
 
   } else if (vStatus === 'FAILED') {
+    const results = app.agent_verification_results || {};
+    const hasFieldResults = VERIFICATION_FIELDS.some(f => results[f.key]?.status);
+    const fieldsHtml = hasFieldResults ? VERIFICATION_FIELDS.map(f => {
+      const field = results[f.key] || {};
+      return `
+        <div class="verification-field">
+          <div class="verification-icon">${verificationFieldIcon(field.status)}</div>
+          <div class="verification-field-info">
+            <div class="verification-field-label">${esc(f.label)}</div>
+            ${field.message ? `<div class="verification-field-note">${esc(field.message)}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('') : `<div class="research-placeholder" style="color:var(--error);">
+        ${results.error ? esc(results.error) : 'Verification failed — no detail available.'}
+      </div>`;
     content.innerHTML = `
-      <div class="research-placeholder" style="color:var(--error);">
-        Verification failed${app.agent_verification_error ? ': ' + esc(app.agent_verification_error) : ''}.
+      <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--bg);display:flex;align-items:center;gap:0.75rem;">
+        <span class="verification-badge verification-badge-failed">✗ VERIFICATION FAILED</span>
+        ${app.agent_verified_at ? `<span style="font-size:0.75rem;color:var(--text-muted);">${timeAgo(app.agent_verified_at)}</span>` : ''}
       </div>
-      <div style="padding:0 1.25rem 1rem;">
+      ${fieldsHtml}
+      <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--bg);">
         <button class="cta-btn cta-btn-secondary" onclick="runVerification(this)">
           <i data-lucide="refresh-cw" class="icon-sm"></i>
           Retry Verification
