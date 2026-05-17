@@ -1305,7 +1305,8 @@ async function runVerification(btn) {
     const res = await fetch(`/api/v1/admin/applications/${appId}/verify`, { method: 'POST' });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      throw new Error(d.detail || `HTTP ${res.status}`);
+      const detail = Array.isArray(d.detail) ? d.detail.map(e => e.msg).join(', ') : (d.detail || `HTTP ${res.status}`);
+      throw new Error(detail);
     }
     toast('Verification started', 'success');
     const appRes = await fetch(`/api/v1/admin/applications/${appId}`);
