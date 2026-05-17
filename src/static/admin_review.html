@@ -419,6 +419,33 @@
     .iq-item:last-child { border-bottom: none; }
     .iq-num { font-weight: 700; color: var(--text-muted); min-width: 1.5rem; flex-shrink: 0; }
     .iq-actions { padding: 0.75rem 1.25rem 1rem; display: flex; gap: 0.65rem; flex-wrap: wrap; border-top: 1px solid var(--bg); }
+
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1.25rem;
+    }
+    .tab-btn {
+      padding: 0.6rem 1.1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
   </style>
 </head>
 <body>
@@ -529,6 +556,21 @@
         <!-- ── Left: 80% content ── -->
         <div class="detail-main">
 
+          <!-- Tab bar -->
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('info', this)">
+              <i data-lucide="building-2" class="icon-xs"></i>
+              Application Info
+            </button>
+            <button class="tab-btn" onclick="switchTab('status', this)">
+              <i data-lucide="shield-check" class="icon-xs"></i>
+              Status
+            </button>
+          </div>
+
+          <!-- Tab 1: Application Info -->
+          <div class="tab-panel active" id="tab-info">
+
           <!-- Application Information Card -->
           <div class="review-card">
             <div class="card-header">
@@ -599,6 +641,11 @@
             </div>
           </div>
 
+          </div><!-- /tab-info -->
+
+          <!-- Tab 2: Status -->
+          <div class="tab-panel" id="tab-status">
+
           <!-- Application Verification Card -->
           <div class="review-card" id="agentResearchCard" style="display:none;">
             <div class="card-header" style="justify-content:space-between;">
@@ -629,6 +676,8 @@
             <p id="actionDesc">Select the next action for this application.</p>
             <div id="actionContent"></div>
           </div>
+
+          </div><!-- /tab-status -->
         </div>
 
         <!-- ── Right: 20% vertical progress wizard ── -->
@@ -1173,7 +1222,10 @@ const VERIFICATION_FIELDS = [
 ];
 
 function isVerificationPassed(app) {
-  return app.agent_verification_results?.overall?.passed === true;
+  const vStatus = (app.agent_verification_status || '').toUpperCase();
+  if (vStatus !== 'COMPLETED') return false;
+  const results = app.agent_verification_results || {};
+  return !VERIFICATION_FIELDS.some(f => (results[f.key]?.status || '').toUpperCase() === 'ERROR');
 }
 
 function verificationFieldIcon(status) {
@@ -1431,6 +1483,17 @@ function toggleCollapse() {
     icon.setAttribute('data-lucide', collapsed ? 'chevrons-right' : 'chevrons-left');
     if (window.lucide) lucide.createIcons();
   }
+}
+
+// ─── Tabs ─────────────────────────────────────────
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('tab-' + id);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (window.lucide) lucide.createIcons();
 }
 
 // ─── Init ─────────────────────────────────────────
