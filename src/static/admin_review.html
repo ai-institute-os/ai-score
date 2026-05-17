@@ -646,31 +646,10 @@
           <!-- Tab 2: Status -->
           <div class="tab-panel" id="tab-status">
 
-          <!-- Application Verification Card -->
-          <div class="review-card" id="agentResearchCard" style="display:none;">
-            <div class="card-header" style="justify-content:space-between;">
-              <span style="display:flex;align-items:center;gap:0.4rem;">
-                <i data-lucide="shield-check" class="icon-xs"></i>
-                Application Verification
-              </span>
-              <span id="agentResearchStatusBadge"></span>
-            </div>
-            <div id="agentResearchContent"></div>
-          </div>
+          <!-- Stage-aware content (verification OR interview questions) -->
+          <div id="stageContent"></div>
 
-          <!-- Generated Interview Questions Card -->
-          <div class="review-card" id="interviewQuestionsCard">
-            <div class="card-header" style="justify-content:space-between;">
-              <span style="display:flex;align-items:center;gap:0.4rem;">
-                <i data-lucide="message-square-text" class="icon-xs"></i>
-                Generated Interview Questions
-              </span>
-              <span id="iqBadge"></span>
-            </div>
-            <div id="interviewQuestionsContent"></div>
-          </div>
-
-          <!-- Status-based Action Panel -->
+          <!-- Action Panel (always shown) -->
           <div class="action-panel" id="actionPanel">
             <h2 id="actionTitle">Actions</h2>
             <p id="actionDesc">Select the next action for this application.</p>
@@ -917,12 +896,14 @@ function renderApp(app) {
     setText('fResearchStatus', rsMap[rs] || rs);
   }
 
-  renderVerification(app);
-  renderInterviewQuestions(app);
+  renderStageContent(app);
   renderActionPanel(app);
   renderProgressWizard(app);
   if ((app.agent_verification_status || '').toUpperCase() === 'IN_PROGRESS') {
     startVerificationPolling();
+  }
+  if ((app.agent_research_status || '').toUpperCase() === 'IN_PROGRESS') {
+    startResearchPolling();
   }
 
   document.getElementById('loadingMsg').style.display = 'none';
@@ -930,14 +911,60 @@ function renderApp(app) {
   if (window.lucide) lucide.createIcons();
 }
 
-// ─── Interview Questions ──────────────────────────
+// ─── Stage-aware Status Tab ───────────────────────
+
+const VERIFICATION_STAGES = new Set(['APPLIED', 'UNDER_REVIEW']);
+const INTERVIEW_STAGES    = new Set(['APPROVED', 'CALLED', 'AWAITING_PAYMENT', 'PAID', 'IN_PRODUCTION', 'QC_REVIEW', 'QC_PASSED', 'QC_FAILED', 'ESCALATED', 'RETRY', 'READY_FOR_REVIEW_CALL', 'CANCELLED', 'REJECTED']);
+
+function renderStageContent(app) {
+  const sc = document.getElementById('stageContent');
+  if (!sc) return;
+
+  const status = app.status;
+
+  if (VERIFICATION_STAGES.has(status)) {
+    sc.innerHTML = `
+      <div class="review-card" id="agentResearchCard">
+        <div class="card-header" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:0.4rem;">
+            <i data-lucide="shield-check" class="icon-xs"></i>
+            Application Verification
+          </span>
+          <span id="agentResearchStatusBadge"></span>
+        </div>
+        <div id="agentResearchContent"></div>
+      </div>`;
+    renderVerification(app);
+
+  } else if (INTERVIEW_STAGES.has(status)) {
+    sc.innerHTML = `
+      <div class="review-card" id="interviewQuestionsCard">
+        <div class="card-header" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:0.4rem;">
+            <i data-lucide="message-square-text" class="icon-xs"></i>
+            Interview Questions
+          </span>
+          <span id="iqBadge"></span>
+        </div>
+        <div id="interviewQuestionsContent"></div>
+      </div>`;
+    renderInterviewQuestions(app);
+
+  } else {
+    sc.innerHTML = '';
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
 
 function renderInterviewQuestions(app) {
   const questions = Array.isArray(app.agent_interview_questions) ? app.agent_interview_questions : [];
   const content = document.getElementById('interviewQuestionsContent');
   const badge = document.getElementById('iqBadge');
-
   if (!content) return;
+
+  const researchStatus = (app.agent_research_status || '').toUpperCase();
+  const isRunning = researchStatus === 'IN_PROGRESS' || researchStatus === 'PENDING' && app._researchStarted;
 
   if (questions.length) {
     badge.innerHTML = `<span style="background:#f0fdf4;color:#15803d;font-size:0.7rem;font-weight:700;padding:0.15rem 0.55rem;border-radius:20px;">${questions.length} questions</span>`;
@@ -946,37 +973,68 @@ function renderInterviewQuestions(app) {
     ).join('');
     content.innerHTML = `<ol class="iq-list">${items}</ol>
       <div class="iq-actions">
-        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-          <i data-lucide="refresh-cw" class="icon-sm"></i>
-          Retry Agent Research
-        </button>
         <button class="cta-btn cta-btn-pdf" onclick="downloadQuestionsPDF()">
           <i data-lucide="download" class="icon-sm"></i>
           Download Questions as PDF
         </button>
+        <button class="cta-btn cta-btn-secondary" onclick="generateInterviewQuestions(this)">
+          <i data-lucide="refresh-cw" class="icon-sm"></i>
+          Regenerate
+        </button>
       </div>`;
-  } else {
+
+  } else if (isRunning) {
     badge.innerHTML = '';
-    const verified = isVerificationPassed(app);
-    const researchStatus = (app.agent_research_status || '').toUpperCase();
-    const btnLabel = researchStatus === 'FAILED' ? 'Retry Agent Research' : 'Generate Questions';
-    const btnIcon  = researchStatus === 'FAILED' ? 'refresh-cw' : 'play';
-    const disabledAttr = verified ? '' : 'disabled title="Run verification first"';
-    const disabledCls  = verified ? '' : ' disabled';
     content.innerHTML = `
       <div class="research-placeholder">
-        No interview questions have been generated yet.
-      </div>
-      <div style="padding:0 1.25rem 1rem;">
-        <button class="cta-btn cta-btn-secondary${disabledCls}" ${disabledAttr} onclick="retryResearch(this)">
-          <i data-lucide="${btnIcon}" class="icon-sm"></i>
-          ${esc(btnLabel)}
+        <span class="research-spinner"></span>
+        Searching company information and generating questions…
+      </div>`;
+
+  } else {
+    badge.innerHTML = '';
+    const failed = researchStatus === 'FAILED';
+    content.innerHTML = `
+      <div style="padding:1.25rem;">
+        <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:0.1rem;font-weight:600;">
+          ${failed ? 'Question generation failed.' : 'No interview questions generated yet.'}
+        </p>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+          Clicking the button below will search the company's website and public information,
+          then generate tailored interview questions for the call.
+        </p>
+        <button class="cta-btn cta-btn-secondary" onclick="generateInterviewQuestions(this)">
+          <i data-lucide="${failed ? 'refresh-cw' : 'search'}" class="icon-sm"></i>
+          ${failed ? 'Retry' : 'Search & Generate Interview Questions'}
         </button>
-        ${!verified ? `<span style="display:block;margin-top:0.5rem;font-size:0.75rem;color:var(--text-muted);">Complete verification first to enable question generation.</span>` : ''}
       </div>`;
   }
 
   if (window.lucide) lucide.createIcons();
+}
+
+async function generateInterviewQuestions(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Searching…'; }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/retry-research`, { method: 'POST' });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${res.status}`);
+    }
+    toast('Searching company info and generating questions…', 'success');
+    appData = appData || {};
+    appData._researchStarted = true;
+    const appRes = await fetch(`/api/v1/admin/applications/${appId}`);
+    if (appRes.ok) { appData = await appRes.json(); appData._researchStarted = true; renderStageContent(appData); }
+    startResearchPolling();
+  } catch (err) {
+    toast('Failed: ' + err.message, 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="search" class="icon-sm"></i> Search & Generate Interview Questions';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
 }
 
 async function downloadQuestionsPDF() {
@@ -1240,13 +1298,11 @@ function verificationFieldIcon(status) {
 }
 
 function renderVerification(app) {
-  const card    = document.getElementById('agentResearchCard');
   const content = document.getElementById('agentResearchContent');
   const badge   = document.getElementById('agentResearchStatusBadge');
-  if (!card) return;
+  if (!content) return;
 
   const vStatus = (app.agent_verification_status || 'PENDING').toUpperCase();
-  card.style.display = '';
 
   const statusMap = {
     PENDING:     { label: 'Pending',    cls: 'research-status-pending',     spinner: false },
@@ -1346,6 +1402,7 @@ function renderVerification(app) {
 }
 
 let _verificationPollTimer = null;
+let _researchPollTimer = null;
 
 function startVerificationPolling() {
   stopVerificationPolling();
@@ -1355,20 +1412,45 @@ function startVerificationPolling() {
       if (!res.ok) return;
       const app = await res.json();
       const vs = (app.agent_verification_status || '').toUpperCase();
-      renderVerification(app);
-      renderInterviewQuestions(app);
+      renderStageContent(app);
       renderActionPanel(app);
       renderProgressWizard(app);
       if (vs !== 'IN_PROGRESS') {
         stopVerificationPolling();
         appData = app;
       }
-    } catch (_) { /* silent poll failure */ }
+    } catch (_) {}
   }, 3000);
 }
 
 function stopVerificationPolling() {
   if (_verificationPollTimer) { clearInterval(_verificationPollTimer); _verificationPollTimer = null; }
+}
+
+function startResearchPolling() {
+  stopResearchPolling();
+  _researchPollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/v1/admin/applications/${appId}`);
+      if (!res.ok) return;
+      const app = await res.json();
+      const rs = (app.agent_research_status || '').toUpperCase();
+      renderStageContent(app);
+      renderActionPanel(app);
+      renderProgressWizard(app);
+      if (rs !== 'IN_PROGRESS' && rs !== 'PENDING') {
+        stopResearchPolling();
+        appData = app;
+        if (Array.isArray(app.agent_interview_questions) && app.agent_interview_questions.length) {
+          toast('Interview questions generated', 'success');
+        }
+      }
+    } catch (_) {}
+  }, 3000);
+}
+
+function stopResearchPolling() {
+  if (_researchPollTimer) { clearInterval(_researchPollTimer); _researchPollTimer = null; }
 }
 
 async function runVerification(btn) {
@@ -1438,24 +1520,7 @@ function toggleCollapsibleList(id, btn) {
 }
 
 async function retryResearch(btn) {
-  if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
-  try {
-    const res = await fetch(`/api/v1/admin/applications/${appId}/retry-research`, { method: 'POST' });
-    if (!res.ok) {
-      const d = await res.json().catch(() => ({}));
-      throw new Error(d.detail || `HTTP ${res.status}`);
-    }
-    toast('Research started', 'success');
-    const appRes = await fetch(`/api/v1/admin/applications/${appId}`);
-    if (appRes.ok) renderApp(await appRes.json());
-  } catch (err) {
-    toast('Failed to start research: ' + err.message, 'error');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="refresh-cw" class="icon-sm"></i> Retry Research';
-      if (window.lucide) lucide.createIcons();
-    }
-  }
+  return generateInterviewQuestions(btn);
 }
 
 // ─── Sidebar ──────────────────────────────────────
