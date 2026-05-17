@@ -85,10 +85,53 @@ async def _fetch_website(url: str) -> str:
         return ""
 
 
-async def _call_llm(prompt: str, api_key: str) -> dict:
-    """Call Claude and parse JSON response. Returns parsed dict."""
-    import anthropic
+def _clean_json(raw: str) -> dict:
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```", 2)[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.rsplit("```", 1)[0].strip()
+    return json.loads(raw)
 
+
+async def _call_openai(prompt: str, api_key: str) -> dict:
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=api_key)
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            max_tokens=2048,
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        return _clean_json(response.choices[0].message.content or "")
+    finally:
+        await client.close()
+
+
+async def _call_gemini(prompt: str, api_key: str) -> dict:
+    import httpx
+    combined = f"{_SYSTEM_PROMPT}\n\n{prompt}"
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-1.5-flash:generateContent?key={api_key}"
+    )
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(url, json={
+            "contents": [{"parts": [{"text": combined}]}],
+            "generationConfig": {"maxOutputTokens": 2048},
+        })
+        resp.raise_for_status()
+        data = resp.json()
+        raw = data["candidates"][0]["content"]["parts"][0]["text"]
+        return _clean_json(raw)
+
+
+async def _call_anthropic(prompt: str, api_key: str) -> dict:
+    import anthropic
     client = anthropic.AsyncAnthropic(api_key=api_key)
     try:
         response = await client.messages.create(
@@ -97,17 +140,29 @@ async def _call_llm(prompt: str, api_key: str) -> dict:
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
-        raw = response.content[0].text if response.content else ""
-        # Strip markdown fences if the model adds them anyway
-        raw = raw.strip()
-        if raw.startswith("```"):
-            raw = raw.split("```", 2)[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-            raw = raw.rsplit("```", 1)[0].strip()
-        return json.loads(raw)
+        return _clean_json(response.content[0].text if response.content else "")
     finally:
         await client.close()
+
+
+async def _call_llm(prompt: str, settings) -> dict:
+    """Try LLM providers in order: OpenAI → Gemini → Anthropic."""
+    providers = [
+        ("openai",    getattr(settings, "openai_api_key", ""),    _call_openai),
+        ("gemini",    getattr(settings, "google_api_key", ""),     _call_gemini),
+        ("anthropic", getattr(settings, "anthropic_api_key", ""),  _call_anthropic),
+    ]
+    last_error: Exception = ValueError("No LLM provider configured")
+    for name, key, fn in providers:
+        if not key:
+            continue
+        try:
+            log.info("research.llm_attempt", provider=name)
+            return await fn(prompt, key)
+        except Exception as exc:
+            log.warning("research.llm_provider_failed", provider=name, error=str(exc))
+            last_error = exc
+    raise last_error
 
 
 async def run_application_research(application_id: uuid.UUID) -> None:
@@ -120,7 +175,6 @@ async def run_application_research(application_id: uuid.UUID) -> None:
     from src.config import get_settings
 
     settings = get_settings()
-    api_key = getattr(settings, "anthropic_api_key", "")
 
     log.info("research.started", application_id=str(application_id))
 
@@ -163,10 +217,7 @@ Website content (truncated):
 
 Analyse this company and produce the JSON research report."""
 
-            if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY not configured")
-
-            data = await _call_llm(user_prompt, api_key)
+            data = await _call_llm(user_prompt, settings)
 
             app.agent_research_status = "COMPLETED"
             app.agent_website_summary = data.get("website_summary")

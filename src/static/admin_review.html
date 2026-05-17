@@ -420,6 +420,45 @@
     .iq-num { font-weight: 700; color: var(--text-muted); min-width: 1.5rem; flex-shrink: 0; }
     .iq-actions { padding: 0.75rem 1.25rem 1rem; display: flex; gap: 0.65rem; flex-wrap: wrap; border-top: 1px solid var(--bg); }
 
+    /* ── Generating progress UI ── */
+    @keyframes gen-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .gen-steps {
+      padding: 1.5rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .gen-step {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      transition: color 0.3s;
+    }
+    .gen-step.active { color: var(--text); font-weight: 600; }
+    .gen-step.done   { color: #16a34a; }
+    .gen-step-icon {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--card);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    .gen-step.active .gen-step-icon {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      animation: gen-pulse 1.4s ease-in-out infinite;
+    }
+    .gen-step.done .gen-step-icon {
+      border-color: #16a34a;
+      background: #f0fdf4;
+    }
+
     /* ── Tabs ── */
     .tab-bar {
       display: flex;
@@ -964,44 +1003,60 @@ function renderInterviewQuestions(app) {
   if (!content) return;
 
   const researchStatus = (app.agent_research_status || '').toUpperCase();
-  const isRunning = researchStatus === 'IN_PROGRESS' || researchStatus === 'PENDING' && app._researchStarted;
+  const isRunning = researchStatus === 'IN_PROGRESS' || (researchStatus === 'PENDING' && app._researchStarted);
 
   if (questions.length) {
     badge.innerHTML = `<span style="background:#f0fdf4;color:#15803d;font-size:0.7rem;font-weight:700;padding:0.15rem 0.55rem;border-radius:20px;">${questions.length} questions</span>`;
     const items = questions.map((q, i) =>
       `<li class="iq-item"><span class="iq-num">${i + 1}.</span><span>${esc(q)}</span></li>`
     ).join('');
-    content.innerHTML = `<ol class="iq-list">${items}</ol>
-      <div class="iq-actions">
-        <button class="cta-btn cta-btn-pdf" onclick="downloadQuestionsPDF()">
-          <i data-lucide="download" class="icon-sm"></i>
-          Download Questions as PDF
+    content.innerHTML = `
+      <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--bg);display:flex;align-items:center;gap:0.75rem;">
+        <button class="cta-btn cta-btn-pdf" onclick="downloadQuestionsPDF()" style="padding:0.55rem 1.1rem;">
+          <i data-lucide="file-down" class="icon-sm"></i>
+          Download PDF
         </button>
-        <button class="cta-btn cta-btn-secondary" onclick="generateInterviewQuestions(this)">
+        <button class="cta-btn cta-btn-secondary" onclick="generateInterviewQuestions(this)" style="padding:0.55rem 1.1rem;">
           <i data-lucide="refresh-cw" class="icon-sm"></i>
           Regenerate
         </button>
-      </div>`;
+      </div>
+      <ol class="iq-list">${items}</ol>`;
 
   } else if (isRunning) {
     badge.innerHTML = '';
     content.innerHTML = `
-      <div class="research-placeholder">
-        <span class="research-spinner"></span>
-        Searching company information and generating questions…
+      <div class="gen-steps" id="genSteps">
+        <div class="gen-step done" id="gs0">
+          <div class="gen-step-icon"><i data-lucide="check" style="width:11px;height:11px;stroke-width:3;color:#16a34a;"></i></div>
+          <span>Fetching company website</span>
+        </div>
+        <div class="gen-step active" id="gs1">
+          <div class="gen-step-icon"><i data-lucide="cpu" style="width:11px;height:11px;color:var(--primary);"></i></div>
+          <span>Analysing company profile and market context</span>
+        </div>
+        <div class="gen-step" id="gs2">
+          <div class="gen-step-icon"></div>
+          <span>Generating tailored interview questions</span>
+        </div>
+        <div class="gen-step" id="gs3">
+          <div class="gen-step-icon"></div>
+          <span>Finalising report</span>
+        </div>
       </div>`;
+    scheduleGenStepAnimation();
 
   } else {
     badge.innerHTML = '';
     const failed = researchStatus === 'FAILED';
+    const errMsg = app.agent_research_error ? ` — ${esc(app.agent_research_error)}` : '';
     content.innerHTML = `
-      <div style="padding:1.25rem;">
-        <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:0.1rem;font-weight:600;">
-          ${failed ? 'Question generation failed.' : 'No interview questions generated yet.'}
-        </p>
-        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
-          Clicking the button below will search the company's website and public information,
-          then generate tailored interview questions for the call.
+      <div style="padding:1.5rem 1.25rem;">
+        ${failed ? `<p style="font-size:0.82rem;color:var(--error);font-weight:600;margin-bottom:0.35rem;">Generation failed${errMsg}</p>` : ''}
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
+          ${failed
+            ? 'Click below to try again. The agent will re-fetch the website and regenerate questions.'
+            : 'The agent will fetch the company\'s website, analyse their business profile, and generate tailored interview questions for your call.'}
         </p>
         <button class="cta-btn cta-btn-secondary" onclick="generateInterviewQuestions(this)">
           <i data-lucide="${failed ? 'refresh-cw' : 'search'}" class="icon-sm"></i>
@@ -1011,6 +1066,26 @@ function renderInterviewQuestions(app) {
   }
 
   if (window.lucide) lucide.createIcons();
+}
+
+let _genStepTimer = null;
+function scheduleGenStepAnimation() {
+  clearTimeout(_genStepTimer);
+  // After 5s advance to step 2, after 12s advance to step 3
+  _genStepTimer = setTimeout(() => {
+    const s1 = document.getElementById('gs1');
+    const s2 = document.getElementById('gs2');
+    if (s1) { s1.classList.remove('active'); s1.classList.add('done'); s1.querySelector('.gen-step-icon').innerHTML = '<i data-lucide="check" style="width:11px;height:11px;stroke-width:3;color:#16a34a;"></i>'; }
+    if (s2) { s2.classList.add('active'); s2.querySelector('.gen-step-icon').innerHTML = '<i data-lucide="cpu" style="width:11px;height:11px;color:var(--primary);"></i>'; }
+    if (window.lucide) lucide.createIcons();
+    _genStepTimer = setTimeout(() => {
+      const s2b = document.getElementById('gs2');
+      const s3  = document.getElementById('gs3');
+      if (s2b) { s2b.classList.remove('active'); s2b.classList.add('done'); s2b.querySelector('.gen-step-icon').innerHTML = '<i data-lucide="check" style="width:11px;height:11px;stroke-width:3;color:#16a34a;"></i>'; }
+      if (s3)  { s3.classList.add('active'); s3.querySelector('.gen-step-icon').innerHTML = '<i data-lucide="cpu" style="width:11px;height:11px;color:var(--primary);"></i>'; }
+      if (window.lucide) lucide.createIcons();
+    }, 7000);
+  }, 5000);
 }
 
 async function generateInterviewQuestions(btn) {
