@@ -998,7 +998,7 @@ function renderStageContent(app) {
               <div>
                 <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Upload recording</label>
                 <div style="display:flex;align-items:center;gap:0.75rem;">
-                  <label for="transcriptFile" class="cta-btn cta-btn-secondary" style="cursor:pointer;margin:0;display:inline-flex;align-items:center;gap:0.4rem;">
+                  <label for="transcriptFile" class="cta-btn cta-btn-secondary" style="cursor:pointer;margin:0;display:inline-flex;align-items:center;gap:0.4rem;box-sizing:border-box;line-height:1;">
                     <i data-lucide="upload" class="icon-sm"></i>Choose File
                   </label>
                   <input type="file" id="transcriptFile" accept="audio/*,video/*,.txt" style="display:none;" onchange="onTranscriptFileChange(this)"/>
@@ -1177,9 +1177,12 @@ async function downloadQuestionsPDF() {
 
 function renderActionPanel(app) {
   const status = app.status;
+  const panelEl = document.getElementById('actionPanel');
   const container = document.getElementById('actionContent');
   const titleEl = document.getElementById('actionTitle');
   const descEl = document.getElementById('actionDesc');
+
+  if (panelEl) panelEl.style.display = status === 'CALLED' ? 'none' : '';
 
   if (status === 'UNDER_REVIEW') {
     titleEl.textContent = 'Review Actions';
@@ -1251,15 +1254,7 @@ function renderActionPanel(app) {
       : `<div class="already-done">No rejection reason was recorded.</div>`;
 
   } else if (status === 'CALLED') {
-    titleEl.textContent = 'Actions';
-    descEl.textContent = '';
-    container.innerHTML = `
-      <div class="cta-row" style="margin-top:0.25rem;">
-        <button class="cta-btn cta-btn-secondary" onclick="changeStatus('APPROVED')">
-          <i data-lucide="arrow-left" class="icon-sm"></i>
-          Back to Approved
-        </button>
-      </div>`;
+    // Action panel is hidden for CALLED stage; buttons live in the transcription card.
 
   } else {
     const nextStatuses = VALID_TRANSITIONS[status] || [];
