@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 import structlog
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import Response
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -440,6 +440,120 @@ async def book_meeting(
         "applicant_name": app.kontaktperson or app.firmanavn,
         "applicant_email": app.email,
     }
+
+
+_TRANSCRIPT_EXTRACT_PROMPT = """You are an AI analyst reviewing a transcript from a sales/onboarding call with a potential AIScore client.
+
+Extract the following from the transcript and return ONLY valid JSON (no prose, no markdown):
+
+{
+  "summary": "2-3 sentence summary of the call",
+  "key_topics": ["topic 1", "topic 2"],
+  "concerns": ["concern or objection raised by the client"],
+  "fit_assessment": "STRONG_FIT | MODERATE_FIT | WEAK_FIT | UNCLEAR",
+  "follow_up_actions": ["action 1", "action 2"],
+  "next_steps": ["next step 1", "next step 2"]
+}"""
+
+
+@router.post("/admin/applications/{application_id}/upload-transcript")
+@limiter.limit("10/minute")
+async def upload_transcript(
+    request: Request,
+    application_id: uuid.UUID,
+    file: Optional[UploadFile] = File(None),
+    transcript_text: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
+):
+    """Admin — transcribe a call recording (Whisper) and extract key information (LLM)."""
+    import httpx
+    import json as _json
+    from src.config import get_settings
+
+    settings = get_settings()
+    await _get_application_or_404(application_id, db)
+
+    raw_transcript: str = transcript_text or ""
+
+    # If a file is provided and it's audio/video, transcribe with Whisper
+    if file and file.filename:
+        content_type = file.content_type or ""
+        is_text = content_type.startswith("text/") or file.filename.endswith(".txt")
+        if is_text:
+            raw_transcript = (await file.read()).decode("utf-8", errors="replace")
+        else:
+            if not settings.openai_api_key:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Audio transcription requires OPENAI_API_KEY. Paste the transcript as text instead.",
+                )
+            file_bytes = await file.read()
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    "https://api.openai.com/v1/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+                    files={"file": (file.filename, file_bytes, content_type)},
+                    data={"model": "whisper-1"},
+                )
+                if not resp.is_success:
+                    raise HTTPException(status_code=502, detail=f"Whisper API error: {resp.status_code}")
+                raw_transcript = resp.json().get("text", "")
+
+    if not raw_transcript.strip():
+        raise HTTPException(status_code=400, detail="No transcript content provided.")
+
+    # Extract structured information with LLM
+    providers = []
+    if settings.openai_api_key:
+        providers.append(("openai", settings.openai_api_key))
+    if settings.google_api_key:
+        providers.append(("gemini", settings.google_api_key))
+    if settings.anthropic_api_key:
+        providers.append(("anthropic", settings.anthropic_api_key))
+
+    extracted: dict = {}
+    for name, key in providers:
+        try:
+            if name == "openai":
+                from openai import AsyncOpenAI
+                c = AsyncOpenAI(api_key=key)
+                r = await c.chat.completions.create(
+                    model="gpt-4o-mini", max_tokens=1024,
+                    messages=[
+                        {"role": "system", "content": _TRANSCRIPT_EXTRACT_PROMPT},
+                        {"role": "user", "content": raw_transcript[:12000]},
+                    ],
+                )
+                await c.close()
+                extracted = _json.loads(r.choices[0].message.content or "{}")
+            elif name == "gemini":
+                async with httpx.AsyncClient(timeout=30) as c:
+                    r = await c.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}",
+                        json={"contents": [{"parts": [{"text": f"{_TRANSCRIPT_EXTRACT_PROMPT}\n\n{raw_transcript[:12000]}"}]}],
+                              "generationConfig": {"maxOutputTokens": 1024}},
+                    )
+                    r.raise_for_status()
+                    raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    if raw.startswith("```"): raw = raw.split("```",2)[1]; raw = raw[4:] if raw.startswith("json") else raw; raw = raw.rsplit("```",1)[0].strip()
+                    extracted = _json.loads(raw)
+            elif name == "anthropic":
+                import anthropic as _ant
+                c = _ant.AsyncAnthropic(api_key=key)
+                r = await c.messages.create(
+                    model="claude-sonnet-4-6", max_tokens=1024,
+                    system=_TRANSCRIPT_EXTRACT_PROMPT,
+                    messages=[{"role": "user", "content": raw_transcript[:12000]}],
+                )
+                await c.close()
+                extracted = _json.loads(r.content[0].text if r.content else "{}")
+            break
+        except Exception as exc:
+            log.warning("transcript.llm_failed", provider=name, error=str(exc))
+
+    log.info("transcript.processed", application_id=str(application_id), chars=len(raw_transcript))
+    return {"transcript": raw_transcript, "extracted": extracted}
 
 
 @router.post("/admin/applications/{application_id}/verify", response_model=ApplicationResponse)

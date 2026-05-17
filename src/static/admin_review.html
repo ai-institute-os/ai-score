@@ -849,6 +849,13 @@ function fmtDate(iso) {
   });
 }
 
+function fmtDateOnly(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
+}
+
 function esc(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -890,7 +897,7 @@ function renderApp(app) {
   setHtml('appStatusChip', statusChip(app.status));
 
   const appDate = app.submitted_at || app.created_at;
-  document.getElementById('appSubmittedAt').textContent = appDate ? 'Submitted ' + fmtDate(appDate) : '';
+  document.getElementById('appSubmittedAt').textContent = appDate ? 'Submitted ' + fmtDateOnly(appDate) : '';
 
   // Application Information Card
   setText('fCompany',     app.firmanavn);
@@ -976,7 +983,35 @@ function renderStageContent(app) {
     renderVerification(app);
 
   } else if (INTERVIEW_STAGES.has(status)) {
-    sc.innerHTML = `
+    const transcriptionCard = status === 'CALLED' ? `
+      <div class="review-card" id="transcriptionCard">
+        <div class="card-header">
+          <i data-lucide="mic" class="icon-xs"></i>
+          Call Transcription
+        </div>
+        <div id="transcriptionContent">
+          <div style="padding:1.25rem;">
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+              Upload the call recording or paste the transcript. The AI will extract key information, concerns, and follow-up actions.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:1rem;">
+              <div>
+                <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Upload recording</label>
+                <input type="file" id="transcriptFile" accept="audio/*,video/*,.txt" style="font-size:0.82rem;color:var(--text);" onchange="onTranscriptFileChange(this)"/>
+              </div>
+              <div style="text-align:center;font-size:0.75rem;color:var(--text-muted);">— or paste transcript text —</div>
+              <div>
+                <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Transcript text</label>
+                <textarea id="transcriptText" placeholder="Paste the call transcript here…" style="min-height:120px;font-size:0.82rem;"></textarea>
+              </div>
+              <button class="cta-btn cta-btn-secondary" id="btnProcessTranscript" onclick="processTranscript(this)"><i data-lucide="cpu" class="icon-sm"></i>Process & Extract Information</button>
+            </div>
+          </div>
+          <div id="transcriptResult" style="display:none;"></div>
+        </div>
+      </div>` : '';
+
+    sc.innerHTML = transcriptionCard + `
       <div class="review-card" id="interviewQuestionsCard">
         <div class="card-header" style="justify-content:space-between;">
           <span style="display:flex;align-items:center;gap:0.4rem;">
@@ -1012,14 +1047,8 @@ function renderInterviewQuestions(app) {
     ).join('');
     content.innerHTML = `
       <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--bg);display:flex;align-items:center;gap:0.75rem;">
-        <button class="cta-btn cta-btn-pdf" onclick="downloadQuestionsPDF()" style="padding:0.55rem 1.1rem;">
-          <i data-lucide="file-down" class="icon-sm"></i>
-          Download PDF
-        </button>
-        <button class="cta-btn cta-btn-secondary" onclick="generateInterviewQuestions(this)" style="padding:0.55rem 1.1rem;">
-          <i data-lucide="refresh-cw" class="icon-sm"></i>
-          Regenerate
-        </button>
+        <button class="cta-btn cta-btn-pdf" onclick="downloadQuestionsPDF()"><i data-lucide="file-down" class="icon-sm"></i>Download PDF</button>
+        <button class="cta-btn cta-btn-secondary" onclick="generateInterviewQuestions(this)"><i data-lucide="refresh-cw" class="icon-sm"></i>Regenerate</button>
       </div>
       <ol class="iq-list">${items}</ol>`;
 
@@ -1190,26 +1219,18 @@ function renderActionPanel(app) {
       </div>`;
 
   } else if (status === 'APPROVED') {
-    titleEl.textContent = 'Book a Meeting';
-    descEl.textContent = 'Schedule a call with the applicant via Calendly.';
+    titleEl.textContent = 'Call Booking';
+    descEl.textContent = '';
     container.innerHTML = `
-      <div class="cta-group">
-        <div class="cta-row">
-          <button class="cta-btn cta-btn-approve" id="btnBookMeeting" onclick="bookMeeting(this)">
-            <i data-lucide="calendar" class="icon-sm"></i>
-            Book Meeting
-          </button>
-        </div>
-        <div id="bookMeetingMsg" style="margin-top:0.5rem;"></div>
-        <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0;" />
-        <div>
-          <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Already booked manually?</p>
-          <button class="cta-btn cta-btn-secondary" onclick="markAsCalled()">
-            <i data-lucide="phone-call" class="icon-sm"></i>
-            Mark as Called
-          </button>
-        </div>
-      </div>`;
+      <div>
+        <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.4rem;">Booking Status</label>
+        <select id="bookingStatusSelect" onchange="updateBookingState(this.value)" style="width:100%;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);font-size:0.875rem;cursor:pointer;appearance:auto;">
+          <option value="not_booked">Not Booked</option>
+          <option value="call_booked">Call Booked</option>
+        </select>
+      </div>
+      <div id="bookingContent" style="margin-top:1rem;"></div>`;
+    updateBookingState('not_booked');
 
   } else if (status === 'REJECTED') {
     titleEl.textContent = 'Application Rejected';
@@ -1220,10 +1241,10 @@ function renderActionPanel(app) {
       : `<div class="already-done">No rejection reason was recorded.</div>`;
 
   } else if (status === 'CALLED') {
-    titleEl.textContent = 'Call Completed — Next Step';
-    descEl.textContent = 'The call has been completed. Move to awaiting payment or back to approved if follow-up is needed.';
+    titleEl.textContent = 'Next Step';
+    descEl.textContent = '';
     container.innerHTML = `
-      <div class="cta-row" style="margin-top:0.75rem;">
+      <div class="cta-row" style="margin-top:0.25rem;">
         <button class="cta-btn cta-btn-approve" onclick="changeStatus('AWAITING_PAYMENT')">
           <i data-lucide="credit-card" class="icon-sm"></i>
           Move to Awaiting Payment
@@ -1602,6 +1623,143 @@ function toggleCollapse() {
   if (icon) {
     icon.setAttribute('data-lucide', collapsed ? 'chevrons-right' : 'chevrons-left');
     if (window.lucide) lucide.createIcons();
+  }
+}
+
+// ─── Booking state (APPROVED dropdown) ────────────
+
+function updateBookingState(val) {
+  const content = document.getElementById('bookingContent');
+  const select  = document.getElementById('bookingStatusSelect');
+  if (!content) return;
+
+  if (val === 'not_booked') {
+    content.innerHTML = `
+      <button class="cta-btn cta-btn-approve" id="btnBookMeeting" onclick="bookMeeting(this)"><i data-lucide="calendar" class="icon-sm"></i>Book Meeting</button>
+      <div id="bookMeetingMsg" style="margin-top:0.5rem;"></div>`;
+
+  } else if (val === 'call_booked') {
+    // Add "Called" option to dropdown if not present
+    if (select && !select.querySelector('option[value="called"]')) {
+      const opt = document.createElement('option');
+      opt.value = 'called'; opt.textContent = 'Called';
+      select.appendChild(opt);
+    }
+    content.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem 1rem;margin-bottom:1rem;">
+        <div>
+          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Event Date & Time</label>
+          <input type="datetime-local" id="bkDate" style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);" />
+        </div>
+        <div>
+          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Client Name</label>
+          <input type="text" id="bkClientName" placeholder="${esc(appData?.kontaktperson || '')}" value="${esc(appData?.kontaktperson || '')}" style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);" />
+        </div>
+        <div>
+          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Client Email</label>
+          <input type="email" id="bkClientEmail" placeholder="${esc(appData?.email || '')}" value="${esc(appData?.email || '')}" style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);" />
+        </div>
+        <div>
+          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Meeting Link (optional)</label>
+          <input type="url" id="bkLink" placeholder="https://meet.google.com/…" style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);" />
+        </div>
+      </div>
+      <div>
+        <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Notes (optional)</label>
+        <textarea id="bkNotes" placeholder="Any notes about the booking…" style="min-height:60px;font-size:0.82rem;"></textarea>
+      </div>`;
+
+  } else if (val === 'called') {
+    // Show inline confirmation
+    content.innerHTML = `
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
+        <p style="font-size:0.875rem;font-weight:600;color:var(--text);margin-bottom:0.25rem;">Confirm call completed?</p>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">This will move the application to the Called stage and unlock the transcription upload.</p>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="btn btn-primary" onclick="confirmMoveToCalledStage()">Yes, call is done</button>
+          <button class="btn btn-ghost" onclick="revertBookingDropdown()">Cancel</button>
+        </div>
+      </div>`;
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function revertBookingDropdown() {
+  const select = document.getElementById('bookingStatusSelect');
+  if (select) select.value = 'call_booked';
+  updateBookingState('call_booked');
+}
+
+async function confirmMoveToCalledStage() {
+  await doStatusChange('CALLED', '');
+}
+
+// ─── Transcription ─────────────────────────────────
+
+function onTranscriptFileChange(input) {
+  const btn = document.getElementById('btnProcessTranscript');
+  if (btn) btn.disabled = !input.files?.length && !document.getElementById('transcriptText')?.value?.trim();
+}
+
+async function processTranscript(btn) {
+  const fileInput = document.getElementById('transcriptFile');
+  const textInput = document.getElementById('transcriptText');
+  const resultEl  = document.getElementById('transcriptResult');
+  const file = fileInput?.files?.[0];
+  const text = textInput?.value?.trim();
+
+  if (!file && !text) { toast('Provide a recording file or transcript text', 'error'); return; }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="cpu" class="icon-sm"></i>Processing…'; if (window.lucide) lucide.createIcons(); }
+  if (resultEl) resultEl.style.display = 'none';
+
+  try {
+    let body, headers = {};
+    if (file) {
+      const fd = new FormData();
+      fd.append('file', file);
+      if (text) fd.append('transcript_text', text);
+      body = fd;
+    } else {
+      body = JSON.stringify({ transcript_text: text });
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const res = await fetch(`/api/v1/admin/applications/${appId}/upload-transcript`, {
+      method: 'POST', body, headers,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    if (resultEl) {
+      const ext = data.extracted || {};
+      const rows = [
+        ['Summary',          ext.summary],
+        ['Key topics',       Array.isArray(ext.key_topics) ? ext.key_topics.join(', ') : ext.key_topics],
+        ['Client concerns',  Array.isArray(ext.concerns) ? ext.concerns.join('; ') : ext.concerns],
+        ['Fit assessment',   ext.fit_assessment],
+        ['Follow-up actions',Array.isArray(ext.follow_up_actions) ? ext.follow_up_actions.join('; ') : ext.follow_up_actions],
+        ['Next steps',       Array.isArray(ext.next_steps) ? ext.next_steps.join('; ') : ext.next_steps],
+      ].filter(([,v]) => v).map(([k,v]) => `
+        <div style="padding:0.65rem 1.25rem;border-bottom:1px solid var(--bg);">
+          <div class="field-label">${esc(k)}</div>
+          <div class="field-value" style="margin-top:0.2rem;">${esc(String(v))}</div>
+        </div>`).join('');
+
+      resultEl.innerHTML = `
+        <div style="padding:0.65rem 1.25rem;border-top:1.5px solid var(--bg);background:var(--bg);">
+          <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);">Extracted Information</span>
+        </div>
+        ${rows || '<div style="padding:1rem;color:var(--text-muted);font-size:0.85rem;">No structured data could be extracted.</div>'}
+        ${data.transcript ? `<div style="padding:0.65rem 1.25rem;border-top:1px solid var(--bg);"><div class="field-label">Raw transcript</div><div class="textarea-val" style="margin-top:0.25rem;max-height:200px;overflow-y:auto;">${esc(data.transcript)}</div></div>` : ''}`;
+      resultEl.style.display = '';
+    }
+    toast('Transcript processed', 'success');
+  } catch (err) {
+    toast('Processing failed: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="cpu" class="icon-sm"></i>Process & Extract Information'; if (window.lucide) lucide.createIcons(); }
   }
 }
 
