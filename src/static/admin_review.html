@@ -1224,7 +1224,7 @@ function renderActionPanel(app) {
     container.innerHTML = `
       <div>
         <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.4rem;">Booking Status</label>
-        <select id="bookingStatusSelect" onchange="updateBookingState(this.value)" style="width:100%;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);font-size:0.875rem;cursor:pointer;appearance:auto;">
+        <select id="bookingStatusSelect" onchange="updateBookingState(this.value)" style="width:50%;max-width:240px;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);font-size:0.875rem;cursor:pointer;appearance:auto;">
           <option value="not_booked">Not Booked</option>
           <option value="call_booked">Call Booked</option>
         </select>
@@ -1667,6 +1667,9 @@ function updateBookingState(val) {
       <div>
         <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Notes (optional)</label>
         <textarea id="bkNotes" placeholder="Any notes about the booking…" style="min-height:60px;font-size:0.82rem;"></textarea>
+      </div>
+      <div style="margin-top:1rem;">
+        <button class="btn btn-primary" onclick="confirmMoveToCalledStage()"><i data-lucide="check-circle" class="icon-sm"></i>Confirm Booking</button>
       </div>`;
 
   } else if (val === 'called') {
