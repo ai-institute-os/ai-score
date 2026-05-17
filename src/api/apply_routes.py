@@ -369,6 +369,79 @@ async def retry_research(
     return result.scalar_one()
 
 
+@router.post("/admin/applications/{application_id}/book-meeting")
+@limiter.limit("20/minute")
+async def book_meeting(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
+):
+    """Admin — create a one-time Calendly scheduling link for the applicant."""
+    import httpx
+    from src.config import get_settings
+
+    settings = get_settings()
+    app = await _get_application_or_404(application_id, db)
+
+    if not settings.calendly_api_token or not settings.calendly_event_type_uri:
+        missing = []
+        if not settings.calendly_api_token:
+            missing.append("CALENDLY_API_TOKEN")
+        if not settings.calendly_event_type_uri:
+            missing.append("CALENDLY_EVENT_TYPE_URI")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "calendly_not_configured",
+                "message": "Calendly integration is not configured.",
+                "missing_env_vars": missing,
+                "how_to_get": {
+                    "CALENDLY_API_TOKEN": (
+                        "Go to https://calendly.com/integrations/api_webhooks → "
+                        "Generate a Personal Access Token. Copy and set as CALENDLY_API_TOKEN."
+                    ),
+                    "CALENDLY_EVENT_TYPE_URI": (
+                        "Call GET https://api.calendly.com/event_types "
+                        "(Authorization: Bearer <your_token>) to list your event types. "
+                        "Copy the 'uri' field of the event type you want to use for applicant calls."
+                    ),
+                },
+            },
+        )
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                "https://api.calendly.com/scheduling_links",
+                headers={
+                    "Authorization": f"Bearer {settings.calendly_api_token}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "max_event_count": 1,
+                    "owner": settings.calendly_event_type_uri,
+                    "owner_type": "EventType",
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            booking_url = data["resource"]["booking_url"]
+    except httpx.HTTPStatusError as exc:
+        log.error("calendly.api_error", status=exc.response.status_code, body=exc.response.text)
+        raise HTTPException(status_code=502, detail=f"Calendly API error: {exc.response.status_code}")
+    except Exception as exc:
+        log.error("calendly.request_failed", error=str(exc))
+        raise HTTPException(status_code=502, detail=f"Could not reach Calendly: {exc}")
+
+    log.info("calendly.link_created", application_id=str(application_id), company=app.firmanavn)
+    return {
+        "booking_url": booking_url,
+        "applicant_name": app.kontaktperson or app.firmanavn,
+        "applicant_email": app.email,
+    }
+
+
 @router.post("/admin/applications/{application_id}/verify", response_model=ApplicationResponse)
 @limiter.limit("10/minute")
 async def verify_application(

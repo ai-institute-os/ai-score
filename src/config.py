@@ -45,7 +45,13 @@ class Settings(BaseSettings):
     # Base URL for admin review links in emails
     app_base_url: str = "https://app.aiscore.dk"
 
-    # Calendly webhook signing secret
+    # Calendly integration
+    # calendly_api_token: Personal Access Token from https://calendly.com/integrations/api_webhooks
+    # calendly_event_type_uri: full API URI of the event type, e.g.
+    #   https://api.calendly.com/event_types/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+    #   (get it from GET https://api.calendly.com/event_types with your token)
+    calendly_api_token: str = ""
+    calendly_event_type_uri: str = ""
     calendly_webhook_secret: str = ""
 
     # Admin API key — must be set in production; all /admin/* endpoints require X-Admin-Key header

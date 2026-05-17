@@ -722,7 +722,7 @@ let appData = null;
 const STATUS_LABELS = {
   APPLIED: 'Applied',
   UNDER_REVIEW: 'Under Review',
-  APPROVED: 'Approved',
+  APPROVED: 'Call Booking',
   REJECTED: 'Rejected',
   CALLED: 'Meeting Booked',
   AWAITING_PAYMENT: 'Awaiting Payment',
@@ -756,8 +756,8 @@ const WIZARD_STEPS = [
   { id: 'APPLIED',               label: 'Applied',               icon: 'mail-open'       },
   { id: 'UNDER_REVIEW',          label: 'Under Review',          icon: 'eye'             },
   { id: 'AGENT_RESEARCH',        label: 'Verification',          icon: 'shield-check'    },
-  { id: 'APPROVED',              label: 'Approved',              icon: 'check-circle-2'  },
-  { id: 'CALL_BOOKING',          label: 'Call Booking',          icon: 'calendar'        },
+  { id: 'APPROVED',              label: 'Call Booking',          icon: 'calendar'        },
+  { id: 'CALL_BOOKING',          label: 'Call Booked',           icon: 'calendar-check'  },
   { id: 'CALLED',                label: 'Called',                icon: 'phone'           },
   { id: 'AWAITING_PAYMENT',      label: 'Awaiting Payment',      icon: 'credit-card'     },
   { id: 'PAID',                  label: 'Paid',                  icon: 'badge-check'     },
@@ -1190,43 +1190,23 @@ function renderActionPanel(app) {
       </div>`;
 
   } else if (status === 'APPROVED') {
-    titleEl.textContent = 'Next Steps — Book a Call';
-    descEl.textContent = 'This application is approved. Schedule a call with the applicant.';
+    titleEl.textContent = 'Book a Meeting';
+    descEl.textContent = 'Schedule a call with the applicant via Calendly.';
     container.innerHTML = `
       <div class="cta-group">
         <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary disabled" disabled title="Calendly integration coming soon">
+          <button class="cta-btn cta-btn-approve" id="btnBookMeeting" onclick="bookMeeting(this)">
             <i data-lucide="calendar" class="icon-sm"></i>
-            Book Calendly Call
-          </button>
-          <span class="cta-coming-soon">Coming soon</span>
-        </div>
-        <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary disabled" disabled title="Google Meet integration coming soon">
-            <i data-lucide="video" class="icon-sm"></i>
-            Create Google Meet
-          </button>
-          <span class="cta-coming-soon">Coming soon</span>
-        </div>
-        <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary disabled" disabled title="Email integration coming soon">
-            <i data-lucide="mail" class="icon-sm"></i>
-            Send Booking Email
-          </button>
-          <span class="cta-coming-soon">Coming soon</span>
-        </div>
-        <div class="cta-row">
-          <button class="cta-btn cta-btn-pdf" onclick="downloadQuestionsPDF()">
-            <i data-lucide="download" class="icon-sm"></i>
-            Download Questions as PDF
+            Book Meeting
           </button>
         </div>
-        <hr style="border:none;border-top:1px solid var(--border);margin:0.25rem 0;" />
+        <div id="bookMeetingMsg" style="margin-top:0.5rem;"></div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0;" />
         <div>
-          <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Already completed a call manually?</p>
+          <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Already booked manually?</p>
           <button class="cta-btn cta-btn-secondary" onclick="markAsCalled()">
             <i data-lucide="phone-call" class="icon-sm"></i>
-            Move to Called manually
+            Mark as Called
           </button>
         </div>
       </div>`;
@@ -1622,6 +1602,53 @@ function toggleCollapse() {
   if (icon) {
     icon.setAttribute('data-lucide', collapsed ? 'chevrons-right' : 'chevrons-left');
     if (window.lucide) lucide.createIcons();
+  }
+}
+
+// ─── Calendly ─────────────────────────────────────
+
+async function bookMeeting(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening Calendly…'; }
+  const msgEl = document.getElementById('bookMeetingMsg');
+  if (msgEl) msgEl.innerHTML = '';
+
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/book-meeting`, { method: 'POST' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Show Calendly setup instructions
+      const d = data.detail || data;
+      if (d.error === 'calendly_not_configured') {
+        const missing = (d.missing_env_vars || []).join(', ');
+        const howTo = Object.entries(d.how_to_get || {}).map(([k, v]) =>
+          `<li style="margin-bottom:0.5rem;"><strong>${k}</strong>: ${esc(v)}</li>`
+        ).join('');
+        if (msgEl) msgEl.innerHTML = `
+          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;margin-top:0.25rem;font-size:0.8rem;">
+            <p style="font-weight:700;color:var(--text);margin-bottom:0.35rem;">Calendly not configured</p>
+            <p style="color:var(--text-muted);margin-bottom:0.65rem;">Set these Railway environment variables to enable Calendly:</p>
+            <ul style="list-style:none;padding:0;color:var(--text);line-height:1.55;">${howTo}</ul>
+          </div>`;
+      } else {
+        throw new Error(d.message || d.detail || `HTTP ${res.status}`);
+      }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="calendar" class="icon-sm"></i> Book Meeting'; if (window.lucide) lucide.createIcons(); }
+      return;
+    }
+
+    // Success — open the Calendly booking URL in a new tab
+    window.open(data.booking_url, '_blank', 'noopener');
+    toast('Calendly scheduling link opened', 'success');
+    if (msgEl) msgEl.innerHTML = `
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;">
+        Link opened in a new tab. Once the meeting is booked, mark it as Called below.
+      </div>`;
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="calendar" class="icon-sm"></i> Book Meeting'; if (window.lucide) lucide.createIcons(); }
+
+  } catch (err) {
+    toast('Failed to create meeting link: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="calendar" class="icon-sm"></i> Book Meeting'; if (window.lucide) lucide.createIcons(); }
   }
 }
 
