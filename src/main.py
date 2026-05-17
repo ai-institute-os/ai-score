@@ -168,7 +168,7 @@ async def lifespan(app: FastAPI):
     if not settings.admin_api_key:
         log.warning(
             "config.missing_admin_api_key",
-            detail="ADMIN_API_KEY env var is not set — all /admin/* endpoints will return HTTP 500",
+            detail="ADMIN_API_KEY env var is not set — admin login will always reject (401) and page auth will redirect to login",
         )
 
     log.info("app.started", cache_ttl=settings.cache_ttl_seconds)
