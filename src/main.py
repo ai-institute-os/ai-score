@@ -1,11 +1,13 @@
 import asyncio
+import hashlib
+import hmac
 import structlog
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -95,6 +97,44 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+_ADMIN_COOKIE = "aiscore_admin_session"
+
+
+def _make_admin_token(admin_api_key: str) -> str:
+    return hmac.new(admin_api_key.encode(), b"aiscore-admin-v1", hashlib.sha256).hexdigest()
+
+
+def _verify_admin_token(token: str, admin_api_key: str) -> bool:
+    if not admin_api_key:
+        return False
+    expected = _make_admin_token(admin_api_key)
+    return hmac.compare_digest(token, expected)
+
+
+class AdminAuthMiddleware(BaseHTTPMiddleware):
+    """Protect /admin/* HTML pages with cookie-based auth.
+
+    API routes (/api/v1/admin/*) keep their existing X-Admin-Key header auth.
+    """
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        path = request.url.path
+        is_admin_html = (
+            (path == "/admin" or path.startswith("/admin/"))
+            and not path.startswith("/admin/login")
+            and not path.startswith("/api/")
+        )
+        if not is_admin_html:
+            return await call_next(request)
+
+        settings = get_settings()
+        token = request.cookies.get(_ADMIN_COOKIE, "")
+        if _verify_admin_token(token, settings.admin_api_key or ""):
+            return await call_next(request)
+
+        return RedirectResponse(url=f"/admin/login?next={request.url.path}", status_code=302)
+
+
 def get_router() -> PromptRouter:
     if _router is None:
         raise RuntimeError("App not initialized — call startup first")
@@ -153,6 +193,7 @@ if _allowed_hosts and _allowed_hosts != ["*"]:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
 
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AdminAuthMiddleware)
 app.add_middleware(ErrorAlertMiddleware)
 
 app.include_router(router, prefix="/api/v1")
@@ -169,10 +210,60 @@ async def health():
     return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
 
 
+@app.get("/", include_in_schema=False)
+async def landing_page():
+    """Serve the AIScore marketing landing page."""
+    return FileResponse(str(_static_dir / "landing.html"))
+
+
 @app.get("/apply", include_in_schema=False)
 async def apply_form():
     """Serve the customer pre-qualification apply form."""
     return FileResponse(str(_static_dir / "apply.html"))
+
+
+@app.get("/admin/login", include_in_schema=False)
+async def admin_login_page(request: Request):
+    """Serve the admin login page; redirect if already authenticated."""
+    settings = get_settings()
+    token = request.cookies.get(_ADMIN_COOKIE, "")
+    if _verify_admin_token(token, settings.admin_api_key or ""):
+        return RedirectResponse(url="/admin", status_code=302)
+    return FileResponse(str(_static_dir / "admin_login.html"))
+
+
+@app.post("/admin/login", include_in_schema=False)
+async def admin_login_submit(request: Request):
+    """Validate admin key and set session cookie."""
+    settings = get_settings()
+    try:
+        body = await request.json()
+        submitted_key = body.get("admin_key", "")
+    except Exception:
+        return JSONResponse({"detail": "Invalid request"}, status_code=400)
+
+    if not settings.admin_api_key or submitted_key != settings.admin_api_key:
+        return JSONResponse({"detail": "Invalid admin key"}, status_code=401)
+
+    token = _make_admin_token(settings.admin_api_key)
+    response = JSONResponse({"redirect": "/admin"})
+    response.set_cookie(
+        key=_ADMIN_COOKIE,
+        value=token,
+        httponly=True,
+        secure=request.url.scheme == "https",
+        samesite="lax",
+        max_age=86400 * 7,
+    )
+    return response
+
+
+@app.get("/admin/logout", include_in_schema=False)
+async def admin_logout():
+    """Clear the admin session cookie."""
+    response = RedirectResponse(url="/admin/login", status_code=302)
+    response.delete_cookie(key=_ADMIN_COOKIE)
+    return response
 
 
 @app.get("/admin", include_in_schema=False)
@@ -190,7 +281,6 @@ async def admin_orders():
 @app.get("/admin/applications", include_in_schema=False)
 async def admin_applications_list():
     """Redirect the old applications list page to the main admin dashboard."""
-    from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/admin", status_code=301)
 
 
