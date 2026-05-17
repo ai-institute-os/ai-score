@@ -997,21 +997,31 @@ function renderStageContent(app) {
             <div style="display:flex;flex-direction:column;gap:1rem;">
               <div>
                 <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Upload recording</label>
-                <input type="file" id="transcriptFile" accept="audio/*,video/*,.txt" style="font-size:0.82rem;color:var(--text);" onchange="onTranscriptFileChange(this)"/>
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                  <label for="transcriptFile" class="cta-btn cta-btn-secondary" style="cursor:pointer;margin:0;display:inline-flex;align-items:center;gap:0.4rem;">
+                    <i data-lucide="upload" class="icon-sm"></i>Choose File
+                  </label>
+                  <input type="file" id="transcriptFile" accept="audio/*,video/*,.txt" style="display:none;" onchange="onTranscriptFileChange(this)"/>
+                  <span id="transcriptFileName" style="font-size:0.8rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">No file chosen</span>
+                </div>
               </div>
               <div style="text-align:center;font-size:0.75rem;color:var(--text-muted);">— or paste transcript text —</div>
               <div>
                 <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Transcript text</label>
                 <textarea id="transcriptText" placeholder="Paste the call transcript here…" style="min-height:120px;font-size:0.82rem;"></textarea>
               </div>
-              <button class="cta-btn cta-btn-secondary" id="btnProcessTranscript" onclick="processTranscript(this)"><i data-lucide="cpu" class="icon-sm"></i>Process & Extract Information</button>
+              <div style="display:flex;gap:0.75rem;">
+                <button class="cta-btn cta-btn-secondary" id="btnProcessTranscript" onclick="processTranscript(this)" style="flex:1;"><i data-lucide="cpu" class="icon-sm"></i>Process & Extract Information</button>
+                <button class="cta-btn cta-btn-approve" onclick="changeStatus('AWAITING_PAYMENT')" style="flex:1;"><i data-lucide="credit-card" class="icon-sm"></i>Move to Awaiting Payment</button>
+              </div>
             </div>
           </div>
           <div id="transcriptResult" style="display:none;"></div>
         </div>
       </div>` : '';
 
-    sc.innerHTML = transcriptionCard + `
+    const showInterviewQuestions = status !== 'CALLED';
+    sc.innerHTML = transcriptionCard + (showInterviewQuestions ? `
       <div class="review-card" id="interviewQuestionsCard">
         <div class="card-header" style="justify-content:space-between;">
           <span style="display:flex;align-items:center;gap:0.4rem;">
@@ -1021,8 +1031,8 @@ function renderStageContent(app) {
           <span id="iqBadge"></span>
         </div>
         <div id="interviewQuestionsContent"></div>
-      </div>`;
-    renderInterviewQuestions(app);
+      </div>` : '');
+    if (showInterviewQuestions) renderInterviewQuestions(app);
 
   } else {
     sc.innerHTML = '';
@@ -1241,14 +1251,10 @@ function renderActionPanel(app) {
       : `<div class="already-done">No rejection reason was recorded.</div>`;
 
   } else if (status === 'CALLED') {
-    titleEl.textContent = 'Next Step';
+    titleEl.textContent = 'Actions';
     descEl.textContent = '';
     container.innerHTML = `
       <div class="cta-row" style="margin-top:0.25rem;">
-        <button class="cta-btn cta-btn-approve" onclick="changeStatus('AWAITING_PAYMENT')">
-          <i data-lucide="credit-card" class="icon-sm"></i>
-          Move to Awaiting Payment
-        </button>
         <button class="cta-btn cta-btn-secondary" onclick="changeStatus('APPROVED')">
           <i data-lucide="arrow-left" class="icon-sm"></i>
           Back to Approved
@@ -1702,6 +1708,8 @@ async function confirmMoveToCalledStage() {
 
 function onTranscriptFileChange(input) {
   const btn = document.getElementById('btnProcessTranscript');
+  const nameEl = document.getElementById('transcriptFileName');
+  if (nameEl) nameEl.textContent = input.files?.length ? input.files[0].name : 'No file chosen';
   if (btn) btn.disabled = !input.files?.length && !document.getElementById('transcriptText')?.value?.trim();
 }
 
