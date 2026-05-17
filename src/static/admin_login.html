@@ -186,8 +186,10 @@
         });
 
         if (res.ok) {
-          const data = await res.json();
-          window.location.href = data.redirect || '/admin';
+          const params = new URLSearchParams(window.location.search);
+          const next = params.get('next');
+          const dest = next && next.startsWith('/admin') ? next : '/admin';
+          window.location.href = dest;
         } else {
           keyInput.classList.add('error');
           errMsg.style.display = 'block';
