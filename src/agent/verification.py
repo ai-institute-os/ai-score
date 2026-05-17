@@ -53,8 +53,10 @@ For each application field listed, assess whether the information is credible, i
 
 Status guidance:
 - OK: Field is credible, complete, and consistent with other fields
-- WARNING: Field is acceptable but vague, unusual, or slightly inconsistent — worth a human check
-- ERROR: Field is clearly wrong, missing required information, or contradicts other fields in a serious way
+- WARNING: Field is acceptable but has minor issues — vague, unusual, slightly inconsistent, website may be temporarily unreachable, phone number format looks off, domain looks new or redirecting, description is short but plausible. A human should review but the application can proceed.
+- ERROR: Field is fundamentally broken and blocks review — no website URL provided at all, business description is blank or gibberish, competitors listed are entirely unrelated to the stated industry, or the application appears fraudulent. Reserve ERROR only for cases where a human reviewer cannot make sense of the field at all.
+
+When in doubt between WARNING and ERROR, choose WARNING. Unreachable websites, unverifiable phone numbers, and minor inconsistencies are WARNING, not ERROR.
 
 Output ONLY valid JSON — no prose, no markdown fences."""
 
