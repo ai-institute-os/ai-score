@@ -1207,8 +1207,9 @@ function renderVerification(app) {
 
   if (vStatus === 'COMPLETED') {
     const results = app.agent_verification_results || {};
-    const overall = results.overall || {};
-    const passed  = overall.passed === true;
+    // "passed" = no field has ERROR status (COMPLETED means at most WARNINGs)
+    const hasError = VERIFICATION_FIELDS.some(f => (results[f.key]?.status || '').toUpperCase() === 'ERROR');
+    const passed = !hasError;
 
     const overallBadge = passed
       ? `<span class="verification-badge verification-badge-verified">✓ VERIFIED</span>`
@@ -1238,6 +1239,7 @@ function renderVerification(app) {
           Re-run Verification
         </button>
       </div>`;
+    if (window.lucide) lucide.createIcons();
 
   } else if (vStatus === 'IN_PROGRESS') {
     content.innerHTML = `
