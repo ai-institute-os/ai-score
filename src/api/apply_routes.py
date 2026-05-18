@@ -489,6 +489,16 @@ async def upload_transcript(
                     detail="Audio transcription requires OPENAI_API_KEY. Paste the transcript as text instead.",
                 )
             file_bytes = await file.read()
+            _WHISPER_MAX_BYTES = 25 * 1024 * 1024  # 25 MB — OpenAI hard limit
+            if len(file_bytes) > _WHISPER_MAX_BYTES:
+                raise HTTPException(
+                    status_code=413,
+                    detail=(
+                        f"Audio file is too large ({len(file_bytes) // (1024*1024)} MB). "
+                        "Whisper's limit is 25 MB. Compress or trim the recording and try again, "
+                        "or paste the transcript as text."
+                    ),
+                )
             async with httpx.AsyncClient(timeout=120) as client:
                 resp = await client.post(
                     "https://api.openai.com/v1/audio/transcriptions",
@@ -497,7 +507,9 @@ async def upload_transcript(
                     data={"model": "whisper-1"},
                 )
                 if not resp.is_success:
-                    raise HTTPException(status_code=502, detail=f"Whisper API error: {resp.status_code}")
+                    err_body = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+                    err_msg = err_body.get("error", {}).get("message") or f"HTTP {resp.status_code}"
+                    raise HTTPException(status_code=502, detail=f"Whisper transcription failed: {err_msg}")
                 raw_transcript = resp.json().get("text", "")
 
     if not raw_transcript.strip():
