@@ -116,6 +116,94 @@
     .report-q-item .rq-cat { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 0.2rem; }
     .report-q-item .rq-q { font-weight: 600; color: var(--text); margin-bottom: 0.2rem; }
     .report-q-item .rq-guide { color: var(--text-muted); font-size: 0.78rem; line-height: 1.4; }
+
+    /* ── Sort select with chevron ── */
+    .sort-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .sort-wrap select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 0.4rem 2rem 0.4rem 0.75rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .sort-wrap select:focus { border-color: var(--primary); }
+    .sort-chevron {
+      position: absolute;
+      right: 0.55rem;
+      pointer-events: none;
+      color: var(--text-muted);
+    }
+
+    /* ── Auth menu ── */
+    .auth-menu { position: relative; }
+    .auth-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.3rem 0.65rem 0.3rem 0.35rem;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: var(--card);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      transition: border-color 0.15s, background 0.12s;
+    }
+    .auth-trigger:hover { border-color: var(--primary); background: var(--primary-light); }
+    .auth-avatar {
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .auth-name { font-size: 0.82rem; }
+    .auth-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      min-width: 140px;
+      z-index: 200;
+      overflow: hidden;
+    }
+    .auth-dropdown.open { display: block; }
+    .auth-drop-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text);
+      text-decoration: none;
+      transition: background 0.1s;
+    }
+    .auth-drop-item:hover { background: var(--bg); color: var(--error); }
   </style>
 </head>
 <body>
@@ -135,10 +223,20 @@
   <span class="topnav-sep">/</span>
   <span class="topnav-title" id="navTitle">Leads</span>
   <div class="topnav-right">
-    <span class="topnav-badge" id="navLiveBadge">Live</span>
-    <button class="btn btn-ghost" onclick="loadData()" title="Genindlæs data" style="padding:0.4rem 0.65rem;">
-      <i data-lucide="refresh-cw" class="icon-sm"></i>
-    </button>
+    <!-- Auth menu -->
+    <div class="auth-menu" id="authMenu">
+      <button class="auth-trigger" id="authTrigger" onclick="toggleAuthMenu(event)" aria-haspopup="true">
+        <span class="auth-avatar">A</span>
+        <span class="auth-name">Admin</span>
+        <i data-lucide="chevron-down" class="icon-xs" style="opacity:0.6;"></i>
+      </button>
+      <div class="auth-dropdown" id="authDropdown">
+        <a class="auth-drop-item" href="/admin/logout">
+          <i data-lucide="log-out" class="icon-xs"></i>
+          Sign out
+        </a>
+      </div>
+    </div>
   </div>
 </nav>
 
@@ -257,12 +355,15 @@
       </div>
 
       <div class="toolbar-right">
-        <select class="btn btn-ghost" id="sortSelect" onchange="renderTable()" style="cursor:pointer;">
-          <option value="created_desc">Nyeste først</option>
-          <option value="created_asc">Ældste først</option>
-          <option value="company_asc">Firma A→Z</option>
-          <option value="status_asc">Status</option>
-        </select>
+        <div class="sort-wrap">
+          <select id="sortSelect" onchange="renderTable()">
+            <option value="created_desc">Newest first</option>
+            <option value="created_asc">Oldest first</option>
+            <option value="company_asc">Company A→Z</option>
+            <option value="status_asc">Status</option>
+          </select>
+          <i data-lucide="chevron-down" class="icon-xs sort-chevron"></i>
+        </div>
       </div>
     </div>
 
@@ -320,6 +421,16 @@
 
 <script src="/static/assets/icons.js"></script>
 <script>
+// ─── Auth menu ────────────────────────────────────
+function toggleAuthMenu(e) {
+  e.stopPropagation();
+  document.getElementById('authDropdown').classList.toggle('open');
+}
+document.addEventListener('click', function() {
+  const d = document.getElementById('authDropdown');
+  if (d) d.classList.remove('open');
+});
+
 // ─── State ────────────────────────────────────────
 let allApplications = [];
 let activeFilter = '';
