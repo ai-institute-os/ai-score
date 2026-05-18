@@ -168,6 +168,11 @@
       '<circle cx="12" cy="12" r="6"/>' +
       '<circle cx="12" cy="12" r="2"/>',
 
+    'upload':
+      '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+      '<polyline points="17 8 12 3 7 8"/>' +
+      '<line x1="12" x2="12" y1="3" y2="15"/>',
+
     'user':
       '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>' +
       '<circle cx="12" cy="7" r="4"/>',

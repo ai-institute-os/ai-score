@@ -1034,6 +1034,36 @@ function renderStageContent(app) {
         <div id="interviewQuestionsContent"></div>
       </div>` : '');
     if (window.lucide) lucide.createIcons();
+
+    // Restore saved transcript and extracted data for the Called stage
+    if (status === 'CALLED' && app.call_transcript) {
+      const textEl = document.getElementById('transcriptText');
+      if (textEl) textEl.value = app.call_transcript;
+      const resultEl = document.getElementById('transcriptResult');
+      if (resultEl && app.call_extracted_data && Object.keys(app.call_extracted_data).length) {
+        const ext = app.call_extracted_data;
+        const rows = [
+          ['Summary',          ext.summary],
+          ['Key topics',       Array.isArray(ext.key_topics) ? ext.key_topics.join(', ') : ext.key_topics],
+          ['Client concerns',  Array.isArray(ext.concerns) ? ext.concerns.join('; ') : ext.concerns],
+          ['Fit assessment',   ext.fit_assessment],
+          ['Follow-up actions',Array.isArray(ext.follow_up_actions) ? ext.follow_up_actions.join('; ') : ext.follow_up_actions],
+          ['Next steps',       Array.isArray(ext.next_steps) ? ext.next_steps.join('; ') : ext.next_steps],
+        ].filter(([,v]) => v).map(([k,v]) => `
+          <div style="padding:0.65rem 1.25rem;border-bottom:1px solid var(--bg);">
+            <div class="field-label">${esc(k)}</div>
+            <div class="field-value" style="margin-top:0.2rem;">${esc(String(v))}</div>
+          </div>`).join('');
+        resultEl.innerHTML = `
+          <div style="padding:0.65rem 1.25rem;border-top:1.5px solid var(--bg);background:var(--bg);">
+            <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);">Extracted Information</span>
+          </div>
+          ${rows || '<div style="padding:1rem;color:var(--text-muted);font-size:0.85rem;">No structured data could be extracted.</div>'}
+          <div style="padding:0.65rem 1.25rem;border-top:1px solid var(--bg);"><div class="field-label">Raw transcript</div><div class="textarea-val" style="margin-top:0.25rem;max-height:200px;overflow-y:auto;">${esc(app.call_transcript)}</div></div>`;
+        resultEl.style.display = '';
+      }
+    }
+
     if (showInterviewQuestions) renderInterviewQuestions(app);
 
   } else {

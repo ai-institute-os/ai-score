@@ -252,6 +252,9 @@ class ApplicationResponse(BaseModel):
     agent_verification_status: str = "PENDING"
     agent_verification_results: Optional[dict] = None
     agent_verified_at: Optional[datetime] = None
+    # Call transcript (persisted after Whisper + LLM processing in Called stage)
+    call_transcript: Optional[str] = None
+    call_extracted_data: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
     state_logs: list[StateLogEntry] = []
