@@ -98,16 +98,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 _ADMIN_COOKIE = "aiscore_admin_session"
+_ADMIN_PASSWORD = "admin"  # temporary hardcode — replace with env var later
 
 
-def _make_admin_token(admin_api_key: str) -> str:
-    return hmac.new(admin_api_key.encode(), b"aiscore-admin-v1", hashlib.sha256).hexdigest()
+def _make_admin_token(password: str) -> str:
+    return hmac.new(password.encode(), b"aiscore-admin-v1", hashlib.sha256).hexdigest()
 
 
-def _verify_admin_token(token: str, admin_api_key: str) -> bool:
-    if not admin_api_key:
+def _verify_admin_token(token: str, password: str) -> bool:
+    if not password:
         return False
-    expected = _make_admin_token(admin_api_key)
+    expected = _make_admin_token(password)
     return hmac.compare_digest(token, expected)
 
 
@@ -129,7 +130,7 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
 
         settings = get_settings()
         token = request.cookies.get(_ADMIN_COOKIE, "")
-        if _verify_admin_token(token, settings.admin_api_key or ""):
+        if _verify_admin_token(token, _ADMIN_PASSWORD):
             return await call_next(request)
 
         return RedirectResponse(url=f"/admin/login?next={request.url.path}", status_code=302)
@@ -227,7 +228,7 @@ async def admin_login_page(request: Request):
     """Serve the admin login page; redirect if already authenticated."""
     settings = get_settings()
     token = request.cookies.get(_ADMIN_COOKIE, "")
-    if _verify_admin_token(token, settings.admin_api_key or ""):
+    if _verify_admin_token(token, _ADMIN_PASSWORD):
         return RedirectResponse(url="/admin", status_code=302)
     return FileResponse(str(_static_dir / "admin_login.html"))
 
@@ -242,10 +243,10 @@ async def admin_login_submit(request: Request):
     except Exception:
         return JSONResponse({"detail": "Invalid request"}, status_code=400)
 
-    if not settings.admin_api_key or submitted_key != settings.admin_api_key:
+    if not submitted_key or submitted_key != _ADMIN_PASSWORD:
         return JSONResponse({"detail": "Invalid admin key"}, status_code=401)
 
-    token = _make_admin_token(settings.admin_api_key)
+    token = _make_admin_token(_ADMIN_PASSWORD)
     response = JSONResponse({"redirect": "/admin"})
     response.set_cookie(
         key=_ADMIN_COOKIE,
