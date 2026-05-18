@@ -54,8 +54,8 @@ class Settings(BaseSettings):
     calendly_event_type_uri: str = ""
     calendly_webhook_secret: str = ""
 
-    # Admin API key — must be set in production; all /admin/* endpoints require X-Admin-Key header
-    admin_api_key: str = ""
+    # Admin API key — temporary default "admin"; override via ADMIN_API_KEY env var in production
+    admin_api_key: str = "admin"
 
     # Fernet key for encrypting LLM provider API keys at rest.
     # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
