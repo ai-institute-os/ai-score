@@ -174,11 +174,6 @@
           <span class="sidebar-text">Under review</span>
           <span class="sidebar-count" id="cnt-UNDER_REVIEW">—</span>
         </a>
-        <a class="sidebar-item" data-filter="APPROVED" onclick="setFilter(this, 'APPROVED')" data-label="Godkendt">
-          <i data-lucide="check-circle-2" class="icon-sm"></i>
-          <span class="sidebar-text">Godkendt</span>
-          <span class="sidebar-count" id="cnt-APPROVED">—</span>
-        </a>
         <a class="sidebar-item" data-filter="CALLED" onclick="setFilter(this, 'CALLED')" data-label="Møde booket">
           <i data-lucide="calendar-days" class="icon-sm"></i>
           <span class="sidebar-text">Møde booket</span>
@@ -229,19 +224,6 @@
         </a>
       </div>
 
-      <div class="sidebar-label">Afsluttet</div>
-      <div class="sidebar-section">
-        <a class="sidebar-item" data-filter="REJECTED" onclick="setFilter(this, 'REJECTED')" data-label="Afvist">
-          <i data-lucide="ban" class="icon-sm"></i>
-          <span class="sidebar-text">Afvist</span>
-          <span class="sidebar-count" id="cnt-REJECTED">—</span>
-        </a>
-        <a class="sidebar-item" data-filter="CANCELLED" onclick="setFilter(this, 'CANCELLED')" data-label="Annulleret">
-          <i data-lucide="x-circle" class="icon-sm"></i>
-          <span class="sidebar-text">Annulleret</span>
-          <span class="sidebar-count" id="cnt-CANCELLED">—</span>
-        </a>
-      </div>
     </div>
 
     <div class="sidebar-footer">
@@ -254,16 +236,7 @@
   <!-- Main -->
   <main class="admin-main">
     <div class="page-header">
-      <div>
-        <h1>Leads &amp; Ansøgninger</h1>
-        <p>Administrér kundeansøgninger og pipeline igennem AIScore-forløbet</p>
-      </div>
-      <div style="display:flex;gap:0.5rem;">
-        <button class="btn btn-ghost" onclick="exportCSV()">
-          <i data-lucide="download" class="icon-sm"></i>
-          Eksporter CSV
-        </button>
-      </div>
+      <div></div>
     </div>
 
     <!-- Toolbar -->
@@ -303,7 +276,8 @@
           <tr>
             <th>Virksomhed</th>
             <th>Kontakt</th>
-            <th>E-mail / Tlf.</th>
+            <th>E-mail</th>
+            <th>Tlf.</th>
             <th>Website</th>
             <th>Status</th>
             <th>Ansøgningsdato</th>
@@ -514,10 +488,8 @@ function renderTable() {
         <div class="td-company">${esc(a.firmanavn)}</div>
       </td>
       <td>${esc(a.kontaktperson)}</td>
-      <td>
-        <div>${esc(a.email)}</div>
-        <div class="td-sub">${esc(a.telefon || '—')}</div>
-      </td>
+      <td>${esc(a.email)}</td>
+      <td>${esc(a.telefon || '—')}</td>
       <td>
         <a class="td-link" href="${esc(a.website)}" target="_blank" rel="noopener"
            onclick="event.stopPropagation()">
@@ -525,7 +497,7 @@ function renderTable() {
         </a>
       </td>
       <td>${statusChip(a.status)}</td>
-      <td><div>${fmtDate(appDate)}</div><div class="td-sub">${fmtTime(appDate)}</div></td>
+      <td>${fmtDate(appDate)}</td>
     </tr>
   `;}).join('');
 
