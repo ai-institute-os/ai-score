@@ -1010,10 +1010,11 @@ function renderStageContent(app) {
                 <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Transcript text</label>
                 <textarea id="transcriptText" placeholder="Paste the call transcript here…" style="min-height:120px;font-size:0.82rem;"></textarea>
               </div>
-              <div style="display:flex;gap:0.75rem;">
-                <button class="cta-btn cta-btn-secondary" id="btnProcessTranscript" onclick="processTranscript(this)" style="flex:1;"><i data-lucide="cpu" class="icon-sm"></i>Process & Extract Information</button>
-                <button class="cta-btn cta-btn-approve" onclick="changeStatus('AWAITING_PAYMENT')" style="flex:1;"><i data-lucide="credit-card" class="icon-sm"></i>Move to Awaiting Payment</button>
+              <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                <button class="cta-btn cta-btn-secondary" id="btnProcessTranscript" onclick="processTranscript(this)"><i data-lucide="cpu" class="icon-sm"></i>Process & Extract Information</button>
+                <button class="cta-btn cta-btn-approve" onclick="changeStatus('AWAITING_PAYMENT')"><i data-lucide="credit-card" class="icon-sm"></i>Move to Awaiting Payment</button>
               </div>
+              <div id="transcriptError" style="display:none;margin-top:0.5rem;padding:0.65rem 0.85rem;border-radius:var(--radius-sm);background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:0.82rem;"></div>
             </div>
           </div>
           <div id="transcriptResult" style="display:none;"></div>
@@ -1032,6 +1033,7 @@ function renderStageContent(app) {
         </div>
         <div id="interviewQuestionsContent"></div>
       </div>` : '');
+    if (window.lucide) lucide.createIcons();
     if (showInterviewQuestions) renderInterviewQuestions(app);
 
   } else {
@@ -1715,8 +1717,18 @@ async function processTranscript(btn) {
   const file = fileInput?.files?.[0];
   const text = textInput?.value?.trim();
 
-  if (!file && !text) { toast('Provide a recording file or transcript text', 'error'); return; }
+  const errorEl = document.getElementById('transcriptError');
+  function showTranscriptError(msg) {
+    if (errorEl) { errorEl.textContent = msg; errorEl.style.display = ''; }
+    toast(msg, 'error');
+  }
+  function clearTranscriptError() {
+    if (errorEl) { errorEl.textContent = ''; errorEl.style.display = 'none'; }
+  }
 
+  if (!file && !text) { showTranscriptError('Please upload a recording file or paste a transcript.'); return; }
+
+  clearTranscriptError();
   if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="cpu" class="icon-sm"></i>Processing…'; if (window.lucide) lucide.createIcons(); }
   if (resultEl) resultEl.style.display = 'none';
 
@@ -1761,9 +1773,9 @@ async function processTranscript(btn) {
         ${data.transcript ? `<div style="padding:0.65rem 1.25rem;border-top:1px solid var(--bg);"><div class="field-label">Raw transcript</div><div class="textarea-val" style="margin-top:0.25rem;max-height:200px;overflow-y:auto;">${esc(data.transcript)}</div></div>` : ''}`;
       resultEl.style.display = '';
     }
-    toast('Transcript processed', 'success');
+    toast('Transcript processed and saved', 'success');
   } catch (err) {
-    toast('Processing failed: ' + err.message, 'error');
+    showTranscriptError(err.message);
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="cpu" class="icon-sm"></i>Process & Extract Information'; if (window.lucide) lucide.createIcons(); }
   }

@@ -564,6 +564,12 @@ async def upload_transcript(
         except Exception as exc:
             log.warning("transcript.llm_failed", provider=name, error=str(exc))
 
+    # Persist transcript and extraction result to the application record
+    app_record = await _get_application_or_404(application_id, db)
+    app_record.call_transcript = raw_transcript
+    app_record.call_extracted_data = extracted or {}
+    await db.commit()
+
     log.info("transcript.processed", application_id=str(application_id), chars=len(raw_transcript))
     return {"transcript": raw_transcript, "extracted": extracted}
 

@@ -217,6 +217,9 @@ class CustomerApplication(Base):
     agent_research_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     agent_researched_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     agent_research_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Call transcript and extracted data (set after Whisper + LLM processing in Called stage)
+    call_transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    call_extracted_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     questions_generated_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     # Per-field AI verification — runs as a separate phase before Generate Questions
     agent_verification_status: Mapped[str] = mapped_column(String, nullable=False, default="PENDING")
