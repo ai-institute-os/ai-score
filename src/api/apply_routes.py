@@ -1227,13 +1227,15 @@ async def expire_payment_link(
 
     session_id = app.stripe_session_id
     if session_id:
+        secret_key = get_settings().stripe_secret_key
+
         def _expire(sid: str) -> None:
             import stripe as _stripe
-            _stripe.api_key = get_settings().stripe_secret_key
+            _stripe.api_key = secret_key
             try:
                 _stripe.checkout.Session.expire(sid)
-            except _stripe.error.InvalidRequestError:
-                pass  # already expired or completed — ignore
+            except Exception:
+                pass  # already expired, completed, or invalid — clear DB record regardless
 
         await asyncio.to_thread(_expire, session_id)
 

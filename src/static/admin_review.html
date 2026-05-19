@@ -714,6 +714,23 @@
 
 <div class="toast-wrap" id="toastWrap"></div>
 
+<!-- Expire payment link confirmation modal -->
+<div id="expireModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;">
+      <i data-lucide="alert-triangle" style="width:18px;height:18px;color:var(--error);flex-shrink:0;"></i>
+      <span style="font-weight:700;font-size:0.95rem;">Expire payment link?</span>
+    </div>
+    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+      The customer will no longer be able to pay using the active link. You can generate a new one afterwards.
+    </p>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeExpireModal()">Cancel</button>
+      <button class="btn btn-danger" id="btnConfirmExpire" onclick="doExpirePaymentLink()">Expire link</button>
+    </div>
+  </div>
+</div>
+
 <script src="/static/assets/icons.js"></script>
 <script>
 let appId = null;
@@ -1432,17 +1449,30 @@ function copyPayLink(inputId) {
   navigator.clipboard.writeText(el.value).then(() => toast('Link copied', 'success'));
 }
 
-async function expirePaymentLink() {
-  if (!confirm('Expire the active payment link? The customer will no longer be able to pay using it.')) return;
+function expirePaymentLink() {
+  const modal = document.getElementById('expireModal');
+  modal.style.display = 'flex';
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeExpireModal() {
+  document.getElementById('expireModal').style.display = 'none';
+}
+
+async function doExpirePaymentLink() {
+  const btn = document.getElementById('btnConfirmExpire');
+  btn.disabled = true; btn.textContent = 'Expiring…';
   try {
     const res = await fetch(`/api/v1/admin/applications/${appId}/payment-link/expire`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
     if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
+    closeExpireModal();
     toast('Payment link expired', 'success');
     await loadApp();
   } catch (err) {
+    closeExpireModal();
     toast('Failed: ' + err.message, 'error');
   }
 }
