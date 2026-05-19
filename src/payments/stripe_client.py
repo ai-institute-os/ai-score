@@ -34,8 +34,8 @@ def _build_checkout_session(
             }
         ],
         mode="payment",
-        success_url=settings.payment_success_url + f"?order_id={order_id}",
-        cancel_url=settings.payment_cancel_url + f"?order_id={order_id}",
+        success_url=settings.app_base_url.rstrip("/") + f"/payment/success?order_id={order_id}",
+        cancel_url=settings.app_base_url.rstrip("/") + f"/payment/cancel?order_id={order_id}",
         metadata={"order_id": order_id},
         expires_at=int(__import__("time").time()) + 3600,  # 1 hour window
     )
