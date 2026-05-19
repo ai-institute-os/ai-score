@@ -1153,12 +1153,13 @@ async def generate_payment_link(
     allowed_from = {
         CustomerApplicationStatus.CALLED,
         CustomerApplicationStatus.APPROVED,
+        CustomerApplicationStatus.AWAITING_PAYMENT,
     }
     if app.status not in allowed_from:
         raise HTTPException(
             status_code=422,
             detail=(
-                f"Payment link can only be generated from CALLED or APPROVED status. "
+                f"Payment link can only be generated from CALLED, APPROVED, or AWAITING_PAYMENT status. "
                 f"Current status: {app.status.value}"
             ),
         )
