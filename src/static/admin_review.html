@@ -778,7 +778,6 @@ const WIZARD_STEPS = [
   { id: 'CALLED',                label: 'Called',                icon: 'phone'           },
   { id: 'AWAITING_PAYMENT',      label: 'Awaiting Payment',      icon: 'credit-card'     },
   { id: 'PAID',                  label: 'Paid',                  icon: 'badge-check'     },
-  { id: 'IN_PRODUCTION',         label: 'In Production',         icon: 'zap'             },
   { id: 'PDF_REPORT',            label: 'PDF Report',            icon: 'file-text'       },
   { id: 'QC_REVIEW',             label: 'QC Review',             icon: 'shield-check'    },
   { id: 'READY_FOR_REVIEW_CALL', label: 'Ready for Review Call', icon: 'video'           },
@@ -792,10 +791,10 @@ const STATUS_STEP_INDEX = {
   AWAITING_PAYMENT:      6,
   PAID:                  7,
   IN_PRODUCTION:         8,
-  QC_REVIEW:             10,
-  QC_PASSED:             11,
-  QC_FAILED:             10,
-  READY_FOR_REVIEW_CALL: 11,
+  QC_REVIEW:             9,
+  QC_PASSED:             10,
+  QC_FAILED:             9,
+  READY_FOR_REVIEW_CALL: 10,
 };
 
 function getWizardActiveIndex(app) {
@@ -1337,6 +1336,61 @@ function renderActionPanel(app) {
         </button>
       </div>`;
 
+  } else if (status === 'PAID') {
+    titleEl.textContent = 'Rapport';
+    descEl.textContent = 'Gennemgå kundens oplysninger og start rapport-generering.';
+
+    // Public application data
+    const fields = [
+      ['Virksomhed',       app.firmanavn],
+      ['Website',          app.website],
+      ['Branche',          app.industry],
+      ['Land',             app.country],
+      ['Kontaktperson',    app.kontaktperson],
+      ['E-mail',           app.email],
+      ['Virksomhedsinfo',  app.virksomhedsinfo || app.business_description],
+      ['Konkurrenter',     app.competitors],
+      ['Mål med analyse',  app.application_goal],
+    ].filter(([,v]) => v);
+
+    const publicRows = fields.map(([k, v]) => `
+      <div style="display:flex;gap:0.5rem;padding:0.45rem 0;border-bottom:1px solid var(--border);">
+        <span style="min-width:130px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);flex-shrink:0;">${esc(k)}</span>
+        <span style="font-size:0.88rem;color:var(--text);">${esc(String(v))}</span>
+      </div>`).join('');
+
+    // Interview extracted data
+    const ext = app.call_extracted_data || {};
+    const interviewRows = [
+      ['Resumé',           ext.summary],
+      ['Emner',            Array.isArray(ext.key_topics) ? ext.key_topics.join(', ') : ext.key_topics],
+      ['Bekymringer',      Array.isArray(ext.concerns) ? ext.concerns.join('; ') : ext.concerns],
+      ['Fit-vurdering',   ext.fit_assessment],
+      ['Follow-up',        Array.isArray(ext.follow_up_actions) ? ext.follow_up_actions.join('; ') : ext.follow_up_actions],
+      ['Næste skridt',     Array.isArray(ext.next_steps) ? ext.next_steps.join('; ') : ext.next_steps],
+    ].filter(([,v]) => v).map(([k, v]) => `
+      <div style="display:flex;gap:0.5rem;padding:0.45rem 0;border-bottom:1px solid var(--border);">
+        <span style="min-width:130px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);flex-shrink:0;">${esc(k)}</span>
+        <span style="font-size:0.88rem;color:var(--text);">${esc(String(v))}</span>
+      </div>`).join('');
+
+    const interviewSection = interviewRows ? `
+      <div style="margin-top:1rem;">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:0.5rem;">Interview — ekstraoplysninger</div>
+        ${interviewRows}
+      </div>` : '';
+
+    container.innerHTML = `
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:0.5rem;">Kundens ansøgningsdata</div>
+      ${publicRows || '<div style="color:var(--text-muted);font-size:0.85rem;">Ingen data fundet.</div>'}
+      ${interviewSection}
+      <div style="margin-top:1.25rem;">
+        <button class="btn btn-primary" onclick="generateReport()" style="font-size:0.9rem;padding:0.6rem 1.4rem;">
+          <i data-lucide="file-text" style="width:15px;height:15px;margin-right:0.4rem;"></i>
+          Generate Report
+        </button>
+      </div>`;
+
   } else {
     const nextStatuses = VALID_TRANSITIONS[status] || [];
     if (!nextStatuses.length) {
@@ -1381,6 +1435,7 @@ async function confirmReject() {
 }
 async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
+async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
 
 async function doStatusChange(newStatus, note) {
   try {
