@@ -1275,7 +1275,7 @@ async def _upsert_subscription(
 
 
 @router.post("/webhooks/stripe", include_in_schema=False)
-async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+async def stripe_webhook(request: Request, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     """
     Unified Stripe webhook endpoint.
 
@@ -1345,9 +1345,12 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 
             if app.status == CustomerApplicationStatus.AWAITING_PAYMENT:
                 prev_status = app.status
+                now = datetime.now(timezone.utc)
+
+                # Transition 1: AWAITING_PAYMENT → PAID
                 app.status = CustomerApplicationStatus.PAID
                 app.stripe_payment_intent_id = payment_intent_id
-                app.updated_at = datetime.now(timezone.utc)
+                app.updated_at = now
                 await _add_state_log(
                     db, app,
                     from_status=prev_status,
@@ -1355,8 +1358,23 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                     changed_by="stripe",
                     note=f"Payment confirmed — intent {payment_intent_id}",
                 )
+
+                # Transition 2: PAID → IN_PRODUCTION (auto-advance, atomic with PAID)
+                app.status = CustomerApplicationStatus.IN_PRODUCTION
+                app.updated_at = now
+                app.report_questions_status = "generating"
+                await _add_state_log(
+                    db, app,
+                    from_status=CustomerApplicationStatus.PAID,
+                    to_status=CustomerApplicationStatus.IN_PRODUCTION,
+                    changed_by="stripe",
+                    note="Auto-advanced to IN_PRODUCTION — AI pipeline triggered",
+                )
                 await db.commit()
-                log.info("stripe_webhook.payment_confirmed", application_id=application_id_str)
+                log.info(
+                    "stripe_webhook.payment_confirmed_production_started",
+                    application_id=application_id_str,
+                )
 
                 amount_total = session.get("amount_total")
                 amount_dkk = (amount_total // 100) if amount_total is not None else None
@@ -1374,6 +1392,10 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                         application_id=application_id_str,
                         error=str(exc),
                     )
+
+                # Trigger AI analysis pipeline as background task
+                background_tasks.add_task(_generate_and_store_report_questions, application_id)
+                log.info("stripe_webhook.pipeline_triggered", application_id=application_id_str)
 
         elif mode == "subscription":
             # AISelect new subscription checkout completed
