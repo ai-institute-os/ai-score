@@ -1208,6 +1208,50 @@ async def generate_payment_link(
     )
 
 
+@router.post(
+    "/admin/applications/{application_id}/payment-link/expire",
+    summary="Expire the active Stripe checkout session for an application",
+)
+async def expire_payment_link(
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(verify_admin),
+) -> dict:
+    app = await _get_application_or_404(application_id, db)
+
+    if app.status != CustomerApplicationStatus.AWAITING_PAYMENT:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Can only expire payment link in AWAITING_PAYMENT status. Current: {app.status.value}",
+        )
+
+    session_id = app.stripe_session_id
+    if session_id:
+        def _expire(sid: str) -> None:
+            import stripe as _stripe
+            _stripe.api_key = get_settings().stripe_secret_key
+            try:
+                _stripe.checkout.Session.expire(sid)
+            except _stripe.error.InvalidRequestError:
+                pass  # already expired or completed — ignore
+
+        await asyncio.to_thread(_expire, session_id)
+
+    app.stripe_session_id = None
+    app.payment_url = None
+    app.updated_at = datetime.now(timezone.utc)
+    await _add_state_log(
+        db, app,
+        from_status=CustomerApplicationStatus.AWAITING_PAYMENT,
+        to_status=CustomerApplicationStatus.AWAITING_PAYMENT,
+        changed_by="admin",
+        note="Payment link manually expired",
+    )
+    await db.commit()
+
+    return {"expired": True, "application_id": str(application_id)}
+
+
 # ─────────────────────────────────────────────
 # Stripe webhook (payment confirmed + subscriptions)
 # ─────────────────────────────────────────────

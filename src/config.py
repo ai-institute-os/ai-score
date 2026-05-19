@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     # Stripe (payment links)
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
-    payment_success_url: str = "https://aiscore.dk/payment/success"
-    payment_cancel_url: str = "https://aiscore.dk/payment/cancel"
+    payment_success_url: str = "https://app.aiscore.dk/payment/success"
+    payment_cancel_url: str = "https://app.aiscore.dk/payment/cancel"
 
     # Resend (outbound email)
     resend_api_key: str = ""
