@@ -1215,7 +1215,7 @@ async def generate_payment_link(
 async def expire_payment_link(
     application_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: str = Depends(verify_admin),
+    _: str = Depends(require_admin_key),
 ) -> dict:
     app = await _get_application_or_404(application_id, db)
 
