@@ -22,6 +22,7 @@ def _build_checkout_session(
     stripe.api_key = settings.stripe_secret_key
     return stripe.checkout.Session.create(
         customer_email=customer_email,
+        payment_method_types=["card"],  # explicit list disables Stripe Link
         line_items=[
             {
                 "price_data": {
