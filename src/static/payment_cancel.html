@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Betaling annulleret — AIScore</title>
+  <link rel="stylesheet" href="/static/shared.css" />
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+    .icon-wrap {
+      width: 56px; height: 56px;
+      background: #fef2f2;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+    .icon-wrap svg { width: 28px; height: 28px; stroke: #dc2626; stroke-width: 2.5; fill: none; }
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text); }
+    p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 1.5rem; }
+    .btn-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 0.55rem 1.2rem; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 600; text-decoration: none; cursor: pointer; border: none; }
+    .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <h1>Betaling annulleret</h1>
+    <p>Du annullerede betalingen. Ingen beløb er trukket. Kontakt os på <a href="mailto:support@aiinstitute.dk">support@aiinstitute.dk</a> hvis du har spørgsmål.</p>
+    <div class="btn-row">
+      <a class="btn btn-ghost" href="/">Tilbage til forsiden</a>
+    </div>
+  </div>
+</body>
+</html>

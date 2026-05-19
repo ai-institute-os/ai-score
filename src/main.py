@@ -298,3 +298,15 @@ _templates_dir = Path(__file__).parent / "templates"
 async def report_status_page(order_id: str):
     """Customer-facing status page that live-polls rapport generation progress."""
     return FileResponse(str(_templates_dir / "report_status.html"))
+
+
+@app.get("/payment/success", include_in_schema=False)
+async def payment_success_page(order_id: str = ""):
+    """Post-payment confirmation page — shown after successful Stripe checkout."""
+    return FileResponse(str(_static_dir / "payment_success.html"))
+
+
+@app.get("/payment/cancel", include_in_schema=False)
+async def payment_cancel_page(order_id: str = ""):
+    """Shown when customer cancels Stripe checkout."""
+    return FileResponse(str(_static_dir / "payment_cancel.html"))

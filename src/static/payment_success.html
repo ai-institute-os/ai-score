@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Confirmed — AIScore</title>
+  <link rel="stylesheet" href="/static/shared.css" />
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+    .icon-wrap {
+      width: 56px; height: 56px;
+      background: #f0fdf4;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+    .icon-wrap svg { width: 28px; height: 28px; stroke: #16a34a; stroke-width: 2.5; fill: none; }
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text); }
+    p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 1.5rem; }
+    .btn-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 0.55rem 1.2rem; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 600; text-decoration: none; cursor: pointer; border: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .status-badge { display: inline-block; background: #f0fdf4; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.7rem; border-radius: 20px; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="status-badge">Betaling bekræftet</div>
+    <h1>Tak for din betaling!</h1>
+    <p>Vi har modtaget din betaling og er gået i gang med at analysere din virksomhed. Du vil modtage en e-mail, når rapporten er klar.</p>
+    <div class="btn-row">
+      <a id="statusLink" class="btn btn-primary" href="#">Se status</a>
+      <a id="adminLink" class="btn btn-ghost" href="/admin" style="display:none;">Admin — gå til ansøgning</a>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get('order_id') || '';
+    if (orderId) {
+      document.getElementById('statusLink').href = '/report-status/' + orderId;
+      const adminLink = document.getElementById('adminLink');
+      adminLink.href = '/admin/applications/' + orderId + '/review';
+      // Show admin link only if admin cookie is present
+      if (document.cookie.includes('aiscore_admin_session')) {
+        adminLink.style.display = 'inline-block';
+      }
+    } else {
+      document.getElementById('statusLink').href = '/';
+    }
+  </script>
+</body>
+</html>
