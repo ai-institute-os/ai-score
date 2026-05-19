@@ -1038,7 +1038,7 @@ function renderStageContent(app) {
         </div>
       </div>` : '';
 
-    const showInterviewQuestions = status !== 'CALLED' && status !== 'AWAITING_PAYMENT';
+    const showInterviewQuestions = status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID';
     sc.innerHTML = transcriptionCard + (showInterviewQuestions ? `
       <div class="review-card" id="interviewQuestionsCard">
         <div class="card-header" style="justify-content:space-between;">
@@ -1326,10 +1326,14 @@ function renderActionPanel(app) {
             style="width:140px;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);font-size:0.875rem;">
         </div>
       </div>
-      <div style="margin-top:0.85rem;">
+      <div style="margin-top:0.85rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
         <button class="btn btn-primary" id="btnGenPayLink" onclick="generatePaymentLink()">
           <i data-lucide="credit-card" style="width:14px;height:14px;margin-right:0.35rem;"></i>
           ${existingUrl ? 'Regenerate Payment Link' : 'Generate Payment Link'}
+        </button>
+        <button class="btn btn-ghost" onclick="changeStatus('PAID')" style="border-color:var(--success,#16a34a);color:var(--success,#16a34a);">
+          <i data-lucide="badge-check" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+          Mark as Paid
         </button>
       </div>`;
 
