@@ -43,8 +43,7 @@
     <h1>Tak for din betaling!</h1>
     <p>Vi har modtaget din betaling og er gået i gang med at analysere din virksomhed. Du vil modtage en e-mail, når rapporten er klar.</p>
     <div class="btn-row">
-      <a id="statusLink" class="btn btn-primary" href="#">Se status</a>
-      <a id="adminLink" class="btn btn-ghost" href="/admin" style="display:none;">Admin — gå til ansøgning</a>
+      <a id="statusLink" class="btn btn-primary" href="#">Gå til ansøgning</a>
     </div>
   </div>
 
@@ -52,15 +51,9 @@
     const params = new URLSearchParams(location.search);
     const orderId = params.get('order_id') || '';
     if (orderId) {
-      // Redirect admin users straight to the application review page
-      if (document.cookie.includes('aiscore_admin_session')) {
-        location.replace('/admin/applications/' + orderId + '/review');
-      } else {
-        document.getElementById('statusLink').href = '/report-status/' + orderId;
-        document.getElementById('adminLink').style.display = 'none';
-      }
+      document.getElementById('statusLink').href = '/admin/applications/' + orderId + '/review';
     } else {
-      document.getElementById('statusLink').href = '/';
+      document.getElementById('statusLink').href = '/admin';
     }
   </script>
 </body>
