@@ -1030,6 +1030,7 @@ function renderStageContent(app) {
       </div>` : '';
 
     const showInterviewQuestions = status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION';
+    const showInterviewSummary = status === 'IN_PRODUCTION' || status === 'PAID';
     sc.innerHTML = transcriptionCard + (showInterviewQuestions ? `
       <div class="review-card" id="interviewQuestionsCard">
         <div class="card-header" style="justify-content:space-between;">
@@ -1040,6 +1041,13 @@ function renderStageContent(app) {
           <span id="iqBadge"></span>
         </div>
         <div id="interviewQuestionsContent"></div>
+      </div>` : '') + (showInterviewSummary ? `
+      <div class="review-card" id="interviewSummaryCard">
+        <div class="card-header">
+          <i data-lucide="clipboard-list" class="icon-xs"></i>
+          Interview Result Summary
+        </div>
+        <div id="interviewSummaryContent"></div>
       </div>` : '');
     if (window.lucide) lucide.createIcons();
 
@@ -1073,6 +1081,26 @@ function renderStageContent(app) {
     }
 
     if (showInterviewQuestions) renderInterviewQuestions(app);
+
+    if (showInterviewSummary) {
+      const summaryEl = document.getElementById('interviewSummaryContent');
+      if (summaryEl) {
+        const ext = app.call_extracted_data || {};
+        const rows = [
+          ['Summary',           ext.summary],
+          ['Key topics',        Array.isArray(ext.key_topics) ? ext.key_topics.join(', ') : ext.key_topics],
+          ['Client concerns',   Array.isArray(ext.concerns) ? ext.concerns.join('; ') : ext.concerns],
+          ['Fit assessment',    ext.fit_assessment],
+          ['Follow-up actions', Array.isArray(ext.follow_up_actions) ? ext.follow_up_actions.join('; ') : ext.follow_up_actions],
+          ['Next steps',        Array.isArray(ext.next_steps) ? ext.next_steps.join('; ') : ext.next_steps],
+        ].filter(([,v]) => v).map(([k,v]) => `
+          <div style="padding:0.65rem 1.25rem;border-bottom:1px solid var(--bg);">
+            <div class="field-label">${esc(k)}</div>
+            <div class="field-value" style="margin-top:0.2rem;">${esc(String(v))}</div>
+          </div>`).join('');
+        summaryEl.innerHTML = rows || `<div style="padding:1rem;color:var(--text-muted);font-size:0.85rem;">Ingen interview-data fundet endnu.</div>`;
+      }
+    }
 
   } else {
     sc.innerHTML = '';
@@ -1329,7 +1357,7 @@ function renderActionPanel(app) {
       </div>`;
 
   } else if (status === 'IN_PRODUCTION' || status === 'PAID') {
-    titleEl.textContent = status === 'IN_PRODUCTION' ? 'PDF Rapport' : 'Rapport';
+    titleEl.textContent = status === 'IN_PRODUCTION' ? 'PDF Report' : 'Rapport';
     descEl.textContent = status === 'IN_PRODUCTION'
       ? 'Gennemgå kundens oplysninger og download den færdige PDF rapport.'
       : 'Gennemgå kundens oplysninger og start rapport-generering.';
