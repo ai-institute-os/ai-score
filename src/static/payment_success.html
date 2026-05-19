@@ -52,12 +52,12 @@
     const params = new URLSearchParams(location.search);
     const orderId = params.get('order_id') || '';
     if (orderId) {
-      document.getElementById('statusLink').href = '/report-status/' + orderId;
-      const adminLink = document.getElementById('adminLink');
-      adminLink.href = '/admin/applications/' + orderId + '/review';
-      // Show admin link only if admin cookie is present
+      // Redirect admin users straight to the application review page
       if (document.cookie.includes('aiscore_admin_session')) {
-        adminLink.style.display = 'inline-block';
+        location.replace('/admin/applications/' + orderId + '/review');
+      } else {
+        document.getElementById('statusLink').href = '/report-status/' + orderId;
+        document.getElementById('adminLink').style.display = 'none';
       }
     } else {
       document.getElementById('statusLink').href = '/';

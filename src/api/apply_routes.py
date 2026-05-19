@@ -698,6 +698,7 @@ async def update_application_status(
     request: Request,
     application_id: uuid.UUID,
     body: ApplicationStatusUpdate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     """Admin — advance the application through the CRM state machine."""
@@ -731,6 +732,12 @@ async def update_application_status(
     )
     db.add(log)
     await db.commit()
+
+    if new_status == CustomerApplicationStatus.IN_PRODUCTION:
+        app.report_questions_status = "generating"
+        await db.commit()
+        background_tasks.add_task(_generate_and_store_report_questions, application_id)
+        log.info("admin.pipeline_triggered", application_id=str(application_id))
 
     if new_status == CustomerApplicationStatus.READY_FOR_REVIEW_CALL:
         from src.payments.emailer import send_aiselect_crosssell_email
@@ -1365,7 +1372,7 @@ async def stripe_webhook(request: Request, background_tasks: BackgroundTasks, db
                 prev_status = app.status
                 now = datetime.now(timezone.utc)
 
-                # Transition 1: AWAITING_PAYMENT → PAID
+                # AWAITING_PAYMENT → PAID (admin will manually advance to IN_PRODUCTION)
                 app.status = CustomerApplicationStatus.PAID
                 app.stripe_payment_intent_id = payment_intent_id
                 app.updated_at = now
@@ -1376,21 +1383,9 @@ async def stripe_webhook(request: Request, background_tasks: BackgroundTasks, db
                     changed_by="stripe",
                     note=f"Payment confirmed — intent {payment_intent_id}",
                 )
-
-                # Transition 2: PAID → IN_PRODUCTION (auto-advance, atomic with PAID)
-                app.status = CustomerApplicationStatus.IN_PRODUCTION
-                app.updated_at = now
-                app.report_questions_status = "generating"
-                await _add_state_log(
-                    db, app,
-                    from_status=CustomerApplicationStatus.PAID,
-                    to_status=CustomerApplicationStatus.IN_PRODUCTION,
-                    changed_by="stripe",
-                    note="Auto-advanced to IN_PRODUCTION — AI pipeline triggered",
-                )
                 await db.commit()
                 log.info(
-                    "stripe_webhook.payment_confirmed_production_started",
+                    "stripe_webhook.payment_confirmed",
                     application_id=application_id_str,
                 )
 
@@ -1410,10 +1405,6 @@ async def stripe_webhook(request: Request, background_tasks: BackgroundTasks, db
                         application_id=application_id_str,
                         error=str(exc),
                     )
-
-                # Trigger AI analysis pipeline as background task
-                background_tasks.add_task(_generate_and_store_report_questions, application_id)
-                log.info("stripe_webhook.pipeline_triggered", application_id=application_id_str)
 
         elif mode == "subscription":
             # AISelect new subscription checkout completed
