@@ -1290,14 +1290,14 @@ function renderActionPanel(app) {
 
   } else if (status === 'AWAITING_PAYMENT') {
     titleEl.textContent = 'Payment';
-    descEl.textContent = 'Generate a Stripe payment link and send it to the customer.';
+    descEl.textContent = 'Generate a Stripe payment link for the customer.';
     const existingUrl = app.stripe_checkout_url || app.payment_url || null;
     container.innerHTML = `
       ${existingUrl ? `
-      <div style="margin-bottom:1.25rem;padding:0.75rem 1rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius-sm);">
-        <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#15803d;margin-bottom:0.4rem;">Active payment link</div>
+      <div style="margin-bottom:1.25rem;">
+        <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Payment link</label>
         <div style="display:flex;align-items:center;gap:0.5rem;">
-          <input id="existingPayLink" type="text" readonly value="${esc(existingUrl)}" style="flex:1;font-size:0.8rem;padding:0.35rem 0.6rem;border:1px solid #bbf7d0;border-radius:var(--radius-sm);background:#fff;color:var(--text);">
+          <input id="existingPayLink" type="text" readonly value="${esc(existingUrl)}" style="flex:1;font-size:0.8rem;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);">
           <button class="btn btn-ghost" style="white-space:nowrap;" onclick="copyPayLink()">Copy link</button>
           <button class="btn btn-danger" style="white-space:nowrap;" onclick="expirePaymentLink()">Expire link</button>
         </div>
@@ -1308,18 +1308,13 @@ function renderActionPanel(app) {
           <input id="payAmountDkk" type="number" min="1" step="1" placeholder="e.g. 4995"
             style="width:140px;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);font-size:0.875rem;">
         </div>
-        <div style="display:flex;align-items:center;gap:0.4rem;padding-bottom:0.1rem;">
-          <input type="checkbox" id="paySendEmail" checked style="width:15px;height:15px;cursor:pointer;">
-          <label for="paySendEmail" style="font-size:0.85rem;color:var(--text);cursor:pointer;">Send link by email to customer</label>
-        </div>
       </div>
       <div style="margin-top:0.85rem;">
         <button class="btn btn-primary" id="btnGenPayLink" onclick="generatePaymentLink()">
           <i data-lucide="credit-card" style="width:14px;height:14px;margin-right:0.35rem;"></i>
-          Generate Payment Link
+          ${existingUrl ? 'Regenerate Payment Link' : 'Generate Payment Link'}
         </button>
-      </div>
-      <div id="payLinkResult" style="margin-top:1rem;display:none;"></div>`;
+      </div>`;
 
   } else {
     const nextStatuses = VALID_TRANSITIONS[status] || [];
@@ -1404,8 +1399,6 @@ async function confirmStatus() {
 
 async function generatePaymentLink() {
   const amountEl = document.getElementById('payAmountDkk');
-  const sendEmail = document.getElementById('paySendEmail')?.checked ?? true;
-  const resultEl = document.getElementById('payLinkResult');
   const btn = document.getElementById('btnGenPayLink');
   const amount = parseInt(amountEl?.value, 10);
   if (!amount || amount < 1) { toast('Enter a valid amount in DKK', 'error'); return; }
@@ -1414,29 +1407,23 @@ async function generatePaymentLink() {
     const res = await fetch(`/api/v1/admin/applications/${appId}/payment-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount_dkk: amount, send_email: sendEmail }),
+      body: JSON.stringify({ amount_dkk: amount, send_email: false }),
     });
     if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
-    const data = await res.json();
-    const url = data.payment_url || '';
-    resultEl.innerHTML = `
-      <div style="padding:0.75rem 1rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius-sm);">
-        <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#15803d;margin-bottom:0.4rem;">
-          Payment link generated${data.email_sent ? ' — email sent to customer' : ''}
-        </div>
-        <div style="display:flex;align-items:center;gap:0.5rem;">
-          <input id="newPayLink" type="text" readonly value="${esc(url)}" style="flex:1;font-size:0.8rem;padding:0.35rem 0.6rem;border:1px solid #bbf7d0;border-radius:var(--radius-sm);background:#fff;color:var(--text);">
-          <button class="btn btn-ghost" style="white-space:nowrap;" onclick="copyPayLink('newPayLink')">Copy link</button>
-        </div>
-      </div>`;
-    resultEl.style.display = '';
-    toast('Payment link created' + (data.email_sent ? ' and emailed' : ''), 'success');
+    toast('Payment link generated', 'success');
+    await loadApp();
   } catch (err) {
     toast('Failed: ' + err.message, 'error');
-  } finally {
     btn.disabled = false; btn.innerHTML = '<i data-lucide="credit-card" style="width:14px;height:14px;margin-right:0.35rem;"></i>Generate Payment Link';
     if (window.lucide) lucide.createIcons();
   }
+}
+
+async function loadApp() {
+  const res = await fetch(`/api/v1/admin/applications/${appId}`);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const app = await res.json();
+  renderApp(app);
 }
 
 function copyPayLink(inputId) {
