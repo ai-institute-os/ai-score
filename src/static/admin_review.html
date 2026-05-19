@@ -1328,9 +1328,11 @@ function renderActionPanel(app) {
         </button>
       </div>`;
 
-  } else if (status === 'PAID') {
-    titleEl.textContent = 'Rapport';
-    descEl.textContent = 'Gennemgå kundens oplysninger og start rapport-generering.';
+  } else if (status === 'IN_PRODUCTION' || status === 'PAID') {
+    titleEl.textContent = status === 'IN_PRODUCTION' ? 'PDF Rapport' : 'Rapport';
+    descEl.textContent = status === 'IN_PRODUCTION'
+      ? 'Gennemgå kundens oplysninger og download den færdige PDF rapport.'
+      : 'Gennemgå kundens oplysninger og start rapport-generering.';
 
     // Public application data
     const fields = [
@@ -1385,10 +1387,17 @@ function renderActionPanel(app) {
           </button>
         </div>
         <div id="checkerResults" style="display:none;margin-bottom:1rem;"></div>
-        <button class="btn btn-primary" onclick="generateReport()" style="font-size:0.9rem;padding:0.6rem 1.4rem;" id="btnGenerateReport" disabled>
-          <i data-lucide="file-text" style="width:15px;height:15px;margin-right:0.4rem;"></i>
-          Generate Report
-        </button>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+          ${status === 'IN_PRODUCTION' ? `
+          <button class="btn btn-primary" onclick="downloadReportPdf()" style="font-size:0.9rem;padding:0.6rem 1.4rem;" id="btnDownloadPdf" disabled>
+            <i data-lucide="file-text" style="width:15px;height:15px;margin-right:0.4rem;"></i>
+            Download PDF Rapport
+          </button>` : `
+          <button class="btn btn-primary" onclick="generateReport()" style="font-size:0.9rem;padding:0.6rem 1.4rem;" id="btnGenerateReport" disabled>
+            <i data-lucide="file-text" style="width:15px;height:15px;margin-right:0.4rem;"></i>
+            Generate Report
+          </button>`}
+        </div>
       </div>`;
 
   } else {
@@ -1436,6 +1445,26 @@ async function confirmReject() {
 async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
+
+async function downloadReportPdf() {
+  const btn = document.getElementById('btnDownloadPdf');
+  if (btn) { btn.disabled = true; btn.textContent = 'Genererer…'; }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/report/pdf`);
+    if (!res.ok) { alert('PDF-generering fejlede: ' + res.status); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AIScore-rapport-${appId}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('PDF-generering fejlede: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="file-text" style="width:15px;height:15px;margin-right:0.4rem;"></i>Download PDF Rapport'; if (window.lucide) lucide.createIcons(); }
+  }
+}
 
 function runDataChecker() {
   const app = appData;
@@ -1499,12 +1528,14 @@ function runDataChecker() {
   el.innerHTML = summary + rows;
   el.style.display = '';
 
-  const btn = document.getElementById('btnGenerateReport');
-  if (btn) {
-    btn.disabled = !passed;
-    btn.style.opacity = passed ? '1' : '0.45';
-    btn.title = passed ? '' : 'Kør checker og ret alle fejl inden rapport-generering';
-  }
+  ['btnGenerateReport', 'btnDownloadPdf'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.disabled = !passed;
+      btn.style.opacity = passed ? '1' : '0.45';
+      btn.title = passed ? '' : 'Kør checker og ret alle fejl inden rapport-generering';
+    }
+  });
 
   if (window.lucide) lucide.createIcons();
 }
