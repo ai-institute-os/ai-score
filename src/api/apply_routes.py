@@ -2628,6 +2628,7 @@ async def download_report_pdf(
     request: Request,
     application_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
 ):
     """Renders the HTML report template for *application_id* to a PDF using Puppeteer."""
     from src.pdf_renderer import render_html_to_pdf
