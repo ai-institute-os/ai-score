@@ -1474,7 +1474,7 @@ async function changeStatus(newStatus, note = '') { await doStatusChange(newStat
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
 
 function downloadReportPdf() {
-  window.location.href = `/api/v1/admin/applications/${appId}/report/pdf`;
+  window.open(`/api/v1/admin/applications/${appId}/report/pdf`, '_blank');
 }
 
 function runDataChecker() {
