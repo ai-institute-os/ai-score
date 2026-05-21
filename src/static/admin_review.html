@@ -1485,33 +1485,29 @@ async function downloadPdfReport() {
     if (window.lucide) lucide.createIcons();
   }
   try {
-    console.log('[PDF] Step 1: starting fetch', appId);
     const res = await fetch(`/api/v1/admin/applications/${appId}/report/pdf`);
-    console.log('[PDF] Step 2: fetch done', 'status=' + res.status, 'content-type=' + res.headers.get('content-type'));
-    toast('[PDF debug] fetch ' + res.status + ' ' + res.headers.get('content-type'), 'success');
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       throw new Error(d.detail || `HTTP ${res.status}`);
     }
     const blob = await res.blob();
-    console.log('[PDF] Step 3: blob', 'size=' + blob.size, 'type=' + blob.type);
-    toast('[PDF debug] blob size=' + blob.size + ' type=' + blob.type, 'success');
     const url = URL.createObjectURL(blob);
-    console.log('[PDF] Step 4: objectURL', url);
-    toast('[PDF debug] blobURL oprettet, klikker anchor...', 'success');
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'AIScore-rapport.pdf';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    console.log('[PDF] Step 5: a.click() kaldt');
-    toast('[PDF debug] a.click() kaldt — download bør starte nu', 'success');
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 60000);
+
+    // Replace button with a real user-clickable download link.
+    // Programmatic a.click() after await loses the user-gesture context in Chrome
+    // and silently fails. A visible anchor the user clicks themselves always works.
+    const dlLink = document.createElement('a');
+    dlLink.href = url;
+    dlLink.download = 'AIScore-rapport.pdf';
+    dlLink.className = (btn ? btn.className : 'btn btn-primary');
+    dlLink.style.cssText = 'font-size:0.85rem;padding:0.5rem 1.1rem;display:inline-flex;align-items:center;text-decoration:none;background:#16a34a;';
+    dlLink.innerHTML = '<i data-lucide="check-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i> PDF klar — klik for download';
+    if (btn) btn.replaceWith(dlLink);
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => URL.revokeObjectURL(url), 120000);
   } catch (err) {
-    console.error('[PDF] fejl:', err);
     toast('PDF-download fejlede: ' + err.message, 'error');
-  } finally {
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = origHTML;
