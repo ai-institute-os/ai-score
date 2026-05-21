@@ -1473,27 +1473,8 @@ async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
 
-async function downloadReportPdf() {
-  const btn = document.getElementById('btnDownloadPdf');
-  if (btn) { btn.disabled = true; btn.textContent = 'Genererer…'; }
-  try {
-    const res = await fetch(`/api/v1/admin/applications/${appId}/report/pdf`);
-    if (!res.ok) { alert('PDF-generering fejlede: ' + res.status); return; }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `AIScore-rapport-${appId}.pdf`;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (e) {
-    alert('PDF-generering fejlede: ' + e.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="file-text" style="width:15px;height:15px;margin-right:0.4rem;"></i>Download PDF Rapport'; if (window.lucide) lucide.createIcons(); }
-  }
+function downloadReportPdf() {
+  window.location.href = `/api/v1/admin/applications/${appId}/report/pdf`;
 }
 
 function runDataChecker() {
