@@ -90,12 +90,14 @@
     overflow: hidden;
   }
 
+  /* Quarter-arc decoration: center is at the top-right corner of the page
+     so only the lower-left quarter is visible within the cover bounds */
   .cover::before {
     content: '';
     position: absolute;
-    top: -70px; right: -60px;
-    width: 420px; height: 420px;
-    background: #1a3461;
+    top: -100mm; right: -100mm;
+    width: 200mm; height: 200mm;
+    background: #1e3d8a;
     border: none;
     border-radius: 50%;
   }
@@ -103,9 +105,9 @@
   .cover::after {
     content: '';
     position: absolute;
-    top: 0px; right: 20px;
-    width: 260px; height: 260px;
-    background: #132449;
+    top: -65mm; right: -65mm;
+    width: 130mm; height: 130mm;
+    background: #0f2040;
     border: none;
     border-radius: 50%;
   }
@@ -119,7 +121,7 @@
   }
 
   .cover-brand {
-    font-size: 12pt;
+    font-size: 10pt;
     font-weight: 800;
     letter-spacing: -.01em;
     color: rgba(255,255,255,.9);
@@ -128,7 +130,7 @@
 
   .cover-brand span {
     display: block;
-    font-size: 8pt;
+    font-size: 7.5pt;
     font-weight: 400;
     letter-spacing: .02em;
     color: rgba(255,255,255,.4);
