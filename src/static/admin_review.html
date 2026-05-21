@@ -1416,10 +1416,11 @@ function renderActionPanel(app) {
             Run Checker
           </button>
           ${status === 'IN_PRODUCTION' ? `
-          <button class="btn btn-primary" onclick="downloadReportPdf()" style="font-size:0.85rem;padding:0.5rem 1.1rem;" id="btnDownloadPdf" disabled>
+          <a class="btn btn-primary" id="btnDownloadPdf" download="AIScore-rapport.pdf"
+             style="font-size:0.85rem;padding:0.5rem 1.1rem;display:inline-flex;align-items:center;pointer-events:none;opacity:0.45;text-decoration:none;">
             <i data-lucide="download" style="width:14px;height:14px;margin-right:0.35rem;"></i>
             Download PDF Rapport
-          </button>` : `
+          </a>` : `
           <button class="btn btn-primary" onclick="generateReport()" style="font-size:0.85rem;padding:0.5rem 1.1rem;" id="btnGenerateReport" disabled>
             <i data-lucide="file-text" style="width:14px;height:14px;margin-right:0.35rem;"></i>
             Generate Report
@@ -1473,15 +1474,6 @@ async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
 
-function downloadReportPdf() {
-  const a = document.createElement('a');
-  a.href = `/api/v1/admin/applications/${appId}/report/pdf`;
-  a.download = `AIScore-rapport-${appId}.pdf`;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
 
 function runDataChecker() {
   const app = appData;
@@ -1546,14 +1538,24 @@ function runDataChecker() {
   el.innerHTML = summary + rows;
   el.style.display = '';
 
-  ['btnGenerateReport', 'btnDownloadPdf'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) {
-      btn.disabled = !passed;
-      btn.style.opacity = passed ? '1' : '0.45';
-      btn.title = passed ? '' : 'Kør checker og ret alle fejl inden rapport-generering';
+  const dlBtn = document.getElementById('btnDownloadPdf');
+  if (dlBtn && dlBtn.tagName === 'A') {
+    if (passed) {
+      dlBtn.href = `/api/v1/admin/applications/${appId}/report/pdf`;
+      dlBtn.style.pointerEvents = '';
+      dlBtn.style.opacity = '1';
+    } else {
+      dlBtn.removeAttribute('href');
+      dlBtn.style.pointerEvents = 'none';
+      dlBtn.style.opacity = '0.45';
     }
-  });
+  }
+  const genBtn = document.getElementById('btnGenerateReport');
+  if (genBtn) {
+    genBtn.disabled = !passed;
+    genBtn.style.opacity = passed ? '1' : '0.45';
+    genBtn.title = passed ? '' : 'Kør checker og ret alle fejl inden rapport-generering';
+  }
 
   if (window.lucide) lucide.createIcons();
 }
