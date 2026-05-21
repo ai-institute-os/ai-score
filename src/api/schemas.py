@@ -190,6 +190,22 @@ class GeneratedQuestion(BaseModel):
     category: str
 
 
+class ApplicationListItem(BaseModel):
+    """Lightweight projection used by the admin list endpoint — omits large text/JSON fields."""
+    id: uuid.UUID
+    firmanavn: str
+    website: str
+    kontaktperson: str
+    email: str
+    status: str
+    submitted_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class ApplicationResponse(BaseModel):
     id: uuid.UUID
     firmanavn: str

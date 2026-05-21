@@ -22,7 +22,7 @@ from src.db.models import (
 )
 from src.api.schemas import (
     ApplicationCreate, ApplicationCreatePublic, ApplicationRejectRequest,
-    ApplicationResponse, ApplicationStatusUpdate,
+    ApplicationListItem, ApplicationResponse, ApplicationStatusUpdate,
     GeneratePaymentLinkRequest, PaymentLinkResponse,
     QCResultSubmit, ManualCorrectionRequest, ScoringDataUpdate,
     ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
@@ -275,7 +275,7 @@ async def _run_verification_background(application_id: uuid.UUID) -> None:
 # Admin: list and manage applications
 # ─────────────────────────────────────────────
 
-@router.get("/admin/applications", response_model=list[ApplicationResponse])
+@router.get("/admin/applications", response_model=list[ApplicationListItem])
 @limiter.limit("30/minute")
 async def list_applications(
     request: Request,
@@ -284,8 +284,18 @@ async def list_applications(
     offset: int = Query(default=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """Admin — list all customer applications, optionally filtered by status."""
-    q = select(CustomerApplication).options(selectinload(CustomerApplication.state_logs))
+    """Admin — list applications (lightweight: only columns needed for the table view)."""
+    q = select(
+        CustomerApplication.id,
+        CustomerApplication.firmanavn,
+        CustomerApplication.website,
+        CustomerApplication.kontaktperson,
+        CustomerApplication.email,
+        CustomerApplication.status,
+        CustomerApplication.submitted_at,
+        CustomerApplication.created_at,
+        CustomerApplication.updated_at,
+    )
     if status:
         try:
             status_enum = CustomerApplicationStatus(status.upper())
@@ -294,7 +304,8 @@ async def list_applications(
         q = q.where(CustomerApplication.status == status_enum)
     q = q.order_by(CustomerApplication.created_at.desc()).offset(offset).limit(limit)
     result = await db.execute(q)
-    return list(result.scalars().all())
+    rows = result.mappings().all()
+    return [ApplicationListItem.model_validate(dict(r)) for r in rows]
 
 
 @router.get("/admin/orders")
