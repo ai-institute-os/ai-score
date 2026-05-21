@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AIScore™ Rapport – {{COMPANY_NAME}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -35,19 +38,27 @@
   }
 
   body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
     font-size: 10.5pt;
     line-height: 1.6;
     color: var(--text);
     background: var(--white);
   }
 
-  @page { size: A4; margin: 16mm 16mm 20mm 16mm; }
+  @page { size: A4; margin: 0; }
 
   @media print {
     .page-break { page-break-before: always; }
     .no-break   { page-break-inside: avoid; }
     .break-after { page-break-after: always; }
+
+    /* Content pages get inset padding; full-bleed pages escape it with negative margins */
+    .page { padding: 16mm 16mm 20mm 16mm; }
+
+    .cover, .section-divider {
+      margin: -16mm -16mm -20mm -16mm;
+      min-height: 297mm;
+    }
   }
 
   @media screen {
@@ -73,7 +84,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 261mm;
+    min-height: 297mm;
     padding: 14mm 16mm;
     position: relative;
     overflow: hidden;
@@ -279,7 +290,7 @@
     display: grid;
     grid-template-columns: 1fr 180px;
     grid-template-rows: auto 1fr auto;
-    min-height: 261mm;
+    min-height: 297mm;
     padding: 14mm 0 14mm 16mm;
     position: relative;
     overflow: hidden;
