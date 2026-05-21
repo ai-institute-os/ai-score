@@ -963,6 +963,7 @@ function renderApp(app) {
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('pageContent').style.display = 'block';
   if (window.lucide) lucide.createIcons();
+  runDataChecker();
 }
 
 // ─── Stage-aware Status Tab ───────────────────────
@@ -1551,6 +1552,7 @@ function runDataChecker() {
     : `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:0.6rem 0.9rem;font-size:0.85rem;color:#b91c1c;font-weight:600;margin-bottom:0.75rem;">❌ ${failCount} tjek fejlede — rapport kan ikke genereres.</div>`;
 
   const el = document.getElementById('checkerResults');
+  if (!el) return;
   el.innerHTML = summary + rows;
   el.style.display = '';
 
