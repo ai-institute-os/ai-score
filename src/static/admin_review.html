@@ -1416,8 +1416,10 @@ function renderActionPanel(app) {
             Run Checker
           </button>
           ${status === 'IN_PRODUCTION' ? `
-          <a class="btn btn-primary" id="btnDownloadPdf" download="AIScore-rapport.pdf"
-             style="font-size:0.85rem;padding:0.5rem 1.1rem;display:inline-flex;align-items:center;pointer-events:none;opacity:0.45;text-decoration:none;">
+          <a class="btn btn-primary" id="btnDownloadPdf"
+             href="/api/v1/admin/applications/${appId}/report/pdf"
+             download="AIScore-rapport.pdf"
+             style="font-size:0.85rem;padding:0.5rem 1.1rem;display:inline-flex;align-items:center;text-decoration:none;">
             <i data-lucide="download" style="width:14px;height:14px;margin-right:0.35rem;"></i>
             Download PDF Rapport
           </a>` : `
@@ -1539,17 +1541,7 @@ function runDataChecker() {
   el.style.display = '';
 
   const dlBtn = document.getElementById('btnDownloadPdf');
-  if (dlBtn && dlBtn.tagName === 'A') {
-    if (passed) {
-      dlBtn.href = `/api/v1/admin/applications/${appId}/report/pdf`;
-      dlBtn.style.pointerEvents = '';
-      dlBtn.style.opacity = '1';
-    } else {
-      dlBtn.removeAttribute('href');
-      dlBtn.style.pointerEvents = 'none';
-      dlBtn.style.opacity = '0.45';
-    }
-  }
+  if (dlBtn) dlBtn.style.opacity = passed ? '1' : '0.45';
   const genBtn = document.getElementById('btnGenerateReport');
   if (genBtn) {
     genBtn.disabled = !passed;
