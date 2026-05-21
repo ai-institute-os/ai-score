@@ -10,17 +10,18 @@
   :root {
     --navy:        #0d1b2e;
     --navy-mid:    #1a3461;
-    --accent:      #2563eb;
-    --accent-light:#dbeafe;
-    --chosen:      #15803d;
-    --chosen-bg:   #dcfce7;
-    --mentioned:   #1d4ed8;
-    --mentioned-bg:#dbeafe;
+    --navy-light:  #152540;
+    --accent:      #e85d26;
+    --accent-light:#fde8dc;
+    --chosen:      #0d9488;
+    --chosen-bg:   #ccfbf1;
+    --mentioned:   #0d1b2e;
+    --mentioned-bg:#e2e8f0;
     --neutral:     #64748b;
     --border:      #e2e8f0;
     --bg:          #f8fafc;
     --white:       #ffffff;
-    --text:        #0f172a;
+    --text:        #1e293b;
     --text-mid:    #334155;
     --text-light:  #64748b;
     --danger:      #b91c1c;
@@ -81,18 +82,20 @@
   .cover::before {
     content: '';
     position: absolute;
-    top: -80px; right: -100px;
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(37,99,235,0.25) 0%, transparent 70%);
+    top: -60px; right: -80px;
+    width: 380px; height: 380px;
+    background: transparent;
+    border: 40px solid rgba(255,255,255,0.07);
     border-radius: 50%;
   }
 
   .cover::after {
     content: '';
     position: absolute;
-    bottom: -60px; left: -80px;
-    width: 280px; height: 280px;
-    background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%);
+    top: 40px; right: 80px;
+    width: 220px; height: 220px;
+    background: transparent;
+    border: 24px solid rgba(255,255,255,0.04);
     border-radius: 50%;
   }
 
@@ -148,14 +151,14 @@
     font-weight: 700;
     letter-spacing: .18em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.35);
+    color: var(--accent);
     margin-bottom: 10px;
   }
 
   .cover-company {
-    font-size: 42pt;
+    font-size: 60pt;
     font-weight: 800;
-    line-height: 1.05;
+    line-height: 1.0;
     letter-spacing: -.025em;
     color: var(--white);
     margin-bottom: 10px;
@@ -171,27 +174,23 @@
   }
 
   .cover-divider {
-    width: 48px;
+    width: 64px;
     height: 3px;
     background: var(--accent);
-    border-radius: 2px;
+    border-radius: 0;
     margin-bottom: 24px;
   }
 
   .cover-score-block {
     display: inline-flex;
     align-items: flex-end;
-    gap: 14px;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 8px;
-    padding: 16px 22px;
-    margin-bottom: 14px;
+    gap: 4px;
+    margin-bottom: 10px;
     width: fit-content;
   }
 
   .cover-score-num {
-    font-size: 52pt;
+    font-size: 80pt;
     font-weight: 900;
     line-height: 1;
     color: var(--white);
@@ -199,10 +198,10 @@
   }
 
   .cover-score-denom {
-    font-size: 22pt;
-    font-weight: 400;
-    color: rgba(255,255,255,.4);
-    padding-bottom: 6px;
+    font-size: 36pt;
+    font-weight: 700;
+    color: var(--accent);
+    padding-bottom: 10px;
   }
 
   .cover-score-label {
@@ -210,8 +209,10 @@
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.4);
+    color: var(--accent);
     padding-bottom: 8px;
+    display: block;
+    margin-top: 4px;
   }
 
   .cover-score-sub {
@@ -275,25 +276,44 @@
   .section-divider {
     background: var(--section-bg);
     color: var(--white);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    grid-template-rows: auto 1fr auto;
     min-height: 261mm;
-    padding: 14mm 16mm;
+    padding: 14mm 0 14mm 16mm;
     position: relative;
     overflow: hidden;
   }
 
   .section-divider::before {
-    content: '';
-    position: absolute;
-    top: -60px; right: -80px;
-    width: 320px; height: 320px;
-    background: radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%);
-    border-radius: 50%;
+    content: none;
+  }
+
+  .divider-left {
+    display: contents;
+  }
+
+  .divider-right {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    background: var(--navy-light);
+    position: relative;
+    padding: 14mm 0 14mm 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .divider-block {
+    width: 100%;
+    flex-shrink: 0;
   }
 
   .divider-brand {
+    grid-column: 1;
     font-size: 9pt;
     font-weight: 700;
     letter-spacing: .14em;
@@ -304,12 +324,13 @@
   }
 
   .divider-body {
+    grid-column: 1;
     position: relative;
     z-index: 1;
-    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    padding-right: 16mm;
   }
 
   .divider-section-label {
@@ -317,7 +338,7 @@
     font-weight: 700;
     letter-spacing: .18em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.3);
+    color: var(--accent);
     margin-bottom: 14px;
   }
 
@@ -328,20 +349,24 @@
     color: var(--white);
     margin-bottom: 20px;
     letter-spacing: -.02em;
+    border-left: 3px solid var(--accent);
+    padding-left: 14px;
   }
 
   .divider-accent-bar {
     width: 40px;
     height: 3px;
     background: var(--accent);
-    border-radius: 2px;
+    border-radius: 0;
     margin-bottom: 20px;
+    margin-left: 17px;
   }
 
   .divider-subsections {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    margin-left: 17px;
   }
 
   .divider-subsection {
@@ -362,6 +387,7 @@
   }
 
   .divider-footer {
+    grid-column: 1;
     position: relative;
     z-index: 1;
     font-size: 8pt;
@@ -370,6 +396,20 @@
     padding-top: 12px;
     display: flex;
     justify-content: space-between;
+    padding-right: 16mm;
+  }
+
+  .divider-section-num {
+    position: absolute;
+    bottom: 20mm;
+    right: 0;
+    font-size: 80pt;
+    font-weight: 900;
+    color: rgba(255,255,255,.06);
+    line-height: 1;
+    letter-spacing: -.04em;
+    text-align: center;
+    width: 100%;
   }
 
   /* ═══════════════════════════════════
@@ -380,7 +420,7 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--navy);
+    border-bottom: 2px solid var(--accent);
     margin-bottom: 22px;
   }
 
@@ -390,6 +430,13 @@
     letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--navy);
+  }
+
+  .pg-header-section {
+    font-size: 8pt;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: .06em;
   }
 
   .pg-header-company {
@@ -416,8 +463,10 @@
     font-weight: 700;
     letter-spacing: .16em;
     text-transform: uppercase;
-    color: var(--text-light);
+    color: var(--accent);
     margin-bottom: 4px;
+    border-top: 2px solid var(--accent);
+    padding-top: 8px;
   }
 
   .toc-company {
@@ -438,13 +487,13 @@
     align-items: baseline;
     gap: 10px;
     padding: 10px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px dashed var(--border);
   }
 
   .toc-num {
     font-size: 9pt;
     font-weight: 800;
-    color: var(--text-light);
+    color: var(--accent);
     min-width: 26px;
     letter-spacing: .04em;
   }
@@ -475,20 +524,26 @@
      SECTION HEADINGS
   ═══════════════════════════════════ */
   .sec-num {
-    font-size: 9pt;
-    font-weight: 800;
+    font-size: 8pt;
+    font-weight: 700;
     color: var(--accent);
-    letter-spacing: .12em;
-    margin-bottom: 4px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    border-top: 2px solid var(--accent);
+    padding-top: 6px;
+    display: inline-block;
   }
 
   .sec-title {
-    font-size: 16pt;
+    font-size: 18pt;
     font-weight: 800;
     color: var(--navy);
     line-height: 1.2;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     letter-spacing: -.01em;
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
   }
 
   .sec-intro {
@@ -593,6 +648,20 @@
     padding: 14px;
     text-align: center;
     background: var(--bg);
+  }
+
+  .kpi-card.kpi-highlight {
+    background: var(--navy);
+    border-color: var(--navy);
+  }
+
+  .kpi-card.kpi-highlight .kpi-num {
+    color: var(--accent);
+  }
+
+  .kpi-card.kpi-highlight .kpi-sub,
+  .kpi-card.kpi-highlight .kpi-label {
+    color: rgba(255,255,255,.55);
   }
 
   .kpi-num {
@@ -1046,8 +1115,8 @@
     border-radius: 3px;
   }
 
-  .gap-bar.mention { background: var(--mentioned); }
-  .gap-bar.select  { background: var(--chosen); }
+  .gap-bar.mention { background: var(--navy); }
+  .gap-bar.select  { background: var(--accent); }
 
   .gap-bar-pct {
     font-size: 8pt;
@@ -1411,7 +1480,7 @@
   .callout-info {
     background: var(--accent-light);
     border-left: 3px solid var(--accent);
-    color: #1e3a8a;
+    color: #7c2d12;
   }
 
   .callout-warn {
@@ -1421,9 +1490,19 @@
   }
 
   .callout-key {
-    background: #f0fdf4;
+    background: #f0fdfa;
     border-left: 3px solid var(--chosen);
-    color: #14532d;
+    color: #134e4a;
+  }
+
+  .callout-navy {
+    background: var(--navy);
+    color: var(--white);
+    border-left: none;
+  }
+
+  .callout-navy strong {
+    color: var(--accent);
   }
 
   .callout strong { font-weight: 700; }
@@ -1450,7 +1529,8 @@
     position: absolute;
     top: -80px; right: -100px;
     width: 350px; height: 350px;
-    background: radial-gradient(circle, rgba(37,99,235,0.2) 0%, transparent 70%);
+    background: transparent;
+    border: 40px solid rgba(255,255,255,0.06);
     border-radius: 50%;
   }
 
@@ -1459,7 +1539,8 @@
     position: absolute;
     bottom: -60px; left: -80px;
     width: 260px; height: 260px;
-    background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+    background: transparent;
+    border: 28px solid rgba(255,255,255,0.04);
     border-radius: 50%;
   }
 
@@ -1497,9 +1578,9 @@
   }
 
   .back-cover-divider {
-    width: 40px; height: 2px;
-    background: rgba(255,255,255,.15);
-    border-radius: 1px;
+    width: 64px; height: 2px;
+    background: var(--accent);
+    border-radius: 0;
     margin: 0 auto 24px;
   }
 
@@ -1535,18 +1616,16 @@
   </div>
 
   <div class="cover-body">
-    <div class="cover-label">Analyserapport</div>
+    <div class="cover-label">AIScore™ Strategisk Analyse</div>
     <div class="cover-company">{{COMPANY_NAME}}</div>
     <div class="cover-sector">{{COMPANY_SECTOR}}</div>
     <div class="cover-divider"></div>
 
     <div class="cover-score-block">
-      <div>
-        <div class="cover-score-num">{{OVERALL_SCORE}}</div>
-      </div>
+      <div class="cover-score-num">{{OVERALL_SCORE}}</div>
       <div class="cover-score-denom">/100</div>
-      <div class="cover-score-label">AIScore™</div>
     </div>
+    <div><span class="cover-score-label">AIScore™</span></div>
     <div class="cover-score-sub">
       Samlet AI-synlighedsscore baseret på {{QUERIES_RUN}} strukturerede testprompts
     </div>
@@ -1713,6 +1792,15 @@
     <span>AIScore™ by AI Institute ApS</span>
     <span>Fortroligt — 3</span>
   </div>
+
+  <div class="divider-right">
+    <div class="divider-block" style="height:80px;background:#152540;"></div>
+    <div class="divider-block" style="height:60px;background:var(--accent);opacity:.7;"></div>
+    <div class="divider-block" style="height:100px;background:#1a3461;"></div>
+    <div class="divider-block" style="height:50px;background:var(--chosen);opacity:.6;"></div>
+    <div class="divider-block" style="flex:1;background:#0f2235;"></div>
+    <div class="divider-section-num">01</div>
+  </div>
 </div>
 </div>
 
@@ -1787,9 +1875,9 @@
       <div class="kpi-sub">{{SELECTION_COUNT}} prompts</div>
       <div class="kpi-label">Udvælgelsesfrekvens</div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kpi-highlight">
       <div class="kpi-num">{{SELECTION_GAP}}pp</div>
-      <div class="kpi-sub">&nbsp;</div>
+      <div class="kpi-sub">Analysens nøgletal</div>
       <div class="kpi-label">Kløft omtale → valg</div>
     </div>
     <div class="kpi-card">
@@ -1916,6 +2004,15 @@
   <div class="divider-footer">
     <span>AIScore™ by AI Institute ApS</span>
     <span>Fortroligt — 7</span>
+  </div>
+
+  <div class="divider-right">
+    <div class="divider-block" style="height:120px;background:#152540;"></div>
+    <div class="divider-block" style="height:50px;background:var(--chosen);opacity:.6;"></div>
+    <div class="divider-block" style="height:80px;background:#1a3461;"></div>
+    <div class="divider-block" style="height:60px;background:var(--accent);opacity:.7;"></div>
+    <div class="divider-block" style="flex:1;background:#0f2235;"></div>
+    <div class="divider-section-num">02</div>
   </div>
 </div>
 </div>
@@ -2108,6 +2205,15 @@
   <div class="divider-footer">
     <span>AIScore™ by AI Institute ApS</span>
     <span>Fortroligt — 11</span>
+  </div>
+
+  <div class="divider-right">
+    <div class="divider-block" style="height:60px;background:var(--accent);opacity:.7;"></div>
+    <div class="divider-block" style="height:90px;background:#152540;"></div>
+    <div class="divider-block" style="height:70px;background:#1a3461;"></div>
+    <div class="divider-block" style="height:50px;background:var(--chosen);opacity:.6;"></div>
+    <div class="divider-block" style="flex:1;background:#0f2235;"></div>
+    <div class="divider-section-num">03</div>
   </div>
 </div>
 </div>
@@ -2388,6 +2494,15 @@
     <span>AIScore™ by AI Institute ApS</span>
     <span>Fortroligt — 14</span>
   </div>
+
+  <div class="divider-right">
+    <div class="divider-block" style="height:100px;background:#1a3461;"></div>
+    <div class="divider-block" style="height:70px;background:var(--accent);opacity:.7;"></div>
+    <div class="divider-block" style="height:50px;background:#152540;"></div>
+    <div class="divider-block" style="height:80px;background:var(--chosen);opacity:.6;"></div>
+    <div class="divider-block" style="flex:1;background:#0f2235;"></div>
+    <div class="divider-section-num">04</div>
+  </div>
 </div>
 </div>
 
@@ -2508,7 +2623,7 @@
           <div class="dim-desc">{{DIM_DECISION_DESC}}</div>
         </div>
         <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{DECISION_RELEVANCE_SCORE}}%; background:var(--danger)"></div></div>
+          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{DECISION_RELEVANCE_SCORE}}%; background:var(--accent)"></div></div>
           <div class="dim-score-num">{{DECISION_RELEVANCE_SCORE}}/100</div>
         </div>
       </div>
