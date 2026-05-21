@@ -1474,7 +1474,13 @@ async function changeStatus(newStatus, note = '') { await doStatusChange(newStat
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
 
 function downloadReportPdf() {
-  window.open(`/api/v1/admin/applications/${appId}/report/pdf`, '_blank');
+  const a = document.createElement('a');
+  a.href = `/api/v1/admin/applications/${appId}/report/pdf`;
+  a.download = `AIScore-rapport-${appId}.pdf`;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function runDataChecker() {
