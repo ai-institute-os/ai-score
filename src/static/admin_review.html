@@ -1494,11 +1494,12 @@ async function downloadPdfReport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `AIScore-rapport.pdf`;
+    a.download = 'AIScore-rapport.pdf';
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Revoke after 60s — immediate revocation cancels the download before the browser starts it
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 60000);
   } catch (err) {
     toast('PDF-download fejlede: ' + err.message, 'error');
   } finally {
