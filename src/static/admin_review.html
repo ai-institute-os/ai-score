@@ -188,6 +188,7 @@
 
     /* ── Agent Research (legacy spinner) ── */
     @keyframes research-spin { to { transform: rotate(360deg); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .research-status-badge {
       display: inline-flex;
@@ -1416,13 +1417,11 @@ function renderActionPanel(app) {
             Run Checker
           </button>
           ${status === 'IN_PRODUCTION' ? `
-          <a class="btn btn-primary" id="btnDownloadPdf"
-             href="/api/v1/admin/applications/${appId}/report/pdf"
-             download="AIScore-rapport.pdf"
-             style="font-size:0.85rem;padding:0.5rem 1.1rem;display:inline-flex;align-items:center;text-decoration:none;">
+          <button class="btn btn-primary" id="btnDownloadPdf" onclick="downloadPdfReport()"
+             style="font-size:0.85rem;padding:0.5rem 1.1rem;">
             <i data-lucide="download" style="width:14px;height:14px;margin-right:0.35rem;"></i>
             Download PDF Rapport
-          </a>` : `
+          </button>` : `
           <button class="btn btn-primary" onclick="generateReport()" style="font-size:0.85rem;padding:0.5rem 1.1rem;" id="btnGenerateReport" disabled>
             <i data-lucide="file-text" style="width:14px;height:14px;margin-right:0.35rem;"></i>
             Generate Report
@@ -1476,6 +1475,40 @@ async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
 
+
+async function downloadPdfReport() {
+  const btn = document.getElementById('btnDownloadPdf');
+  const origHTML = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Genererer PDF…';
+    if (window.lucide) lucide.createIcons();
+  }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/report/pdf`);
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AIScore-rapport.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    toast('PDF-download fejlede: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
 
 function runDataChecker() {
   const app = appData;
@@ -1541,7 +1574,11 @@ function runDataChecker() {
   el.style.display = '';
 
   const dlBtn = document.getElementById('btnDownloadPdf');
-  if (dlBtn) dlBtn.style.opacity = passed ? '1' : '0.45';
+  if (dlBtn) {
+    dlBtn.style.opacity = passed ? '1' : '0.45';
+    dlBtn.disabled = !passed;
+    dlBtn.title = passed ? '' : 'Kør checker og ret alle fejl inden download';
+  }
   const genBtn = document.getElementById('btnGenerateReport');
   if (genBtn) {
     genBtn.disabled = !passed;
