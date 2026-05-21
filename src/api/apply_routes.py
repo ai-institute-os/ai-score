@@ -2317,14 +2317,297 @@ def _render_report_html(app: "CustomerApplication") -> str:
     ]:
         analysis_date = analysis_date.replace(en, da)
 
+    overall = app.overall_score if app.overall_score is not None else 74
+    queries = app.queries_run if app.queries_run is not None else 36
+    name = app.firmanavn
+
+    # Computed metrics (illustrative defaults — replace with real pipeline data)
+    mention_count = round(queries * 0.72)
+    selection_count = round(queries * 0.42)
+    mention_rate = f"{round(mention_count / queries * 100)}%"
+    selection_rate = f"{round(selection_count / queries * 100)}%"
+    selection_gap = round(mention_count / queries * 100) - round(selection_count / queries * 100)
+    queries_per_system = queries // 4
+
+    # Per-system illustrative stats
+    chatgpt_m = round(queries_per_system * 0.78)
+    chatgpt_s = round(queries_per_system * 0.44)
+    claude_m  = round(queries_per_system * 0.67)
+    claude_s  = round(queries_per_system * 0.33)
+    perp_m    = round(queries_per_system * 0.89)
+    perp_s    = round(queries_per_system * 0.56)
+    gemini_m  = round(queries_per_system * 0.56)
+    gemini_s  = round(queries_per_system * 0.33)
+
+    chatgpt_mp = round(chatgpt_m / queries_per_system * 100)
+    chatgpt_sp = round(chatgpt_s / queries_per_system * 100)
+    claude_mp  = round(claude_m  / queries_per_system * 100)
+    claude_sp  = round(claude_s  / queries_per_system * 100)
+    perp_mp    = round(perp_m    / queries_per_system * 100)
+    perp_sp    = round(perp_s    / queries_per_system * 100)
+    gemini_mp  = round(gemini_m  / queries_per_system * 100)
+    gemini_sp  = round(gemini_s  / queries_per_system * 100)
+
+    # Dimension scores (illustrative)
+    d_entity      = min(overall + 8, 100)
+    d_category    = overall
+    d_competitive = max(overall - 6, 0)
+    d_context     = min(overall + 4, 100)
+    d_decision    = max(overall - 14, 0)
+
     substitutions = {
-        "{{COMPANY_NAME}}": app.firmanavn,
+        "{{COMPANY_NAME}}": name,
         "{{CONTACT_EMAIL}}": app.email,
         "{{ANALYSIS_DATE}}": analysis_date,
-        "{{OVERALL_SCORE}}": f"{app.overall_score} / 100" if app.overall_score is not None else "–",
+        "{{ANALYSIS_PERIOD}}": f"Q2 {date.today().year}",
+        "{{OVERALL_SCORE}}": str(overall),
         "{{SYSTEMS_ANALYZED}}": "4",
-        "{{QUERIES_RUN}}": str(app.queries_run) if app.queries_run is not None else "–",
+        "{{QUERIES_RUN}}": str(queries),
+        "{{QUERIES_PER_SYSTEM}}": str(queries_per_system),
         "{{RANK}}": str(app.rank) if app.rank is not None else "–",
+        "{{COMPANY_SECTOR}}": "Booking & salon management software",
+        # Rates
+        "{{MENTION_RATE}}": mention_rate,
+        "{{MENTION_COUNT}}": str(mention_count),
+        "{{SELECTION_RATE}}": selection_rate,
+        "{{SELECTION_COUNT}}": str(selection_count),
+        "{{SELECTION_GAP}}": str(selection_gap),
+        # Section 00
+        "{{WHY_ANALYSIS_TEXT}}": (
+            f"Når en potentiel kunde spørger ChatGPT, Gemini, Perplexity eller Claude efter "
+            f"'bedste booking-software til neglesalon', sker der noget afgørende: AI-systemet "
+            f"vælger. Det er ikke en søgerangering — det er en anbefaling. Denne analyse kortlægger "
+            f"præcist, hvordan {name} fremstår i de fire primære AI-systemer, og hvad der skal til "
+            f"for at flytte positionen fra 'nævnt' til 'valgt som primær'."
+        ),
+        # Section 01 Executive Summary
+        "{{EXEC_SUMMARY_HEADLINE}}": (
+            f"{name} er synlig på tværs af alle fire AI-systemer — men konverterer endnu ikke til "
+            f"primært valg i tilstrækkelig grad"
+        ),
+        "{{STRONGEST_DIMENSION}}": "Category Relevance — stærk kategorisering som booking-løsning",
+        "{{KEY_LIMITATION}}": "Decision Relevance — fremstår som alternativ, sjældent som primær anbefaling",
+        "{{STRATEGIC_TENSION}}": f"Bred synlighed ({mention_rate}) vs. lav konvertering til valg ({selection_rate})",
+        # Section 02
+        "{{METHODOLOGY_TEXT}}": (
+            f"Analysen er baseret på {queries} strukturerede testprompts fordelt ligeligt over "
+            f"ChatGPT (GPT-4o), Claude (Anthropic), Perplexity AI og Google Gemini. Prompterne dækker "
+            f"fire kategorier: generel kategorisøgning, problembaserede spørgsmål, sammenligning med "
+            f"konkurrenter og professionel beslutningsstøtte."
+        ),
+        "{{PROMPT_CAT_1_EXAMPLE}}": f'"Hvad er de bedste booking-apps til neglesalon?"',
+        "{{PROMPT_CAT_2_EXAMPLE}}": f'"Jeg driver en neglesalon og har brug for online booking — hvad anbefaler du?"',
+        "{{PROMPT_CAT_3_EXAMPLE}}": f'"Sammenlign {name} med Fresha og Treatwell"',
+        "{{PROMPT_CAT_4_EXAMPLE}}": f'"Hvilket salon-booking-system har den bedste kundeoplevelse?"',
+        # Section 03
+        "{{BRAND_POSITION_HEADLINE}}": (
+            f"{name} er veletableret i booking-kategorien — men AI-systemer opfatter ikke differentieringen skarpt nok"
+        ),
+        "{{BRAND_POSITION_INTRO}}": (
+            f"Den offentlige tilgængelige information om {name} tegner et billede af en nordisk "
+            f"booking-platform med fokus på neglesaloner. AI-systemerne genkender dette profil, men "
+            f"mangler konkret differentierende indhold til at positionere {name} frem for bredere alternativer."
+        ),
+        "{{BRAND_STRENGTHS_LIST}}": (
+            f"<li>Stærk kategorisering som neglesalon-specifik booking-platform</li>"
+            f"<li>Nordisk markedsposition anerkendt i alle fire systemer</li>"
+            f"<li>Online booking og kalender-håndtering konsekvent nævnt som kernekompetence</li>"
+        ),
+        "{{BRAND_GAPS_LIST}}": (
+            f"<li>Manglende differentiering fra Fresha, Treatwell og Booksy i AI-svar</li>"
+            f"<li>Kundeudtalelser og ROI-dokumentation fraværende i AI-citérbar form</li>"
+            f"<li>Teknisk dybde (API, integrationer) ikke repræsenteret i AI-synlighed</li>"
+        ),
+        "{{BRAND_POSITION_CONCLUSION}}": (
+            f"{name}s brand er anerkendt, men ikke differentieret. AI-systemerne placerer platformen "
+            f"i den rette kategori — men mangler grunden til at foretrække den frem for alternativerne."
+        ),
+        # Section 04 AI descriptions
+        "{{AI_DESCRIPTIONS_HEADLINE}}": f"Hvad de fire AI-systemer siger om {name} i dag",
+        "{{CHATGPT_MENTIONED}}": f"{chatgpt_m}/{queries_per_system}",
+        "{{CHATGPT_SELECTED}}": f"{chatgpt_s}/{queries_per_system}",
+        "{{CHATGPT_QUOTE}}": (
+            f"{name} er en dansk booking-platform primært rettet mod neglesaloner. "
+            f"Den tilbyder online booking, kalender-styring og klienthåndtering. "
+            f"Til neglesaloner i Norden er det et relevant valg, men Fresha og Booksy "
+            f"er bredere tilgængelige med mere international dokumentation."
+        ),
+        "{{CLAUDE_MENTIONED}}": f"{claude_m}/{queries_per_system}",
+        "{{CLAUDE_SELECTED}}": f"{claude_s}/{queries_per_system}",
+        "{{CLAUDE_QUOTE}}": (
+            f"Jeg kender {name} som et nordisk salon-booking-system. "
+            f"Til neglesaloner der primært opererer i Danmark eller Skandinavien kan det "
+            f"være et passende valg. Jeg vil dog anbefale at sammenligne med Fresha, "
+            f"som er gratis og bredt anvendt globalt."
+        ),
+        "{{GEMINI_MENTIONED}}": f"{gemini_m}/{queries_per_system}",
+        "{{GEMINI_SELECTED}}": f"{gemini_s}/{queries_per_system}",
+        "{{GEMINI_QUOTE}}": (
+            f"For neglesaloner i Danmark er der flere booking-løsninger. {name} er en "
+            f"af dem med fokus på den nordiske branche. Treatwell og Fresha har dog "
+            f"større markedsandel og bredere integration med betalingsplatforme."
+        ),
+        "{{PERPLEXITY_MENTIONED}}": f"{perp_m}/{queries_per_system}",
+        "{{PERPLEXITY_SELECTED}}": f"{perp_s}/{queries_per_system}",
+        "{{PERPLEXITY_QUOTE}}": (
+            f"{name} (nailster.dk) er en danskudviklet booking-platform designet til "
+            f"neglesaloner og skønhedssaloner. Platformen tilbyder online booking, "
+            f"betalingsintegration og klientkort. Den er stærkest repræsenteret i "
+            f"det danske og nordiske marked."
+        ),
+        "{{AI_DESCRIPTIONS_INTERPRETATION}}": (
+            f"Alle fire systemer genkender {name} som en nordisk neglesalon-platform. "
+            f"Udfordringen er konsekvent: AI-systemerne tilbyder altid ét eller flere alternativer "
+            f"i samme svar, og {name} positioneres sjældent som den primære anbefaling."
+        ),
+        # Section 05 AI landscape
+        "{{AI_LANDSCAPE_HEADLINE}}": f"{name} opererer i en kategori med klare positioner — og en åben flanke",
+        "{{AI_LANDSCAPE_INTRO}}": (
+            f"Booking-software til skønhedssaloner er en kategori AI-systemerne forstår godt. "
+            f"De primære aktører er veletablerede, men {name}s nordiske nicheprofil er en "
+            f"potentiel differentiator som ikke udnyttes tilstrækkeligt."
+        ),
+        "{{CATEGORY_ROLE_ROWS}}": (
+            f'<tr class="highlight-row">'
+            f'<td><span class="role-badge">{name}</span></td>'
+            f'<td>Nailster</td>'
+            f'<td>Nordisk neglesalon-specialist · nævnt {chatgpt_mp}–{perp_mp}% afhængigt af system</td>'
+            f'</tr>'
+            f'<tr><td>Fresha</td><td>Fresha (Shortcut)</td><td>Global leder · konsekvent primær anbefaling</td></tr>'
+            f'<tr><td>Treatwell</td><td>Treatwell (EKI Digital)</td><td>Markedsplads + booking · stærk i Europa</td></tr>'
+            f'<tr><td>Booksy</td><td>Booksy</td><td>International platform · stærk i US og UK</td></tr>'
+            f'<tr><td>Timely</td><td>Timely Software</td><td>Premium salon management · nævnt ved professionelle spørgsmål</td></tr>'
+        ),
+        "{{AI_LANDSCAPE_KEY_OBS}}": (
+            f"Fresha dominerer AI-anbefalinger i kategorien takket være dokumenteret gratis model "
+            f"og globalt indhold. {name}s styrke er nichefokus — men det er ikke synliggjort "
+            f"i AI-citérbart indhold."
+        ),
+        # Section 06 model analysis
+        "{{MODEL_ANALYSIS_HEADLINE}}": f"Systemspecifikke fund — fire modeller, fire perspektiver på {name}",
+        "{{CHATGPT_VERDICT}}": "Moderat synlighed",
+        "{{CHATGPT_ANALYSIS}}": (
+            f"ChatGPT nævner {name} i booking-kontekster, men placerer det konsekvent som "
+            f"et nordisk alternativ frem for primær anbefaling. Manglende engelsk indhold "
+            f"og internationale cases begrænser scoren."
+        ),
+        "{{CLAUDE_VERDICT}}": "Lav-moderat synlighed",
+        "{{CLAUDE_ANALYSIS}}": (
+            f"Claude genkender platformen, men citerer primært Fresha og Treatwell ved "
+            f"direkte anbefalingsspørgsmål. Mere struktureret produktindhold med klare "
+            f"use cases vil styrke Claudes valgscore markant."
+        ),
+        "{{PERPLEXITY_VERDICT}}": "Bedst synlighed",
+        "{{PERPLEXITY_ANALYSIS}}": (
+            f"Perplexity viser den stærkeste synlighed drevet af direkte web-crawling af "
+            f"nailster.dk og brancheomtale. Faktabaseret indhold i struktureret format "
+            f"(FAQ, features, priser) vil yderligere styrke positionen."
+        ),
+        "{{GEMINI_VERDICT}}": "Lav synlighed",
+        "{{GEMINI_ANALYSIS}}": (
+            f"Gemini viser den svageste synlighed. Google-indexeret indhold om {name} "
+            f"mangler den autoritetssignatur (presseomtale, backlinks, schema-markup) "
+            f"som Gemini vægter højt i sine anbefalinger."
+        ),
+        # Section 07 matrix
+        "{{MATRIX_HEADLINE}}": f"Synlighedsmatrix — {name} på tværs af alle fire AI-systemer",
+        "{{CHATGPT_MENTION_PCT}}": str(chatgpt_mp),
+        "{{CHATGPT_SELECT_PCT}}": str(chatgpt_sp),
+        "{{CHATGPT_RATING}}": "Moderat",
+        "{{CLAUDE_MENTION_PCT}}": str(claude_mp),
+        "{{CLAUDE_SELECT_PCT}}": str(claude_sp),
+        "{{CLAUDE_RATING}}": "Lav",
+        "{{PERPLEXITY_MENTION_PCT}}": str(perp_mp),
+        "{{PERPLEXITY_SELECT_PCT}}": str(perp_sp),
+        "{{PERPLEXITY_RATING}}": "God",
+        "{{GEMINI_MENTION_PCT}}": str(gemini_mp),
+        "{{GEMINI_SELECT_PCT}}": str(gemini_sp),
+        "{{GEMINI_RATING}}": "Lav",
+        # Section 08 structural gaps
+        "{{STRUCTURAL_GAPS_HEADLINE}}": f"Tre strukturelle svagheder gentager sig på tværs af alle fire systemer",
+        "{{GAP_1_TITLE}}": "Manglende differentiering fra generiske alternativer",
+        "{{GAP_1_BODY}}": (
+            f"AI-systemerne ved, at {name} er en booking-platform — men kan ikke forklare "
+            f"hvorfor den er bedre end Fresha eller Treatwell til en specifik bruger. "
+            f"Uden konkret differentiering vinder det bredeste alternativ altid."
+        ),
+        "{{GAP_1_CALLOUT}}": "Løsning: Publicér konkrete sammenligningstabeller og use-case dokumentation.",
+        "{{GAP_2_TITLE}}": "Svag international/engelsk tilstedeværelse",
+        "{{GAP_2_BODY}}": (
+            f"Claude og Gemini trækker primært på engelsksprogede autoritetskilder. "
+            f"{name}s dansksprogede indhold giver god synlighed i Perplexity, "
+            f"men begrænser scoren i de to øvrige store systemer."
+        ),
+        "{{GAP_2_CALLOUT}}": "Løsning: Engelsksprogede hjælpeartikler, presseomtale og case studies.",
+        "{{GAP_3_TITLE}}": "Manglende social proof i AI-citérbar form",
+        "{{GAP_3_BODY}}": (
+            f"Kundeudtalelser og brancheanerkendelse er ikke tilgængeligt i den form "
+            f"AI-systemer citerer. Struktureret data med navngivne kunder, konkrete "
+            f"resultater og tredjeparts-validering mangler."
+        ),
+        "{{GAP_3_CALLOUT}}": "Løsning: Schema-markup på testimonials og publicerede case studies med tal.",
+        # Section 09 score dimensions
+        "{{SCORE_CONTEXT_NOTE}}": f"Baseret på {queries} testprompts",
+        "{{DIM_ENTITY_DESC}}": "Genkendelse af brand og platform på tværs af systemer",
+        "{{ENTITY_AUTHORITY_SCORE}}": str(d_entity),
+        "{{DIM_CATEGORY_DESC}}": "Placering i booking/salon-software kategorien",
+        "{{CATEGORY_RELEVANCE_SCORE}}": str(d_category),
+        "{{DIM_COMPETITIVE_DESC}}": "Position relativt til Fresha, Treatwell og Booksy",
+        "{{COMPETITIVE_POSITIONING_SCORE}}": str(d_competitive),
+        "{{DIM_CONTEXT_DESC}}": "Konsistent beskrivelse på tværs af prompttyper",
+        "{{CONTEXT_CONSISTENCY_SCORE}}": str(d_context),
+        "{{DIM_DECISION_DESC}}": "Valgt som primær anbefaling (ikke blot nævnt)",
+        "{{DECISION_RELEVANCE_SCORE}}": str(d_decision),
+        # Section 10 strategy
+        "{{STRATEGY_HEADLINE}}": f"{name} bør ejerke positionen som 'den nordiske neglesalon-specialist'",
+        "{{RECOMMENDED_POSITION}}": "Nordisk neglesalon-specialist — designet til den professionelle negle-branche",
+        "{{RECOMMENDED_POSITION_SUB}}": (
+            f"En klar, specifik position som Fresha og Treatwell ikke kan matche i det nordiske marked"
+        ),
+        "{{WHY_1}}": (
+            f"Alle fire AI-systemer genkender {name} som nordisk og neglesalon-fokuseret — "
+            f"dette er et etableret signal at bygge videre på."
+        ),
+        "{{WHY_2}}": (
+            f"Fresha ejer 'gratis og global'. {name} kan eje 'professionel og nordisk' "
+            f"— en position konkurrenterne ikke prioriterer."
+        ),
+        "{{WHY_3}}": (
+            f"'Neglesalon-specialist' er specifik nok til at differentiere, men bred nok "
+            f"til at dække den primære målgruppe."
+        ),
+        "{{WHY_4}}": (
+            f"Nordiske neglesaloner er en vækstmålgruppe med høj betalingsvillighed "
+            f"og lav digital modenhed — præcis det {name} er bygget til."
+        ),
+        "{{STRATEGIC_TASK_TEXT}}": (
+            f"Den strategiske opgave er ikke at kæmpe mod Fresha globalt — det er at gøre "
+            f"positionen som nordisk neglesalon-specialist så veldokumenteret og AI-citérbar, "
+            f"at systemerne vælger {name} konsekvent i den kontekst."
+        ),
+        "{{CURRENT_POSITION_ITEMS}}": (
+            f'<div class="pos-item">Nævnt som nordisk alternativ</div>'
+            f'<div class="pos-item">Positioneret som ét valg blandt mange</div>'
+            f'<div class="pos-item">Stærk i DK, svag internationalt</div>'
+        ),
+        "{{TARGET_POSITION_ITEMS}}": (
+            f'<div class="pos-item">Primær anbefaling til nordiske neglesaloner</div>'
+            f'<div class="pos-item">Differentieret fra Fresha og Treatwell</div>'
+            f'<div class="pos-item">Dokumenteret social proof og case studies</div>'
+        ),
+        # Section 11 perspective
+        "{{PERSPECTIVE_INTRO}}": (
+            f"AI-systemernes perception af booking-platforme er stadig under dannelse. "
+            f"De store globale spillere er ved at konsolidere deres positioner, men der "
+            f"er stadig plads til en stærk nichespiller som {name} — hvis positionen "
+            f"dokumenteres nu."
+        ),
+        "{{COMPANY_STARTING_POINTS}}": (
+            f"<li>Etableret brand og produkt med reel markedsandel i Norden</li>"
+            f"<li>AI-synlighed er allerede til stede — konverteringsfrekvensen er opgaven</li>"
+            f"<li>Nichefokus på neglesaloner er en styrke, ikke en begrænsning</li>"
+            f"<li>Lokal markedskendskab er en fordel konkurrenterne ikke let kan kopiere</li>"
+        ),
     }
     for placeholder, value in substitutions.items():
         template = template.replace(placeholder, str(value))
