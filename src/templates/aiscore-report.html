@@ -1060,32 +1060,60 @@
 
   .model-stats-row {
     display: flex;
-    gap: 14px;
+    flex-direction: column;
+    gap: 6px;
     padding: 10px 14px;
     border-bottom: 1px solid var(--border);
     background: var(--white);
   }
 
-  .model-stat {
+  .model-bar-row {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 8px;
   }
 
-  .model-stat-num {
-    font-size: 14pt;
-    font-weight: 800;
-    color: var(--navy);
-    line-height: 1;
-  }
-
-  .model-stat-label {
+  .model-bar-label {
     font-size: 7.5pt;
     color: var(--text-light);
     text-transform: uppercase;
-    letter-spacing: .06em;
+    letter-spacing: .05em;
+    min-width: 36px;
   }
+
+  .model-bar-track {
+    flex: 1;
+    height: 7px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .model-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+
+  .model-bar-navy   { background: var(--navy); }
+  .model-bar-accent { background: var(--accent); }
+
+  .model-bar-score {
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--text);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .model-card.mc-chatgpt   { border-bottom: 4px solid var(--chatgpt); }
+  .model-card.mc-claude    { border-bottom: 4px solid var(--claude); }
+  .model-card.mc-perplexity{ border-bottom: 4px solid var(--perplexity); }
+  .model-card.mc-gemini    { border-bottom: 4px solid var(--gemini); }
+
+  .model-card-verdict.vc-chatgpt   { color: var(--chatgpt); }
+  .model-card-verdict.vc-claude    { color: var(--claude); }
+  .model-card-verdict.vc-perplexity{ color: var(--perplexity); }
+  .model-card-verdict.vc-gemini    { color: var(--gemini); }
 
   .model-card-body {
     padding: 10px 14px;
@@ -1568,7 +1596,7 @@
   }
 
   .callout-key {
-    background: var(--white);
+    background: var(--bg);
     border-left: 4px solid var(--accent);
     color: var(--text);
   }
@@ -2303,7 +2331,7 @@
   <h2 class="sec-title">{{MODEL_ANALYSIS_HEADLINE}}</h2>
 
   <div class="model-card-grid">
-    <div class="model-card no-break">
+    <div class="model-card mc-chatgpt no-break">
       <div class="model-card-header">
         <div class="model-card-header-left">
           <div class="system-icon sys-chatgpt" style="width:26px;height:26px;font-size:10pt;">C</div>
@@ -2312,22 +2340,24 @@
             <div class="model-card-subtitle">GPT-4o · OpenAI</div>
           </div>
         </div>
-        <div class="model-card-verdict">{{CHATGPT_VERDICT}}</div>
+        <div class="model-card-verdict vc-chatgpt">{{CHATGPT_VERDICT}}</div>
       </div>
       <div class="model-stats-row">
-        <div class="model-stat">
-          <div class="model-stat-num">{{CHATGPT_MENTIONED}}</div>
-          <div class="model-stat-label">Nævnt</div>
+        <div class="model-bar-row">
+          <span class="model-bar-label">Nævnt</span>
+          <div class="model-bar-track"><div class="model-bar-fill model-bar-navy" style="width:{{CHATGPT_MENTION_PCT}}%"></div></div>
+          <span class="model-bar-score">{{CHATGPT_MENTIONED}}</span>
         </div>
-        <div class="model-stat">
-          <div class="model-stat-num">{{CHATGPT_SELECTED}}</div>
-          <div class="model-stat-label">Valgt</div>
+        <div class="model-bar-row">
+          <span class="model-bar-label">Valgt</span>
+          <div class="model-bar-track"><div class="model-bar-fill model-bar-accent" style="width:{{CHATGPT_SELECT_PCT}}%"></div></div>
+          <span class="model-bar-score">{{CHATGPT_SELECTED}}</span>
         </div>
       </div>
       <div class="model-card-body">{{CHATGPT_ANALYSIS}}</div>
     </div>
 
-    <div class="model-card no-break">
+    <div class="model-card mc-claude no-break">
       <div class="model-card-header">
         <div class="model-card-header-left">
           <div class="system-icon sys-claude" style="width:26px;height:26px;font-size:10pt;">A</div>
@@ -2336,22 +2366,24 @@
             <div class="model-card-subtitle">Anthropic</div>
           </div>
         </div>
-        <div class="model-card-verdict">{{CLAUDE_VERDICT}}</div>
+        <div class="model-card-verdict vc-claude">{{CLAUDE_VERDICT}}</div>
       </div>
       <div class="model-stats-row">
-        <div class="model-stat">
-          <div class="model-stat-num">{{CLAUDE_MENTIONED}}</div>
-          <div class="model-stat-label">Nævnt</div>
+        <div class="model-bar-row">
+          <span class="model-bar-label">Nævnt</span>
+          <div class="model-bar-track"><div class="model-bar-fill model-bar-navy" style="width:{{CLAUDE_MENTION_PCT}}%"></div></div>
+          <span class="model-bar-score">{{CLAUDE_MENTIONED}}</span>
         </div>
-        <div class="model-stat">
-          <div class="model-stat-num">{{CLAUDE_SELECTED}}</div>
-          <div class="model-stat-label">Valgt</div>
+        <div class="model-bar-row">
+          <span class="model-bar-label">Valgt</span>
+          <div class="model-bar-track"><div class="model-bar-fill model-bar-accent" style="width:{{CLAUDE_SELECT_PCT}}%"></div></div>
+          <span class="model-bar-score">{{CLAUDE_SELECTED}}</span>
         </div>
       </div>
       <div class="model-card-body">{{CLAUDE_ANALYSIS}}</div>
     </div>
 
-    <div class="model-card no-break">
+    <div class="model-card mc-perplexity no-break">
       <div class="model-card-header">
         <div class="model-card-header-left">
           <div class="system-icon sys-perplexity" style="width:26px;height:26px;font-size:10pt;">P</div>
@@ -2360,22 +2392,24 @@
             <div class="model-card-subtitle">Perplexity AI</div>
           </div>
         </div>
-        <div class="model-card-verdict">{{PERPLEXITY_VERDICT}}</div>
+        <div class="model-card-verdict vc-perplexity">{{PERPLEXITY_VERDICT}}</div>
       </div>
       <div class="model-stats-row">
-        <div class="model-stat">
-          <div class="model-stat-num">{{PERPLEXITY_MENTIONED}}</div>
-          <div class="model-stat-label">Nævnt</div>
+        <div class="model-bar-row">
+          <span class="model-bar-label">Nævnt</span>
+          <div class="model-bar-track"><div class="model-bar-fill model-bar-navy" style="width:{{PERPLEXITY_MENTION_PCT}}%"></div></div>
+          <span class="model-bar-score">{{PERPLEXITY_MENTIONED}}</span>
         </div>
-        <div class="model-stat">
-          <div class="model-stat-num">{{PERPLEXITY_SELECTED}}</div>
-          <div class="model-stat-label">Valgt</div>
+        <div class="model-bar-row">
+          <span class="model-bar-label">Valgt</span>
+          <div class="model-bar-track"><div class="model-bar-fill model-bar-accent" style="width:{{PERPLEXITY_SELECT_PCT}}%"></div></div>
+          <span class="model-bar-score">{{PERPLEXITY_SELECTED}}</span>
         </div>
       </div>
       <div class="model-card-body">{{PERPLEXITY_ANALYSIS}}</div>
     </div>
 
-    <div class="model-card no-break">
+    <div class="model-card mc-gemini no-break">
       <div class="model-card-header">
         <div class="model-card-header-left">
           <div class="system-icon sys-gemini" style="width:26px;height:26px;font-size:10pt;">G</div>
@@ -2384,16 +2418,18 @@
             <div class="model-card-subtitle">Google</div>
           </div>
         </div>
-        <div class="model-card-verdict">{{GEMINI_VERDICT}}</div>
+        <div class="model-card-verdict vc-gemini">{{GEMINI_VERDICT}}</div>
       </div>
       <div class="model-stats-row">
-        <div class="model-stat">
-          <div class="model-stat-num">{{GEMINI_MENTIONED}}</div>
-          <div class="model-stat-label">Nævnt</div>
+        <div class="model-bar-row">
+          <span class="model-bar-label">Nævnt</span>
+          <div class="model-bar-track"><div class="model-bar-fill model-bar-navy" style="width:{{GEMINI_MENTION_PCT}}%"></div></div>
+          <span class="model-bar-score">{{GEMINI_MENTIONED}}</span>
         </div>
-        <div class="model-stat">
-          <div class="model-stat-num">{{GEMINI_SELECTED}}</div>
-          <div class="model-stat-label">Valgt</div>
+        <div class="model-bar-row">
+          <span class="model-bar-label">Valgt</span>
+          <div class="model-bar-track"><div class="model-bar-fill model-bar-accent" style="width:{{GEMINI_SELECT_PCT}}%"></div></div>
+          <span class="model-bar-score">{{GEMINI_SELECTED}}</span>
         </div>
       </div>
       <div class="model-card-body">{{GEMINI_ANALYSIS}}</div>
