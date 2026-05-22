@@ -2415,9 +2415,8 @@ def _render_report_html(app: "CustomerApplication") -> str:
             f"{name} er veletableret i booking-kategorien — men AI-systemer opfatter ikke differentieringen skarpt nok"
         ),
         "{{BRAND_POSITION_INTRO}}": (
-            f"Den offentlige tilgængelige information om {name} tegner et billede af en nordisk "
-            f"booking-platform med fokus på neglesaloner. AI-systemerne genkender dette profil, men "
-            f"mangler konkret differentierende indhold til at positionere {name} frem for bredere alternativer."
+            f"<span class='sec-intro-line'>Den offentlige tilgængelige information om {name} tegner et billede af en nordisk booking-platform med fokus på neglesaloner.</span>"
+            f"<span class='sec-intro-line'>AI-systemerne genkender dette profil, men mangler konkret differentierende indhold til at positionere {name} frem for bredere alternativer.</span>"
         ),
         "{{BRAND_STRENGTHS_LIST}}": (
             f"<li>Stærk kategorisering som neglesalon-specifik booking-platform</li>"

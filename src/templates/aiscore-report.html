@@ -882,6 +882,37 @@
     margin-top: 1px;
   }
 
+  .check-block--success {
+    background: var(--chosen);
+    border-radius: 6px;
+    padding: 12px 15px;
+  }
+  .check-block--success .check-block-title {
+    color: var(--white);
+  }
+  .check-block--success .check-list li {
+    color: var(--accent);
+  }
+  .check-block--success .check-list li::before {
+    color: rgba(255,255,255,.5);
+  }
+
+  .check-block--warn {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 15px;
+  }
+  .check-block--warn .check-block-title.warn {
+    color: var(--accent);
+  }
+  .check-block--warn .check-list li {
+    color: var(--text);
+  }
+  .check-block--warn .check-list li::before {
+    color: var(--accent);
+  }
+
   /* ═══════════════════════════════════
      AI DESCRIPTION CARDS
   ═══════════════════════════════════ */
@@ -2017,7 +2048,7 @@
     </div>
   </div>
 
-  <div class="callout callout-navy no-break" style="margin-top:auto; margin-bottom:14px;">
+  <div class="callout callout-navy no-break" style="margin-top:16px; margin-bottom:14px;">
     <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:7px;">Analysegrundlag</div>
     Analysen er gennemført med fire LLM'er for en bred og repræsentativ kortlægning. De fire systemer repræsenterer de dominerende AI-platforme, som forbrugere anvender til produktrådgivning i 2026.
   </div>
@@ -2073,14 +2104,14 @@
 
   <p class="sec-intro">{{BRAND_POSITION_INTRO}}</p>
 
-  <div class="check-block no-break">
+  <div class="check-block check-block--success no-break">
     <div class="check-block-title">✓ &nbsp; Stærk overensstemmelse</div>
     <ul class="check-list">
       {{BRAND_STRENGTHS_LIST}}
     </ul>
   </div>
 
-  <div class="check-block no-break">
+  <div class="check-block check-block--warn no-break">
     <div class="check-block-title warn">↗ &nbsp; Systematisk kløft</div>
     <ul class="check-list">
       {{BRAND_GAPS_LIST}}
