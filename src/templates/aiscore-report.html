@@ -97,11 +97,13 @@
     overflow: hidden;
   }
 
-  /* Corner arc decoration: two concentric quarter-circles at 50% of original size */
+  /* Corner arc decoration: two concentric quarter-circles, both centered at the corner.
+     Offset = diameter/2 so each circle's centre lands exactly at the top-right corner,
+     giving perfectly concentric arcs with a shared starting point. */
   .cover::before {
     content: '';
     position: absolute;
-    top: -45mm; right: -45mm;
+    top: -47.5mm; right: -47.5mm;
     width: 95mm; height: 95mm;
     background: var(--navy-mid);
     border-radius: 50%;
@@ -110,7 +112,7 @@
   .cover::after {
     content: '';
     position: absolute;
-    top: -27mm; right: -27mm;
+    top: -30mm; right: -30mm;
     width: 60mm; height: 60mm;
     background: var(--navy-light);
     border-radius: 50%;
