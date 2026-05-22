@@ -2401,10 +2401,10 @@ def _render_report_html(app: "CustomerApplication") -> str:
         "{{STRATEGIC_TENSION}}": f"Bred synlighed ({mention_rate}) vs. lav konvertering til valg ({selection_rate})",
         # Section 02
         "{{METHODOLOGY_TEXT}}": (
-            f"Analysen er baseret på {queries} strukturerede testprompts fordelt ligeligt over "
-            f"ChatGPT (GPT-4o), Claude (Anthropic), Perplexity AI og Google Gemini. Prompterne dækker "
-            f"fire kategorier: generel kategorisøgning, problembaserede spørgsmål, sammenligning med "
-            f"konkurrenter og professionel beslutningsstøtte."
+            f"<span class='sec-intro-line'>Analysen er baseret på {queries} strukturerede testprompts fordelt ligeligt over "
+            f"ChatGPT (GPT-4o), Claude (Anthropic), Perplexity AI og Google Gemini.</span>"
+            f"<span class='sec-intro-line'>Prompterne dækker fire kategorier: generel kategorisøgning, "
+            f"problembaserede spørgsmål, sammenligning med konkurrenter og professionel beslutningsstøtte.</span>"
         ),
         "{{PROMPT_CAT_1_EXAMPLE}}": f'"Hvad er de bedste booking-apps til neglesalon?"',
         "{{PROMPT_CAT_2_EXAMPLE}}": f'"Jeg driver en neglesalon og har brug for online booking — hvad anbefaler du?"',
