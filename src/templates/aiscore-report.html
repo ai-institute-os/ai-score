@@ -632,7 +632,7 @@
 
   .exec-score-denom {
     font-size: 13pt;
-    color: rgba(255,255,255,.45);
+    color: var(--accent);
   }
 
   .exec-score-badge {
@@ -640,7 +640,7 @@
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.45);
+    color: rgba(255,255,255,.85);
     margin-top: 4px;
   }
 
@@ -658,6 +658,7 @@
   .exec-strategic-block {
     background: var(--bg);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
     border-radius: 6px;
     padding: 12px 14px;
     margin-bottom: 18px;
@@ -1944,38 +1945,38 @@
   </div>
 
   <div class="sec-num">02 &nbsp; Analytisk fundament</div>
-  <h2 class="sec-title">Analysen bygger på {{QUERIES_RUN}} strukturerede testprompts fordelt<br>systematisk over fire AI-systemer og fire promptkategorier</h2>
+  <h2 class="sec-title">Analysen bygger på {{QUERIES_RUN}} strukturerede testprompts fordelt systematisk over fire AI-systemer og fire promptkategorier</h2>
 
   <p class="sec-intro">{{METHODOLOGY_TEXT}}</p>
 
   <div style="display:flex; gap:14px; margin-bottom:18px;">
     <div style="flex:1;">
       <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text-light); margin-bottom:10px;">Testede AI-systemer</div>
-      <div class="system-grid">
-        <div class="system-card no-break">
+      <div style="display:flex; gap:20px; align-items:center; flex-wrap:nowrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
           <div class="system-icon sys-chatgpt">C</div>
-          <div class="system-card-body">
+          <div>
             <div class="system-card-name">ChatGPT</div>
             <div class="system-card-vendor">GPT-4o · OpenAI</div>
           </div>
         </div>
-        <div class="system-card no-break">
+        <div style="display:flex; align-items:center; gap:8px;">
           <div class="system-icon sys-claude">A</div>
-          <div class="system-card-body">
+          <div>
             <div class="system-card-name">Claude</div>
             <div class="system-card-vendor">Anthropic</div>
           </div>
         </div>
-        <div class="system-card no-break">
+        <div style="display:flex; align-items:center; gap:8px;">
           <div class="system-icon sys-perplexity">P</div>
-          <div class="system-card-body">
+          <div>
             <div class="system-card-name">Perplexity</div>
             <div class="system-card-vendor">Perplexity AI</div>
           </div>
         </div>
-        <div class="system-card no-break">
+        <div style="display:flex; align-items:center; gap:8px;">
           <div class="system-icon sys-gemini">G</div>
-          <div class="system-card-body">
+          <div>
             <div class="system-card-name">Gemini</div>
             <div class="system-card-vendor">Google</div>
           </div>
