@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AIScore Admin</title>
   <link rel="stylesheet" href="/static/shared.css" />
+  <script src="/static/i18n.js"></script>
   <style>
     body { min-height: 100vh; font-size: 14px; line-height: 1.5; }
 
@@ -223,6 +224,12 @@
   <span class="topnav-sep">/</span>
   <span class="topnav-title" id="navTitle">Leads</span>
   <div class="topnav-right">
+    <!-- Language toggle -->
+    <div class="lang-toggle" role="group" aria-label="Language / Sprog">
+      <button class="lang-opt lang-active" data-lang="en" onclick="i18n.setLang('en')" aria-label="English">EN</button>
+      <span class="lang-sep">|</span>
+      <button class="lang-opt" data-lang="da" onclick="i18n.setLang('da')" aria-label="Dansk">DA</button>
+    </div>
     <!-- Auth menu -->
     <div class="auth-menu" id="authMenu">
       <button class="auth-trigger" id="authTrigger" onclick="toggleAuthMenu(event)" aria-haspopup="true">
@@ -233,7 +240,7 @@
       <div class="auth-dropdown" id="authDropdown">
         <a class="auth-drop-item" href="/admin/logout">
           <i data-lucide="log-out" class="icon-xs"></i>
-          Sign out
+          <span data-i18n="nav.sign_out">Sign out</span>
         </a>
       </div>
     </div>
@@ -247,77 +254,77 @@
   <aside class="admin-sidebar" id="adminSidebar">
     <div class="admin-sidebar-body">
 
-      <div class="sidebar-label">Genveje</div>
+      <div class="sidebar-label" data-i18n="sidebar.shortcuts">Shortcuts</div>
       <div class="sidebar-section">
-        <a class="sidebar-item" href="/admin/orders" data-label="Betalte ordrer">
+        <a class="sidebar-item" href="/admin/orders" data-label="sidebar.paid_orders">
           <i data-lucide="receipt" class="icon-sm"></i>
-          <span class="sidebar-text">Betalte ordrer</span>
+          <span class="sidebar-text" data-i18n="sidebar.paid_orders">Paid orders</span>
         </a>
       </div>
 
-      <div class="sidebar-label">Pipeline</div>
+      <div class="sidebar-label" data-i18n="sidebar.pipeline">Pipeline</div>
       <div class="sidebar-section">
-        <a class="sidebar-item active" data-filter="" onclick="setFilter(this, '')" data-label="Alle leads">
+        <a class="sidebar-item active" data-filter="" onclick="setFilter(this, '')" data-label="sidebar.all_leads">
           <i data-lucide="layout-list" class="icon-sm"></i>
-          <span class="sidebar-text">Alle leads</span>
+          <span class="sidebar-text" data-i18n="sidebar.all_leads">All leads</span>
           <span class="sidebar-count" id="cnt-all">—</span>
         </a>
-        <a class="sidebar-item" data-filter="APPLIED" onclick="setFilter(this, 'APPLIED')" data-label="Ansøgt">
+        <a class="sidebar-item" data-filter="APPLIED" onclick="setFilter(this, 'APPLIED')" data-label="sidebar.applied">
           <i data-lucide="mail-open" class="icon-sm"></i>
-          <span class="sidebar-text">Ansøgt</span>
+          <span class="sidebar-text" data-i18n="sidebar.applied">Applied</span>
           <span class="sidebar-count" id="cnt-APPLIED">—</span>
         </a>
-        <a class="sidebar-item" data-filter="UNDER_REVIEW" onclick="setFilter(this, 'UNDER_REVIEW')" data-label="Under review">
+        <a class="sidebar-item" data-filter="UNDER_REVIEW" onclick="setFilter(this, 'UNDER_REVIEW')" data-label="sidebar.under_review">
           <i data-lucide="eye" class="icon-sm"></i>
-          <span class="sidebar-text">Under review</span>
+          <span class="sidebar-text" data-i18n="sidebar.under_review">Under review</span>
           <span class="sidebar-count" id="cnt-UNDER_REVIEW">—</span>
         </a>
-        <a class="sidebar-item" data-filter="CALLED" onclick="setFilter(this, 'CALLED')" data-label="Møde booket">
+        <a class="sidebar-item" data-filter="CALLED" onclick="setFilter(this, 'CALLED')" data-label="sidebar.meeting_booked">
           <i data-lucide="calendar-days" class="icon-sm"></i>
-          <span class="sidebar-text">Møde booket</span>
+          <span class="sidebar-text" data-i18n="sidebar.meeting_booked">Meeting booked</span>
           <span class="sidebar-count" id="cnt-CALLED">—</span>
         </a>
       </div>
 
-      <div class="sidebar-label">Betaling</div>
+      <div class="sidebar-label" data-i18n="sidebar.payment">Payment</div>
       <div class="sidebar-section">
-        <a class="sidebar-item" data-filter="AWAITING_PAYMENT" onclick="setFilter(this, 'AWAITING_PAYMENT')" data-label="Afventer betaling">
+        <a class="sidebar-item" data-filter="AWAITING_PAYMENT" onclick="setFilter(this, 'AWAITING_PAYMENT')" data-label="sidebar.awaiting_payment">
           <i data-lucide="credit-card" class="icon-sm"></i>
-          <span class="sidebar-text">Afventer betaling</span>
+          <span class="sidebar-text" data-i18n="sidebar.awaiting_payment">Awaiting payment</span>
           <span class="sidebar-count" id="cnt-AWAITING_PAYMENT">—</span>
         </a>
-        <a class="sidebar-item" data-filter="PAID" onclick="setFilter(this, 'PAID')" data-label="Betalt">
+        <a class="sidebar-item" data-filter="PAID" onclick="setFilter(this, 'PAID')" data-label="sidebar.paid">
           <i data-lucide="wallet" class="icon-sm"></i>
-          <span class="sidebar-text">Betalt</span>
+          <span class="sidebar-text" data-i18n="sidebar.paid">Paid</span>
           <span class="sidebar-count" id="cnt-PAID">—</span>
         </a>
       </div>
 
-      <div class="sidebar-label">Produktion</div>
+      <div class="sidebar-label" data-i18n="sidebar.production">Production</div>
       <div class="sidebar-section">
-        <a class="sidebar-item" data-filter="IN_PRODUCTION" onclick="setFilter(this, 'IN_PRODUCTION')" data-label="I produktion">
+        <a class="sidebar-item" data-filter="IN_PRODUCTION" onclick="setFilter(this, 'IN_PRODUCTION')" data-label="sidebar.in_production">
           <i data-lucide="settings-2" class="icon-sm"></i>
-          <span class="sidebar-text">I produktion</span>
+          <span class="sidebar-text" data-i18n="sidebar.in_production">In production</span>
           <span class="sidebar-count" id="cnt-IN_PRODUCTION">—</span>
         </a>
-        <a class="sidebar-item" data-filter="QC_REVIEW" onclick="setFilter(this, 'QC_REVIEW')" data-label="QC review">
+        <a class="sidebar-item" data-filter="QC_REVIEW" onclick="setFilter(this, 'QC_REVIEW')" data-label="sidebar.qc_review">
           <i data-lucide="microscope" class="icon-sm"></i>
-          <span class="sidebar-text">QC review</span>
+          <span class="sidebar-text" data-i18n="sidebar.qc_review">QC review</span>
           <span class="sidebar-count" id="cnt-QC_REVIEW">—</span>
         </a>
-        <a class="sidebar-item" data-filter="QC_PASSED" onclick="setFilter(this, 'QC_PASSED')" data-label="QC godkendt">
+        <a class="sidebar-item" data-filter="QC_PASSED" onclick="setFilter(this, 'QC_PASSED')" data-label="sidebar.qc_passed">
           <i data-lucide="badge-check" class="icon-sm"></i>
-          <span class="sidebar-text">QC godkendt</span>
+          <span class="sidebar-text" data-i18n="sidebar.qc_passed">QC passed</span>
           <span class="sidebar-count" id="cnt-QC_PASSED">—</span>
         </a>
-        <a class="sidebar-item" data-filter="READY_FOR_REVIEW_CALL" onclick="setFilter(this, 'READY_FOR_REVIEW_CALL')" data-label="Klar til review">
+        <a class="sidebar-item" data-filter="READY_FOR_REVIEW_CALL" onclick="setFilter(this, 'READY_FOR_REVIEW_CALL')" data-label="sidebar.ready_for_review">
           <i data-lucide="phone" class="icon-sm"></i>
-          <span class="sidebar-text">Klar til review</span>
+          <span class="sidebar-text" data-i18n="sidebar.ready_for_review">Ready for review</span>
           <span class="sidebar-count" id="cnt-READY_FOR_REVIEW_CALL">—</span>
         </a>
-        <a class="sidebar-item" data-filter="ESCALATED" onclick="setFilter(this, 'ESCALATED')" data-label="Eskaleret">
+        <a class="sidebar-item" data-filter="ESCALATED" onclick="setFilter(this, 'ESCALATED')" data-label="sidebar.escalated">
           <i data-lucide="alert-triangle" class="icon-sm"></i>
-          <span class="sidebar-text">Eskaleret</span>
+          <span class="sidebar-text" data-i18n="sidebar.escalated">Escalated</span>
           <span class="sidebar-count" id="cnt-ESCALATED">—</span>
         </a>
       </div>
@@ -325,7 +332,7 @@
     </div>
 
     <div class="sidebar-footer">
-      <button class="sidebar-collapse-btn sidebar-collapse-btn-bottom" id="sidebarCollapseBtn" onclick="toggleCollapse()" title="Kollaps sidebar">
+      <button class="sidebar-collapse-btn sidebar-collapse-btn-bottom" id="sidebarCollapseBtn" onclick="toggleCollapse()" data-i18n-title="sidebar.collapse" title="Collapse sidebar">
         <i data-lucide="chevrons-left" class="icon-xs"></i>
       </button>
     </div>
@@ -341,26 +348,26 @@
     <div class="toolbar">
       <div class="search-box" style="flex:1;max-width:320px;">
         <i data-lucide="search" class="icon-sm search-icon"></i>
-        <input type="text" id="searchInput" placeholder="Søg firma, kontakt eller e-mail…" oninput="renderTable()" />
+        <input type="text" id="searchInput" data-i18n-placeholder="search.placeholder" placeholder="Search company, contact or email…" oninput="renderTable()" />
       </div>
 
       <div class="filter-bar" id="filterBar">
-        <button class="filter-chip active" data-status="" onclick="setFilterChip(this, '')">Alle</button>
-        <button class="filter-chip" data-status="APPLIED" onclick="setFilterChip(this, 'APPLIED')">Ansøgt</button>
-        <button class="filter-chip" data-status="UNDER_REVIEW" onclick="setFilterChip(this, 'UNDER_REVIEW')">Review</button>
-        <button class="filter-chip" data-status="APPROVED" onclick="setFilterChip(this, 'APPROVED')">Godkendt</button>
-        <button class="filter-chip" data-status="PAID" onclick="setFilterChip(this, 'PAID')">Betalt</button>
-        <button class="filter-chip" data-status="IN_PRODUCTION" onclick="setFilterChip(this, 'IN_PRODUCTION')">Produktion</button>
-        <button class="filter-chip" data-status="ESCALATED" onclick="setFilterChip(this, 'ESCALATED')">Eskaleret</button>
+        <button class="filter-chip active" data-status="" onclick="setFilterChip(this, '')" data-i18n="filter.all">All</button>
+        <button class="filter-chip" data-status="APPLIED" onclick="setFilterChip(this, 'APPLIED')" data-i18n="filter.applied">Applied</button>
+        <button class="filter-chip" data-status="UNDER_REVIEW" onclick="setFilterChip(this, 'UNDER_REVIEW')" data-i18n="filter.review">Review</button>
+        <button class="filter-chip" data-status="APPROVED" onclick="setFilterChip(this, 'APPROVED')" data-i18n="filter.approved">Approved</button>
+        <button class="filter-chip" data-status="PAID" onclick="setFilterChip(this, 'PAID')" data-i18n="filter.paid">Paid</button>
+        <button class="filter-chip" data-status="IN_PRODUCTION" onclick="setFilterChip(this, 'IN_PRODUCTION')" data-i18n="filter.production">Production</button>
+        <button class="filter-chip" data-status="ESCALATED" onclick="setFilterChip(this, 'ESCALATED')" data-i18n="filter.escalated">Escalated</button>
       </div>
 
       <div class="toolbar-right">
         <div class="sort-wrap">
           <select id="sortSelect" onchange="renderTable()">
-            <option value="created_desc">Newest first</option>
-            <option value="created_asc">Oldest first</option>
-            <option value="company_asc">Company A→Z</option>
-            <option value="status_asc">Status</option>
+            <option value="created_desc" data-i18n="sort.newest">Newest first</option>
+            <option value="created_asc" data-i18n="sort.oldest">Oldest first</option>
+            <option value="company_asc" data-i18n="sort.company_az">Company A→Z</option>
+            <option value="status_asc" data-i18n="sort.status">Status</option>
           </select>
           <i data-lucide="chevron-down" class="icon-xs sort-chevron"></i>
         </div>
@@ -375,13 +382,13 @@
       <table>
         <thead>
           <tr>
-            <th>Virksomhed</th>
-            <th>Kontakt</th>
-            <th>E-mail</th>
-            <th>Tlf.</th>
-            <th>Website</th>
-            <th>Status</th>
-            <th>Ansøgningsdato</th>
+            <th data-i18n="th.company">Company</th>
+            <th data-i18n="th.contact">Contact</th>
+            <th data-i18n="th.email">Email</th>
+            <th data-i18n="th.phone">Phone</th>
+            <th data-i18n="th.website">Website</th>
+            <th data-i18n="th.status">Status</th>
+            <th data-i18n="th.applied_date">Application date</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -438,23 +445,19 @@ let currentPage = 1;
 const PAGE_SIZE = 20;
 
 // ─── Status config ────────────────────────────────
-const STATUS_LABELS = {
-  APPLIED: 'Ansøgt',
-  UNDER_REVIEW: 'Under review',
-  APPROVED: 'Godkendt',
-  REJECTED: 'Afvist',
-  CALLED: 'Møde booket',
-  AWAITING_PAYMENT: 'Afventer betaling',
-  PAID: 'Betalt',
-  IN_PRODUCTION: 'I produktion',
-  QC_REVIEW: 'QC review',
-  QC_PASSED: 'QC godkendt',
-  QC_FAILED: 'QC fejlet',
-  ESCALATED: 'Eskaleret',
-  RETRY: 'Genprøver',
-  CANCELLED: 'Annulleret',
-  READY_FOR_REVIEW_CALL: 'Klar til review',
-};
+const STATUS_KEYS = ['APPLIED','UNDER_REVIEW','APPROVED','REJECTED','CALLED','AWAITING_PAYMENT','PAID','IN_PRODUCTION','QC_REVIEW','QC_PASSED','QC_FAILED','ESCALATED','RETRY','CANCELLED','READY_FOR_REVIEW_CALL'];
+
+function statusLabel(s) {
+  return (window.i18n ? window.i18n.t('status.' + s) : null) || s;
+}
+
+// Keep STATUS_LABELS as a live proxy for compatibility
+const STATUS_LABELS = new Proxy({}, {
+  get(_, key) { return statusLabel(key); },
+  has(_, key) { return STATUS_KEYS.includes(key); },
+  ownKeys() { return STATUS_KEYS; },
+  getOwnPropertyDescriptor(_, key) { return STATUS_KEYS.includes(key) ? { enumerable: true, configurable: true } : undefined; },
+});
 
 const VALID_TRANSITIONS = {
   APPLIED: ['UNDER_REVIEW', 'REJECTED'],
@@ -526,7 +529,7 @@ function setFilter(el, status) {
   });
 
   const navTitle = document.getElementById('navTitle');
-  if (navTitle) navTitle.textContent = status ? (STATUS_LABELS[status] || status) : 'Leads';
+  if (navTitle) navTitle.textContent = status ? statusLabel(status) : (window.i18n ? window.i18n.t('table.leads') : 'Leads');
 
   closeSidebar();
   renderTable();
@@ -571,9 +574,10 @@ function renderTable() {
   if (currentPage > totalPages) currentPage = totalPages;
   const slice = data.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
 
-  document.getElementById('tableCount').innerHTML =
-    `Viser <strong>${slice.length}</strong> af <strong>${total}</strong> leads` +
-    (activeFilter ? ` med status <strong>${STATUS_LABELS[activeFilter] || activeFilter}</strong>` : '');
+  const _t = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
+  document.getElementById('tableCount').innerHTML = activeFilter
+    ? _t('table.showing_filtered', { n: slice.length, total, status: statusLabel(activeFilter) })
+    : _t('table.showing', { n: slice.length, total });
 
   const tbody = document.getElementById('tableBody');
 
@@ -581,7 +585,7 @@ function renderTable() {
     tbody.innerHTML = `<tr><td colspan="6">
       <div class="empty-state">
         <div class="icon"><i data-lucide="inbox" style="width:40px;height:40px;opacity:0.35;"></i></div>
-        <p>Ingen ansøgninger matcher filteret.</p>
+        <p>${_t('table.no_results')}</p>
       </div>
     </td></tr>`;
     document.getElementById('pagination').innerHTML = '';
@@ -620,7 +624,8 @@ function renderPagination(total, totalPages) {
   const pg = document.getElementById('pagination');
   if (totalPages <= 1) { pg.innerHTML = ''; return; }
 
-  let html = `<span class="page-info">Side ${currentPage} af ${totalPages}</span>`;
+  const _tPg = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
+  let html = `<span class="page-info">${_tPg('page.info', { page: currentPage, total: totalPages })}</span>`;
   html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
 
   const range = [];
@@ -643,12 +648,14 @@ function _clearReportQPoll() {
 }
 
 function _buildReportQSection(app) {
+  const _t = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
   const rqStatus = app.report_questions_status || 'not_started';
+  const rqCount = (app.report_questions || []).length;
   const rqStatusLabel = {
-    'not_started': 'Afventer svar',
-    'generating':  'Genererer…',
-    'done':        `${(app.report_questions || []).length} spørgsmål klar`,
-    'error':       'Fejl ved generering',
+    'not_started': _t('rq.not_started'),
+    'generating':  _t('rq.generating'),
+    'done':        _t('rq.done_n', { n: rqCount }),
+    'error':       _t('rq.error'),
   }[rqStatus] || rqStatus;
 
   let rqItemsHtml;
@@ -661,21 +668,21 @@ function _buildReportQSection(app) {
       </div>
     `).join('');
   } else if (rqStatus === 'generating') {
-    rqItemsHtml = '<p style="color:var(--text-muted);font-size:0.8rem;"><span class="spinner" style="vertical-align:middle;margin-right:0.4rem;"></span>Rapport-spørgsmål genereres automatisk…</p>';
+    rqItemsHtml = `<p style="color:var(--text-muted);font-size:0.8rem;"><span class="spinner" style="vertical-align:middle;margin-right:0.4rem;"></span>${_t('rq.loading')}</p>`;
   } else if (rqStatus === 'not_started') {
-    rqItemsHtml = '<p style="color:var(--text-muted);font-size:0.8rem;">Genereres automatisk når alle svar er gemt.</p>';
+    rqItemsHtml = `<p style="color:var(--text-muted);font-size:0.8rem;">${_t('rq.pending')}</p>`;
   } else {
-    rqItemsHtml = '<p style="color:var(--text-muted);font-size:0.8rem;">Ingen rapport-spørgsmål endnu.</p>';
+    rqItemsHtml = `<p style="color:var(--text-muted);font-size:0.8rem;">${_t('rq.none')}</p>`;
   }
 
   const retryBtn = rqStatus === 'error'
-    ? `<button class="btn btn-ghost" style="margin-top:0.5rem;" onclick='triggerReportQuestions("${app.id}")'>Generer igen</button>`
+    ? `<button class="btn btn-ghost" style="margin-top:0.5rem;" onclick='triggerReportQuestions("${app.id}")'>${_t('rq.retry')}</button>`
     : '';
 
   return `
     <div class="report-q-section">
       <div class="report-q-title">
-        Rapport-spørgsmål
+        ${_t('rq.title')}
         <span class="report-q-status rqs-${rqStatus}">${esc(rqStatusLabel)}</span>
       </div>
       ${rqItemsHtml}
@@ -686,6 +693,7 @@ function _buildReportQSection(app) {
 
 function openDetail(app) {
   _clearReportQPoll();
+  const _t = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
 
   document.getElementById('modalTitle').textContent = app.firmanavn;
   document.getElementById('modalSubtitle').textContent = `ID: ${app.id}`;
@@ -695,13 +703,13 @@ function openDetail(app) {
     <div class="timeline-item">
       <div class="timeline-dot"></div>
       <div class="timeline-text">
-        <strong>${STATUS_LABELS[l.to_status] || l.to_status}</strong>
+        <strong>${statusLabel(l.to_status)}</strong>
         — ${fmtDate(l.changed_at)} ${fmtTime(l.changed_at)}
-        ${l.changed_by ? `<em style="color:var(--text-muted)"> af ${esc(l.changed_by)}</em>` : ''}
+        ${l.changed_by ? `<em style="color:var(--text-muted)"> ${_t('timeline.changed_by')} ${esc(l.changed_by)}</em>` : ''}
         ${l.note ? `<br><span style="color:var(--text-muted)">${esc(l.note)}</span>` : ''}
       </div>
     </div>
-  `).join('') : '<p style="color:var(--text-muted);font-size:0.8rem;">Ingen historik tilgængelig</p>';
+  `).join('') : `<p style="color:var(--text-muted);font-size:0.8rem;">${_t('timeline.no_history')}</p>`;
 
   const genQs = app.generated_questions || [];
   let dimensionerHtml = '';
@@ -711,15 +719,15 @@ function openDetail(app) {
         <div class="dim-cat">${esc(q.category || '')}</div>
         <div class="dim-question">${esc(q.question || '')}</div>
         <textarea class="dim-answer" data-qid="${esc(q.id || '')}"
-          placeholder="Svar fra interview…"
+          placeholder="${_t('dim.answer_placeholder')}"
         >${esc(q.answer || '')}</textarea>
       </div>
     `).join('');
     dimensionerHtml = `
       <div class="dimensions-section">
-        <h2 class="dimensions-heading">Opkaldsresultat — AI-parathed dimensioner</h2>
+        <h2 class="dimensions-heading">${_t('dim.heading')}</h2>
         ${qItemsHtml}
-        <button class="btn btn-ghost" style="margin-top:0.5rem;" onclick='saveAnswers("${app.id}")'>Gem svar</button>
+        <button class="btn btn-ghost" style="margin-top:0.5rem;" onclick='saveAnswers("${app.id}")'>${_t('dim.save_answers')}</button>
       </div>
     `;
   }
@@ -727,53 +735,53 @@ function openDetail(app) {
   document.getElementById('modalBody').innerHTML = `
     <div class="detail-grid">
       <div class="detail-field">
-        <label>Virksomhed</label>
+        <label>${_t('detail.company')}</label>
         <div class="value">${esc(app.firmanavn)}</div>
       </div>
       <div class="detail-field">
-        <label>Status</label>
+        <label>${_t('detail.status')}</label>
         <div class="value">${statusChip(app.status)}</div>
       </div>
       <div class="detail-field">
-        <label>Kontaktperson</label>
+        <label>${_t('detail.contact')}</label>
         <div class="value">${esc(app.kontaktperson)}</div>
       </div>
       <div class="detail-field">
-        <label>E-mail</label>
+        <label>${_t('detail.email')}</label>
         <div class="value"><a class="td-link" href="mailto:${esc(app.email)}">${esc(app.email)}</a></div>
       </div>
       <div class="detail-field">
-        <label>Telefon</label>
+        <label>${_t('detail.phone')}</label>
         <div class="value">${esc(app.telefon || '—')}</div>
       </div>
       <div class="detail-field">
-        <label>Website</label>
+        <label>${_t('detail.website')}</label>
         <div class="value"><a class="td-link" href="${esc(app.website)}" target="_blank" rel="noopener">${esc(app.website)}</a></div>
       </div>
       <div class="detail-field">
-        <label>Oprettet</label>
+        <label>${_t('detail.created')}</label>
         <div class="value">${fmtDate(app.created_at)} ${fmtTime(app.created_at)}</div>
       </div>
       <div class="detail-field">
-        <label>Opdateret</label>
+        <label>${_t('detail.updated')}</label>
         <div class="value">${fmtDate(app.updated_at)} ${fmtTime(app.updated_at)}</div>
       </div>
       <div class="detail-field full">
-        <label>Om virksomheden</label>
+        <label>${_t('detail.about')}</label>
         <div class="value" style="white-space:pre-wrap;">${esc(app.virksomhedsinfo || '—')}</div>
       </div>
     </div>
     ${dimensionerHtml}
     <div id="reportQContainer">${_buildReportQSection(app)}</div>
     <div class="timeline">
-      <div class="timeline-title">Statushistorik</div>
+      <div class="timeline-title">${_t('timeline.title')}</div>
       ${timelineHtml}
     </div>
   `;
 
   document.getElementById('modalFooter').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Luk</button>
-    <button class="btn btn-primary" onclick='openStatus(${JSON.stringify(app)})'>Skift status</button>
+    <button class="btn btn-ghost" onclick="closeModal()">${_t('modal.close')}</button>
+    <button class="btn btn-primary" onclick='openStatus(${JSON.stringify(app)})'>${_t('modal.change_status')}</button>
   `;
 
   document.getElementById('modalBackdrop').classList.add('open');
@@ -813,17 +821,17 @@ async function saveAnswers(appId) {
     }
 
     if (data.auto_triggered) {
-      toast('Svar gemt — rapport-spørgsmål genereres automatisk…', 'success');
+      toast((window.i18n ? window.i18n.t('toast.answers_saved_generating') : 'Answers saved — report questions generating automatically…'), 'success');
       const rqApp = idx >= 0 ? allApplications[idx] : { ...data, report_questions: null };
       const container = document.getElementById('reportQContainer');
       if (container) container.innerHTML = _buildReportQSection(rqApp);
       _clearReportQPoll();
       _reportQPollTimer = setInterval(() => pollReportQuestions(appId), 8000);
     } else {
-      toast('Svar gemt.', 'success');
+      toast((window.i18n ? window.i18n.t('toast.answers_saved') : 'Answers saved.'), 'success');
     }
   } catch (err) {
-    toast('Fejl ved gem: ' + err.message, 'error');
+    toast((window.i18n ? window.i18n.t('toast.answers_error') : 'Error saving: ') + err.message, 'error');
   }
 }
 
@@ -853,9 +861,11 @@ async function pollReportQuestions(appId) {
     if (data.report_questions_status !== 'generating') {
       _clearReportQPoll();
       if (data.report_questions_status === 'done') {
-        toast(`${(data.report_questions || []).length} rapport-spørgsmål klar`, 'success');
+        const _t2 = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
+        toast((data.report_questions || []).length + _t2('toast.questions_ready'), 'success');
       } else if (data.report_questions_status === 'error') {
-        toast('Rapport-spørgsmål: generering fejlede — prøv igen', 'error');
+        const _t2 = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
+        toast(_t2('toast.questions_failed'), 'error');
       }
     }
   } catch (_) { /* polling continues silently */ }
@@ -870,7 +880,7 @@ async function triggerReportQuestions(appId) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || `HTTP ${res.status}`);
     }
-    toast('Rapport-spørgsmål genereres…', 'success');
+    toast((window.i18n ? window.i18n.t('toast.questions_generating') : 'Report questions generating…'), 'success');
 
     const idx = allApplications.findIndex(a => a.id === appId);
     if (idx >= 0) {
@@ -890,35 +900,36 @@ async function triggerReportQuestions(appId) {
 }
 
 function openStatus(app) {
+  const _t = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
   const nextStatuses = VALID_TRANSITIONS[app.status] || [];
 
-  document.getElementById('modalTitle').textContent = 'Skift status';
-  document.getElementById('modalSubtitle').textContent = `${app.firmanavn} — nuværende: ${STATUS_LABELS[app.status] || app.status}`;
+  document.getElementById('modalTitle').textContent = _t('modal.change_status');
+  document.getElementById('modalSubtitle').textContent = `${app.firmanavn} — ${statusLabel(app.status)}`;
 
   const optHtml = nextStatuses.length
     ? `<div class="status-select">
         ${nextStatuses.map(s => `
-          <button class="status-option" data-status="${s}" onclick="selectStatus(this)">${STATUS_LABELS[s] || s}</button>
+          <button class="status-option" data-status="${s}" onclick="selectStatus(this)">${statusLabel(s)}</button>
         `).join('')}
       </div>`
     : `<p style="color:var(--text-muted);font-size:0.875rem;padding:0.75rem 0;">
-        Ingen tilladte overgange fra <strong>${STATUS_LABELS[app.status]}</strong>. Denne status er terminal.
+        ${_t('modal.no_transitions', { status: statusLabel(app.status) })}
       </p>`;
 
   document.getElementById('modalBody').innerHTML = `
     <p style="font-size:0.875rem;margin-bottom:1rem;color:var(--text-muted);">
-      Vælg den ønskede næste status for denne ansøgning:
+      ${_t('modal.select_status')}
     </p>
     ${optHtml}
     <div style="margin-top:1.25rem;">
-      <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Note (valgfri)</label>
-      <textarea id="statusNote" placeholder="Intern note til statusskiftet…"></textarea>
+      <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">${_t('modal.note_label')}</label>
+      <textarea id="statusNote" placeholder="${_t('modal.note_placeholder')}"></textarea>
     </div>
   `;
 
   document.getElementById('modalFooter').innerHTML = `
-    <button class="btn btn-ghost" onclick="closeModal()">Annuller</button>
-    <button class="btn btn-primary" id="confirmStatusBtn" onclick='confirmStatus("${app.id}")' disabled>Bekræft statusskift</button>
+    <button class="btn btn-ghost" onclick="closeModal()">${_t('modal.cancel')}</button>
+    <button class="btn btn-primary" id="confirmStatusBtn" onclick='confirmStatus("${app.id}")' disabled>${_t('modal.confirm_status')}</button>
   `;
 
   document.getElementById('modalBackdrop').classList.add('open');
@@ -939,7 +950,7 @@ async function confirmStatus(appId) {
   const btn = document.getElementById('confirmStatusBtn');
 
   btn.disabled = true;
-  btn.textContent = 'Gemmer…';
+  btn.textContent = (window.i18n ? window.i18n.t('modal.saving') : 'Saving…');
 
   try {
     const res = await fetch(`/api/v1/admin/applications/${appId}/status`, {
@@ -957,7 +968,7 @@ async function confirmStatus(appId) {
     const idx = allApplications.findIndex(a => a.id === appId);
     if (idx >= 0) allApplications[idx] = updated;
 
-    toast('Status opdateret til ' + (STATUS_LABELS[newStatus] || newStatus), 'success');
+    toast((window.i18n ? window.i18n.t('toast.status_updated') : 'Status updated to ') + statusLabel(newStatus), 'success');
     closeModal();
     updateKPIs();
     updateSidebarCounts();
@@ -965,7 +976,7 @@ async function confirmStatus(appId) {
   } catch (err) {
     toast('Fejl: ' + err.message, 'error');
     btn.disabled = false;
-    btn.textContent = 'Bekræft statusskift';
+    btn.textContent = (window.i18n ? window.i18n.t('modal.confirm_status') : 'Confirm status change');
   }
 }
 
@@ -1011,9 +1022,10 @@ function toast(msg, type = '') {
 
 function exportCSV() {
   const data = getFilteredSorted();
-  if (!data.length) { toast('Ingen data at eksportere', 'error'); return; }
+  const _tEx = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
+  if (!data.length) { toast(_tEx('toast.no_data'), 'error'); return; }
 
-  const headers = ['Firma','Kontakt','E-mail','Telefon','Website','Status','Ansøgningsdato'];
+  const headers = [_tEx('th.company'),_tEx('th.contact'),_tEx('th.email'),_tEx('th.phone'),_tEx('th.website'),_tEx('th.status'),_tEx('th.applied_date')];
   const rows = data.map(a => {
     const appDate = a.submitted_at || a.created_at;
     return [
@@ -1030,7 +1042,7 @@ function exportCSV() {
   a.href = url; a.download = `aiscore-leads-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('CSV eksporteret', 'success');
+  toast((window.i18n ? window.i18n.t('toast.csv_exported') : 'CSV exported'), 'success');
 }
 
 // ─── Sidebar ──────────────────────────────────────
@@ -1061,8 +1073,27 @@ function toggleCollapse() {
 
 // ─── Init ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.i18n) window.i18n.applyTranslations();
   if (window.lucide) lucide.createIcons();
   loadData();
+});
+
+document.addEventListener('langchange', () => {
+  if (window.i18n) window.i18n.applyTranslations();
+  // Re-render dynamic content with new language
+  updateSidebarCounts();
+  renderTable();
+  // Update navTitle if a filter is active
+  const activeEl = document.querySelector('.sidebar-item.active');
+  if (activeEl) {
+    const labelKey = activeEl.dataset.label;
+    const navTitle = document.getElementById('navTitle');
+    if (navTitle && labelKey) {
+      navTitle.textContent = labelKey.startsWith('sidebar.')
+        ? window.i18n.t(labelKey)
+        : (activeFilter ? statusLabel(activeFilter) : window.i18n.t('table.leads'));
+    }
+  }
 });
 </script>
 </body>

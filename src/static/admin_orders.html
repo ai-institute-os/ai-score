@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AIScore Admin — Ordrer</title>
   <link rel="stylesheet" href="/static/shared.css" />
+  <script src="/static/i18n.js"></script>
   <style>
     body { min-height: 100vh; font-size: 14px; line-height: 1.5; }
 
@@ -28,10 +29,16 @@
   <span class="topnav-sep">/</span>
   <span class="topnav-title">Ordrer</span>
   <div class="topnav-right">
+    <!-- Language toggle -->
+    <div class="lang-toggle" role="group" aria-label="Language / Sprog">
+      <button class="lang-opt lang-active" data-lang="en" onclick="i18n.setLang('en')" aria-label="English">EN</button>
+      <span class="lang-sep">|</span>
+      <button class="lang-opt" data-lang="da" onclick="i18n.setLang('da')" aria-label="Dansk">DA</button>
+    </div>
     <span class="topnav-badge">Admin</span>
-    <button class="btn btn-ghost" onclick="loadData()" title="Genindlæs data" style="padding:0.4rem 0.65rem;">
+    <button class="btn btn-ghost" onclick="loadData()" data-i18n-title="orders.refresh" title="Refresh" style="padding:0.4rem 0.65rem;">
       <i data-lucide="refresh-cw" class="icon-sm"></i>
-      Opdater
+      <span data-i18n="orders.refresh">Refresh</span>
     </button>
   </div>
 </nav>
@@ -42,32 +49,32 @@
   <!-- Sidebar -->
   <aside class="admin-sidebar">
     <div class="admin-sidebar-body">
-      <div class="sidebar-label">Navigation</div>
+      <div class="sidebar-label" data-i18n="orders.navigation">Navigation</div>
       <div class="sidebar-section">
         <a class="sidebar-item" href="/admin">
           <i data-lucide="layout-list" class="icon-sm"></i>
-          Leads &amp; Pipeline
+          <span data-i18n="orders.leads_pipeline">Leads &amp; Pipeline</span>
         </a>
         <a class="sidebar-item active" href="/admin/orders">
           <i data-lucide="receipt" class="icon-sm"></i>
-          Betalte ordrer
+          <span data-i18n="orders.paid_orders">Paid orders</span>
         </a>
       </div>
     </div>
-    <div class="sidebar-footer">AIScore Admin</div>
+    <div class="sidebar-footer" data-i18n="orders.footer">AIScore Admin</div>
   </aside>
 
   <!-- Main -->
   <main class="admin-main">
     <div class="page-header">
       <div>
-        <h1>Betalte rapporter</h1>
-        <p>Seneste 20 betalte AIScore-analyser med status og booking</p>
+        <h1 data-i18n="orders.title">Paid reports</h1>
+        <p data-i18n="orders.subtitle">Latest 20 paid AIScore analyses with status and booking</p>
       </div>
       <div style="display:flex;gap:0.5rem;">
         <button class="btn btn-ghost" onclick="exportCSV()">
           <i data-lucide="download" class="icon-sm"></i>
-          Eksporter CSV
+          <span data-i18n="orders.export_csv">Export CSV</span>
         </button>
       </div>
     </div>
@@ -76,21 +83,21 @@
     <div class="kpi-grid kpi-grid-3">
       <div class="kpi-card" style="--kpi-color: var(--primary);">
         <div class="kpi-icon-bg"><i data-lucide="receipt" class="icon-lg" style="width:40px;height:40px;"></i></div>
-        <div class="kpi-label">Betalte rapporter</div>
+        <div class="kpi-label" data-i18n="orders.kpi_paid">Paid reports</div>
         <div class="kpi-value" id="kpi-total">—</div>
-        <div class="kpi-sub">Seneste 20 vises</div>
+        <div class="kpi-sub" data-i18n="orders.kpi_paid_sub">Latest 20 shown</div>
       </div>
       <div class="kpi-card" style="--kpi-color: var(--success);">
         <div class="kpi-icon-bg"><i data-lucide="calendar-check" class="icon-lg" style="width:40px;height:40px;"></i></div>
-        <div class="kpi-label">Møde booket</div>
+        <div class="kpi-label" data-i18n="orders.kpi_booked">Meeting booked</div>
         <div class="kpi-value" id="kpi-booked">—</div>
-        <div class="kpi-sub">Calendly booking aktiv</div>
+        <div class="kpi-sub" data-i18n="orders.kpi_booked_sub">Calendly booking active</div>
       </div>
       <div class="kpi-card" style="--kpi-color: var(--warning);">
         <div class="kpi-icon-bg"><i data-lucide="clock" class="icon-lg" style="width:40px;height:40px;"></i></div>
-        <div class="kpi-label">Afventer booking</div>
+        <div class="kpi-label" data-i18n="orders.kpi_waiting">Awaiting booking</div>
         <div class="kpi-value" id="kpi-waiting">—</div>
-        <div class="kpi-sub">Endnu ikke booket</div>
+        <div class="kpi-sub" data-i18n="orders.kpi_waiting_sub">Not yet booked</div>
       </div>
     </div>
 
@@ -102,13 +109,13 @@
       <table>
         <thead>
           <tr>
-            <th>Tidspunkt</th>
-            <th>Virksomhed</th>
-            <th>Score</th>
-            <th>Rapport</th>
-            <th>Calendly</th>
-            <th>Email</th>
-            <th>Status</th>
+            <th data-i18n="orders.th_time">Time</th>
+            <th data-i18n="orders.th_company">Company</th>
+            <th data-i18n="orders.th_score">Score</th>
+            <th data-i18n="orders.th_report">Report</th>
+            <th data-i18n="orders.th_calendly">Calendly</th>
+            <th data-i18n="orders.th_email">Email</th>
+            <th data-i18n="orders.th_status">Status</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -133,16 +140,9 @@
 let orders = [];
 
 // ─── Status labels ────────────────────────────────
-const STATUS_LABELS = {
-  PAID: 'Betalt',
-  IN_PRODUCTION: 'I produktion',
-  QC_REVIEW: 'QC review',
-  QC_PASSED: 'QC godkendt',
-  QC_FAILED: 'QC fejlet',
-  ESCALATED: 'Eskaleret',
-  RETRY: 'Genprøver',
-  READY_FOR_REVIEW_CALL: 'Klar til review-kald',
-};
+function statusLabel(s) {
+  return (window.i18n ? window.i18n.t('status.' + s) : null) || s;
+}
 
 // ─── Load data ────────────────────────────────────
 async function loadData() {
@@ -156,7 +156,7 @@ async function loadData() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     orders = await res.json();
   } catch (err) {
-    toast('Fejl ved indlæsning: ' + err.message, 'error');
+    toast((window.i18n ? window.i18n.t('orders.loading_error') : 'Error loading: ') + err.message, 'error');
     orders = [];
   }
 
@@ -175,8 +175,8 @@ function updateKPIs() {
 
 // ─── Render table ─────────────────────────────────
 function renderTable() {
-  document.getElementById('tableCount').innerHTML =
-    `Viser <strong>${orders.length}</strong> betalte rapporter`;
+  const _t = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
+  document.getElementById('tableCount').innerHTML = _t('orders.showing', { n: orders.length });
 
   const tbody = document.getElementById('tableBody');
 
@@ -184,7 +184,7 @@ function renderTable() {
     tbody.innerHTML = `<tr><td colspan="7">
       <div class="empty-state">
         <div class="icon"><i data-lucide="receipt" style="width:48px;height:48px;opacity:0.3;"></i></div>
-        <p>Ingen betalte rapporter fundet.</p>
+        <p>${_t('orders.no_reports')}</p>
       </div>
     </td></tr>`;
     if (window.lucide) lucide.createIcons();
@@ -203,20 +203,20 @@ function renderTable() {
       <td>${scoreCell(o.score)}</td>
       <td>
         <a class="td-link" href="${esc(o.rapport_url)}" target="_blank" rel="noopener">
-          Åbn rapport ↗
+          ${_t('orders.open_report')}
         </a>
       </td>
       <td>
         ${o.calendly_booked
-          ? '<span class="badge badge-booked">Booket</span>'
-          : '<span class="badge badge-waiting">Afventer</span>'}
+          ? `<span class="badge badge-booked">${_t('orders.booked')}</span>`
+          : `<span class="badge badge-waiting">${_t('orders.waiting')}</span>`}
       </td>
       <td>
         <a class="td-link" href="mailto:${esc(o.email)}">${esc(o.email)}</a>
       </td>
       <td>
         <span class="chip chip-${(o.status || '').toLowerCase()}">
-          ${esc(STATUS_LABELS[o.status] || o.status)}
+          ${esc(statusLabel(o.status))}
         </span>
       </td>
     </tr>
@@ -241,17 +241,18 @@ function scoreCell(score) {
 
 // ─── CSV export ───────────────────────────────────
 function exportCSV() {
-  if (!orders.length) { toast('Ingen data at eksportere', 'error'); return; }
+  const _tEx = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
+  if (!orders.length) { toast(_tEx('toast.no_data'), 'error'); return; }
 
-  const headers = ['Tidspunkt', 'Virksomhed', 'Email', 'Score', 'Rapport URL', 'Calendly', 'Status'];
+  const headers = [_tEx('orders.th_time'), _tEx('orders.th_company'), _tEx('orders.th_email'), _tEx('orders.th_score'), 'Rapport URL', _tEx('orders.th_calendly'), _tEx('orders.th_status')];
   const rows = orders.map(o => [
     fmtDate(o.updated_at) + ' ' + fmtTime(o.updated_at),
     o.firmanavn,
     o.email,
     o.score !== null && o.score !== undefined ? Math.round(o.score) : '',
     window.location.origin + o.rapport_url,
-    o.calendly_booked ? 'Booket' : 'Afventer',
-    STATUS_LABELS[o.status] || o.status,
+    o.calendly_booked ? _tEx('orders.booked') : _tEx('orders.waiting'),
+    statusLabel(o.status),
   ].map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(','));
 
   const csv = [headers.join(','), ...rows].join('\n');
@@ -262,7 +263,7 @@ function exportCSV() {
   a.download = `aiscore-ordrer-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('CSV eksporteret', 'success');
+  toast((window.i18n ? window.i18n.t('toast.csv_exported') : 'CSV exported'), 'success');
 }
 
 // ─── Helpers ──────────────────────────────────────
@@ -294,8 +295,15 @@ function toast(msg, type = '') {
 
 // ─── Init ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.i18n) window.i18n.applyTranslations();
   if (window.lucide) lucide.createIcons();
   loadData();
+});
+
+document.addEventListener('langchange', () => {
+  if (window.i18n) window.i18n.applyTranslations();
+  renderTable();
+  updateKPIs();
 });
 </script>
 </body>

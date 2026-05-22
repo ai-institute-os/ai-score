@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AIScore — Applications</title>
   <link rel="stylesheet" href="/static/shared.css" />
+  <script src="/static/i18n.js"></script>
   <style>
     body { min-height: 100vh; font-size: 14px; line-height: 1.5; }
 
@@ -54,6 +55,11 @@
   <span class="topnav-sep">/</span>
   <span class="topnav-title">Applications</span>
   <div class="topnav-right">
+    <div class="lang-toggle" role="group" aria-label="Language / Sprog">
+      <button class="lang-opt lang-active" data-lang="en" onclick="i18n.setLang('en')" aria-label="English">EN</button>
+      <span class="lang-sep">|</span>
+      <button class="lang-opt" data-lang="da" onclick="i18n.setLang('da')" aria-label="Dansk">DA</button>
+    </div>
     <a class="topnav-link" href="/admin">Full Dashboard</a>
     <button class="btn btn-ghost" onclick="loadData()" style="padding:0.4rem 0.65rem;" title="Refresh">
       <i data-lucide="refresh-cw" class="icon-sm"></i>
@@ -268,8 +274,13 @@ function toast(msg, type = '') {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.i18n) window.i18n.applyTranslations();
   if (window.lucide) lucide.createIcons();
   loadData();
+});
+
+document.addEventListener('langchange', () => {
+  if (window.i18n) window.i18n.applyTranslations();
 });
 </script>
 </body>

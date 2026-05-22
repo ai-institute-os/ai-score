@@ -142,6 +142,41 @@ h1, h2, h3, h4, h5 {
 }
 .topnav-link:hover { background: var(--bg); color: var(--text); }
 
+/* ── Language toggle ────────────────────────────── */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--card);
+}
+.lang-opt {
+  padding: 0.22rem 0.6rem;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  letter-spacing: 0.04em;
+}
+.lang-opt:hover { color: var(--text); }
+.lang-opt.lang-active {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 20px;
+}
+.lang-sep {
+  font-size: 0.72rem;
+  color: var(--border);
+  padding: 0 0.05rem;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ── Buttons ────────────────────────────────────── */
 .btn {
   display: inline-flex;
