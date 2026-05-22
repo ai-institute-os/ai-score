@@ -702,7 +702,7 @@
   }
 
   .kpi-card.kpi-highlight .kpi-num {
-    color: var(--white);
+    color: var(--accent);
   }
 
   .kpi-card.kpi-highlight .kpi-sub,
@@ -835,7 +835,7 @@
 
   .prompt-cat-desc {
     font-size: 8.5pt;
-    color: var(--text-light);
+    color: var(--text-mid);
     line-height: 1.5;
   }
 
@@ -1985,36 +1985,41 @@
     </div>
   </div>
 
-  <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text-light); margin-bottom:10px;">Promptkategorier</div>
+  <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:10px;">Promptkategorier</div>
   <div class="prompt-cat-list no-break">
     <div class="prompt-cat-card">
       <div class="prompt-cat-num">01</div>
       <div>
         <div class="prompt-cat-title">Generel kategori</div>
-        <div class="prompt-cat-desc">3 prompts pr. system &nbsp;·&nbsp; {{PROMPT_CAT_1_EXAMPLE}}</div>
+        <div class="prompt-cat-desc"><div>3 prompts pr. system</div><div>{{PROMPT_CAT_1_EXAMPLE}}</div></div>
       </div>
     </div>
     <div class="prompt-cat-card">
       <div class="prompt-cat-num">02</div>
       <div>
         <div class="prompt-cat-title">Problembaseret</div>
-        <div class="prompt-cat-desc">3 prompts pr. system &nbsp;·&nbsp; {{PROMPT_CAT_2_EXAMPLE}}</div>
+        <div class="prompt-cat-desc"><div>3 prompts pr. system</div><div>{{PROMPT_CAT_2_EXAMPLE}}</div></div>
       </div>
     </div>
     <div class="prompt-cat-card">
       <div class="prompt-cat-num">03</div>
       <div>
         <div class="prompt-cat-title">Sammenligning</div>
-        <div class="prompt-cat-desc">2 prompts pr. system &nbsp;·&nbsp; {{PROMPT_CAT_3_EXAMPLE}}</div>
+        <div class="prompt-cat-desc"><div>2 prompts pr. system</div><div>{{PROMPT_CAT_3_EXAMPLE}}</div></div>
       </div>
     </div>
     <div class="prompt-cat-card">
       <div class="prompt-cat-num">04</div>
       <div>
         <div class="prompt-cat-title">Professionel kvalitet</div>
-        <div class="prompt-cat-desc">1 prompt pr. system &nbsp;·&nbsp; {{PROMPT_CAT_4_EXAMPLE}}</div>
+        <div class="prompt-cat-desc"><div>1 prompt pr. system</div><div>{{PROMPT_CAT_4_EXAMPLE}}</div></div>
       </div>
     </div>
+  </div>
+
+  <div class="callout callout-navy no-break" style="margin-top:auto; margin-bottom:14px;">
+    <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:7px;">Analysegrundlag</div>
+    Analysen er gennemført med fire LLM'er for en bred og repræsentativ kortlægning. De fire systemer repræsenterer de dominerende AI-platforme, som forbrugere anvender til produktrådgivning i 2026.
   </div>
 
   <div class="pg-footer">
