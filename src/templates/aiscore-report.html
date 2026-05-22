@@ -54,14 +54,14 @@
 
     /* Content pages get inset padding; full-bleed pages escape it with negative margins */
     .page {
-      padding: 16mm 16mm 20mm 16mm;
+      padding: 16mm 16mm 12mm 16mm;
       display: flex;
       flex-direction: column;
       min-height: 297mm;
     }
 
     .cover, .section-divider, .back-cover {
-      margin: -16mm -16mm -20mm -16mm;
+      margin: -16mm -16mm -12mm -16mm;
       min-height: 297mm;
     }
   }
@@ -74,7 +74,7 @@
       background: var(--white);
       margin: 0 auto 32px;
       box-shadow: 0 4px 32px rgba(0,0,0,.22);
-      padding: 16mm 16mm 20mm;
+      padding: 16mm 16mm 12mm;
       position: relative;
       display: flex;
       flex-direction: column;
@@ -396,8 +396,8 @@
   }
 
   .divider-subsection {
-    font-size: 9.5pt;
-    color: rgba(255,255,255,.4);
+    font-size: 11pt;
+    color: rgba(255,255,255,.75);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -416,15 +416,26 @@
     grid-column: 1;
     position: relative;
     z-index: 1;
-    font-size: 10pt;
-    font-weight: 700;
-    color: rgba(255,255,255,.9);
     border-top: none;
     padding-top: 12px;
     padding-bottom: 14mm;
     display: flex;
     justify-content: space-between;
     padding-right: 16mm;
+  }
+
+  .divider-footer-brand {
+    font-size: 12pt;
+    font-weight: 800;
+    color: rgba(255,255,255,.95);
+    letter-spacing: -.01em;
+  }
+
+  .divider-footer-sub {
+    font-size: 8pt;
+    font-weight: 500;
+    color: rgba(255,255,255,.45);
+    margin-left: 4px;
   }
 
   .divider-section-num {
@@ -572,10 +583,9 @@
   }
 
   .sec-intro {
-    font-size: 10pt;
+    font-size: 11pt;
     color: var(--text-mid);
-    max-width: 500px;
-    line-height: 1.7;
+    line-height: 1.65;
     margin-bottom: 18px;
   }
 
@@ -1814,7 +1824,7 @@
   </div>
 
   <div class="divider-footer">
-    <span>AIScore™ by AI Institute ApS</span>
+    <span><span class="divider-footer-brand">AIScore™</span><span class="divider-footer-sub">by AI Institute ApS</span></span>
   </div>
 
   <div class="divider-right">
@@ -2022,7 +2032,7 @@
   </div>
 
   <div class="divider-footer">
-    <span>AIScore™ by AI Institute ApS</span>
+    <span><span class="divider-footer-brand">AIScore™</span><span class="divider-footer-sub">by AI Institute ApS</span></span>
   </div>
 
   <div class="divider-right">
@@ -2218,7 +2228,7 @@
   </div>
 
   <div class="divider-footer">
-    <span>AIScore™ by AI Institute ApS</span>
+    <span><span class="divider-footer-brand">AIScore™</span><span class="divider-footer-sub">by AI Institute ApS</span></span>
   </div>
 
   <div class="divider-right">
@@ -2501,7 +2511,7 @@
   </div>
 
   <div class="divider-footer">
-    <span>AIScore™ by AI Institute ApS</span>
+    <span><span class="divider-footer-brand">AIScore™</span><span class="divider-footer-sub">by AI Institute ApS</span></span>
   </div>
 
   <div class="divider-right">

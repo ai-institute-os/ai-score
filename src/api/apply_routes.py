@@ -2386,8 +2386,8 @@ def _render_report_html(app: "CustomerApplication") -> str:
         # Section 00
         "{{WHY_ANALYSIS_TEXT}}": (
             f"Når en potentiel kunde spørger ChatGPT, Gemini, Perplexity eller Claude efter "
-            f"'bedste booking-software til neglesalon', sker der noget afgørende: AI-systemet vælger.<br><br>"
-            f"Det er ikke en søgerangering — det er en anbefaling.<br><br>"
+            f"'bedste booking-software til neglesalon', sker der noget afgørende: AI-systemet vælger.<br>"
+            f"Det er ikke en søgerangering — det er en anbefaling.<br>"
             f"Denne analyse kortlægger præcist, hvordan {name} fremstår i de fire primære AI-systemer, "
             f"og hvad der skal til for at flytte positionen fra 'nævnt' til 'valgt som primær'."
         ),
