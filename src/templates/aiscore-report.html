@@ -589,6 +589,11 @@
     margin-bottom: 18px;
   }
 
+  .sec-intro-line {
+    display: block;
+    margin-bottom: 10px;
+  }
+
   hr.rule {
     border: none;
     border-top: 1px solid var(--border);
@@ -639,18 +644,23 @@
     margin-top: 4px;
   }
 
-  .exec-meta-grid {
+  .exec-meta-list {
     flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
   }
 
-  .exec-meta-card {
+  .exec-meta-item {
+    padding: 4px 0;
+  }
+
+  .exec-strategic-block {
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 12px 14px;
+    margin-bottom: 18px;
   }
 
   .exec-meta-label {
@@ -658,7 +668,7 @@
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--text-light);
+    color: var(--accent);
     margin-bottom: 4px;
   }
 
@@ -1874,24 +1884,24 @@
       <div class="exec-score-denom">/100</div>
       <div class="exec-score-badge">AIScore™</div>
     </div>
-    <div class="exec-meta-grid">
-      <div class="exec-meta-card">
+    <div class="exec-meta-list">
+      <div class="exec-meta-item">
         <div class="exec-meta-label">Stærkeste dimension</div>
         <div class="exec-meta-value">{{STRONGEST_DIMENSION}}</div>
       </div>
-      <div class="exec-meta-card">
+      <div class="exec-meta-item">
         <div class="exec-meta-label">Vigtigste begrænsning</div>
         <div class="exec-meta-value">{{KEY_LIMITATION}}</div>
       </div>
-      <div class="exec-meta-card">
+      <div class="exec-meta-item">
         <div class="exec-meta-label">Analysegrundlag</div>
         <div class="exec-meta-value">{{QUERIES_RUN}} strukturerede testprompts på tværs af ChatGPT, Claude, Perplexity og Gemini</div>
       </div>
-      <div class="exec-meta-card">
-        <div class="exec-meta-label">Strategisk spænding</div>
-        <div class="exec-meta-value">{{STRATEGIC_TENSION}}</div>
-      </div>
     </div>
+  </div>
+  <div class="exec-strategic-block no-break">
+    <div class="exec-meta-label">Strategisk spænding</div>
+    <div class="exec-meta-value">{{STRATEGIC_TENSION}}</div>
   </div>
 
   <div class="kpi-row no-break">
