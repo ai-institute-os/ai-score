@@ -120,7 +120,7 @@
   }
 
   .cover-brand {
-    font-size: 10pt;
+    font-size: 11pt;
     font-weight: 800;
     letter-spacing: -.01em;
     color: rgba(255,255,255,.9);
@@ -129,10 +129,10 @@
 
   .cover-brand span {
     display: block;
-    font-size: 7.5pt;
+    font-size: 8pt;
     font-weight: 400;
     letter-spacing: .02em;
-    color: rgba(255,255,255,.4);
+    color: rgba(255,255,255,.6);
     margin-top: 2px;
   }
 
@@ -158,7 +158,7 @@
   }
 
   .cover-label {
-    font-size: 8pt;
+    font-size: 9pt;
     font-weight: 700;
     letter-spacing: .18em;
     text-transform: uppercase;
@@ -179,7 +179,7 @@
   .cover-sector {
     font-size: 13pt;
     font-weight: 400;
-    color: rgba(255,255,255,.55);
+    color: rgba(255,255,255,.75);
     margin-bottom: 20px;
     line-height: 1.4;
   }
@@ -216,19 +216,18 @@
   }
 
   .cover-score-label {
-    font-size: 8pt;
+    font-size: 9.5pt;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--white);
     padding-bottom: 8px;
     display: block;
-    margin-top: 4px;
   }
 
   .cover-score-sub {
-    font-size: 8.5pt;
-    color: rgba(255,255,255,.4);
+    font-size: 9pt;
+    color: rgba(255,255,255,.65);
     max-width: 340px;
     line-height: 1.5;
     margin-bottom: 20px;
@@ -242,11 +241,11 @@
   }
 
   .cover-systems-label {
-    font-size: 8pt;
+    font-size: 8.5pt;
     font-weight: 600;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.35);
+    color: rgba(255,255,255,.6);
     white-space: nowrap;
   }
 
@@ -261,9 +260,9 @@
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    font-size: 9pt;
+    font-size: 10pt;
     font-weight: 500;
-    color: rgba(255,255,255,.75);
+    color: rgba(255,255,255,.9);
   }
 
   .sys-avatar {
@@ -285,21 +284,21 @@
     justify-content: space-between;
     align-items: center;
     background: rgba(0,0,0,0.3);
-    padding: 18px 16mm;
+    padding: 26px 16mm;
     margin-top: auto;
     margin-left: -16mm;
     margin-right: -16mm;
   }
 
   .cover-footer-left {
-    font-size: 8pt;
-    color: rgba(255,255,255,.4);
+    font-size: 9pt;
+    color: rgba(255,255,255,.65);
     line-height: 1.5;
   }
 
   .cover-footer-right {
-    font-size: 8pt;
-    color: rgba(255,255,255,.4);
+    font-size: 9pt;
+    color: rgba(255,255,255,.65);
     text-align: right;
   }
 
@@ -313,7 +312,7 @@
     grid-template-columns: 1fr 180px;
     grid-template-rows: auto 1fr auto;
     min-height: 297mm;
-    padding: 14mm 0 14mm 16mm;
+    padding: 0 0 0 16mm;
     position: relative;
     overflow: hidden;
   }
@@ -351,9 +350,10 @@
     font-weight: 700;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: rgba(255,255,255,.25);
+    color: transparent;
     position: relative;
     z-index: 1;
+    padding-top: 14mm;
   }
 
   .divider-body {
@@ -378,9 +378,9 @@
   .divider-title {
     font-size: 32pt;
     font-weight: 800;
-    line-height: 1.1;
+    line-height: 1.35;
     color: var(--white);
-    margin-bottom: 20px;
+    margin-bottom: 28px;
     letter-spacing: -.02em;
   }
 
@@ -420,6 +420,7 @@
     color: rgba(255,255,255,.2);
     border-top: none;
     padding-top: 12px;
+    padding-bottom: 14mm;
     display: flex;
     justify-content: space-between;
     padding-right: 16mm;
@@ -447,7 +448,7 @@
     align-items: center;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--accent);
-    margin-bottom: 22px;
+    margin-bottom: 14px;
   }
 
   .pg-header-brand {
@@ -1642,11 +1643,11 @@
     <div class="cover-sector">{{COMPANY_SECTOR}}</div>
     <div class="cover-divider"></div>
 
+    <span class="cover-score-label">AIScore™</span>
     <div class="cover-score-block">
       <div class="cover-score-num">{{OVERALL_SCORE}}</div>
       <div class="cover-score-denom">/100</div>
     </div>
-    <div><span class="cover-score-label">AIScore™</span></div>
     <div class="cover-score-sub">
       Samlet AI-synlighedsscore baseret på {{QUERIES_RUN}} strukturerede
     </div>
@@ -1812,11 +1813,9 @@
 
   <div class="divider-footer">
     <span>AIScore™ by AI Institute ApS</span>
-    <span>Fortroligt — 3</span>
   </div>
 
   <div class="divider-right">
-    <div class="divider-block" style="height:80px;background:#152540;"></div>
     <div class="divider-block" style="flex:1;background:#0f2235;"></div>
     <div class="divider-section-num">01</div>
   </div>
@@ -2022,11 +2021,9 @@
 
   <div class="divider-footer">
     <span>AIScore™ by AI Institute ApS</span>
-    <span>Fortroligt — 7</span>
   </div>
 
   <div class="divider-right">
-    <div class="divider-block" style="height:120px;background:#152540;"></div>
     <div class="divider-block" style="flex:1;background:#0f2235;"></div>
     <div class="divider-section-num">02</div>
   </div>
@@ -2220,11 +2217,9 @@
 
   <div class="divider-footer">
     <span>AIScore™ by AI Institute ApS</span>
-    <span>Fortroligt — 11</span>
   </div>
 
   <div class="divider-right">
-    <div class="divider-block" style="height:90px;background:#152540;"></div>
     <div class="divider-block" style="flex:1;background:#0f2235;"></div>
     <div class="divider-section-num">03</div>
   </div>
@@ -2505,11 +2500,9 @@
 
   <div class="divider-footer">
     <span>AIScore™ by AI Institute ApS</span>
-    <span>Fortroligt — 14</span>
   </div>
 
   <div class="divider-right">
-    <div class="divider-block" style="height:50px;background:#152540;"></div>
     <div class="divider-block" style="flex:1;background:#0f2235;"></div>
     <div class="divider-section-num">04</div>
   </div>
