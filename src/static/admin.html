@@ -780,7 +780,7 @@ function openDetail(app) {
   if (window.lucide) lucide.createIcons();
 
   if ((app.report_questions_status || 'not_started') === 'generating') {
-    _reportQPollTimer = setInterval(() => pollReportQuestions(app.id), 4000);
+    _reportQPollTimer = setInterval(() => pollReportQuestions(app.id), 8000);
   }
 }
 
@@ -818,7 +818,7 @@ async function saveAnswers(appId) {
       const container = document.getElementById('reportQContainer');
       if (container) container.innerHTML = _buildReportQSection(rqApp);
       _clearReportQPoll();
-      _reportQPollTimer = setInterval(() => pollReportQuestions(appId), 4000);
+      _reportQPollTimer = setInterval(() => pollReportQuestions(appId), 8000);
     } else {
       toast('Svar gemt.', 'success');
     }
@@ -828,6 +828,7 @@ async function saveAnswers(appId) {
 }
 
 async function pollReportQuestions(appId) {
+  if (document.visibilityState === 'hidden') return;
   try {
     const res = await fetch(`/api/v1/admin/applications/${appId}/report-questions`);
     if (!res.ok) return;
@@ -882,7 +883,7 @@ async function triggerReportQuestions(appId) {
       container.innerHTML = _buildReportQSection({ id: appId, report_questions_status: 'generating', report_questions: null });
     }
     _clearReportQPoll();
-    _reportQPollTimer = setInterval(() => pollReportQuestions(appId), 4000);
+    _reportQPollTimer = setInterval(() => pollReportQuestions(appId), 8000);
   } catch (err) {
     toast('Fejl: ' + err.message, 'error');
   }

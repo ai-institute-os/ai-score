@@ -980,6 +980,16 @@ function renderStageContent(app) {
 
   if (VERIFICATION_STAGES.has(status)) {
     sc.innerHTML = `
+      <div class="review-card" id="agentResearchResultCard">
+        <div class="card-header" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:0.4rem;">
+            <i data-lucide="search" class="icon-xs"></i>
+            Agent Research
+          </span>
+          <span id="agentResearchResultBadge"></span>
+        </div>
+        <div id="agentResearchResultContent"></div>
+      </div>
       <div class="review-card" id="agentResearchCard">
         <div class="card-header" style="justify-content:space-between;">
           <span style="display:flex;align-items:center;gap:0.4rem;">
@@ -990,6 +1000,7 @@ function renderStageContent(app) {
         </div>
         <div id="agentResearchContent"></div>
       </div>`;
+    renderAgentResearch(app);
     renderVerification(app);
 
   } else if (INTERVIEW_STAGES.has(status)) {
@@ -1719,6 +1730,114 @@ function verificationFieldIcon(status) {
   return `<i data-lucide="minus-circle" style="width:16px;height:16px;color:#94a3b8;"></i>`;
 }
 
+function renderAgentResearch(app) {
+  const content = document.getElementById('agentResearchResultContent');
+  const badge   = document.getElementById('agentResearchResultBadge');
+  if (!content) return;
+
+  const rs = (app.agent_research_status || 'PENDING').toUpperCase();
+  const statusMap = {
+    PENDING:     { label: 'Pending',      cls: 'research-status-pending',     spinner: false },
+    IN_PROGRESS: { label: 'Researching…', cls: 'research-status-in_progress', spinner: true  },
+    COMPLETED:   { label: 'Completed',    cls: 'research-status-completed',   spinner: false },
+    FAILED:      { label: 'Failed',       cls: 'research-status-failed',      spinner: false },
+  };
+  const si = statusMap[rs] || statusMap.PENDING;
+  badge.innerHTML = `<span class="research-status-badge ${si.cls}">${si.spinner ? '<span class="research-spinner"></span>' : ''}${esc(si.label)}</span>`;
+
+  if (rs === 'COMPLETED') {
+    const fit = (app.agent_fit_recommendation || '').toUpperCase();
+    const fitLabels = {
+      RECOMMEND_APPROVE:       { label: '✓ Recommend Approve',          bg: '#f0fdf4', color: '#15803d' },
+      NEEDS_MORE_INFORMATION:  { label: '⚠ Needs More Information',     bg: '#fefce8', color: '#a16207' },
+      RECOMMEND_REJECT:        { label: '✗ Recommend Reject',           bg: '#fef2f2', color: '#dc2626' },
+    };
+    const fitStyle = fitLabels[fit] || { label: fit || '—', bg: '#f1f5f9', color: '#64748b' };
+    const fitChip = fit
+      ? `<span style="background:${fitStyle.bg};color:${fitStyle.color};font-size:0.78rem;font-weight:700;padding:0.25rem 0.8rem;border-radius:20px;letter-spacing:0.03em;">${fitStyle.label}</span>`
+      : '';
+
+    function researchRow(label, value, full) {
+      if (!value) return '';
+      const cellStyle = full
+        ? 'padding:0.7rem 1.25rem;border-bottom:1px solid var(--bg);'
+        : 'padding:0.7rem 1.25rem;border-bottom:1px solid var(--bg);';
+      return `<div style="${cellStyle}">
+        <div class="field-label">${esc(label)}</div>
+        <div class="field-value" style="margin-top:0.25rem;font-size:0.875rem;line-height:1.55;">${esc(value)}</div>
+      </div>`;
+    }
+
+    const questions = Array.isArray(app.agent_interview_questions) ? app.agent_interview_questions : [];
+    const directions = Array.isArray(app.agent_prompt_directions) ? app.agent_prompt_directions : [];
+
+    const iqHtml = questions.length
+      ? `<div style="padding:0.7rem 1.25rem;border-bottom:1px solid var(--bg);">
+          <div class="field-label">Interview Questions</div>
+          <div style="margin-top:0.35rem;">${buildCollapsibleList(questions, true)}</div>
+        </div>`
+      : '';
+
+    const pdHtml = directions.length
+      ? `<div style="padding:0.7rem 1.25rem;border-bottom:1px solid var(--bg);">
+          <div class="field-label">Suggested AIScore Prompt Directions</div>
+          <div style="margin-top:0.35rem;">${buildCollapsibleList(directions, false)}</div>
+        </div>`
+      : '';
+
+    content.innerHTML = `
+      <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--bg);display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+        ${fitChip}
+        ${app.agent_researched_at ? `<span style="font-size:0.75rem;color:var(--text-muted);">${timeAgo(app.agent_researched_at)}</span>` : ''}
+      </div>
+      ${app.agent_fit_reason ? `<div style="padding:0.7rem 1.25rem;border-bottom:1px solid var(--bg);background:${fitStyle.bg};"><div class="field-value" style="color:${fitStyle.color};font-size:0.875rem;line-height:1.55;">${esc(app.agent_fit_reason)}</div></div>` : ''}
+      ${app.agent_missing_information ? `<div style="padding:0.6rem 1.25rem;border-bottom:1px solid var(--bg);background:#fefce8;"><div class="field-label" style="color:#a16207;">Missing Information</div><div class="field-value" style="margin-top:0.2rem;font-size:0.85rem;color:#854d0e;">${esc(app.agent_missing_information)}</div></div>` : ''}
+      ${researchRow('Business Summary', app.agent_business_summary || app.agent_website_summary)}
+      ${researchRow('Target Audience', app.agent_target_audience)}
+      ${researchRow('Products & Services', app.agent_products_services)}
+      ${researchRow('Market Context', app.agent_market_context)}
+      ${researchRow('Competitor Notes', app.agent_competitor_notes)}
+      ${iqHtml}
+      ${pdHtml}
+      <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--bg);">
+        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+          <i data-lucide="refresh-cw" class="icon-sm"></i>
+          Re-run Research
+        </button>
+      </div>`;
+
+  } else if (rs === 'IN_PROGRESS') {
+    content.innerHTML = `
+      <div class="research-placeholder">
+        <span class="research-spinner"></span>
+        Agent is researching company website and profile…
+      </div>`;
+
+  } else if (rs === 'FAILED') {
+    const errMsg = app.agent_research_error ? esc(app.agent_research_error) : 'Unknown error';
+    content.innerHTML = `
+      <div style="padding:1rem 1.25rem;">
+        <p style="font-size:0.82rem;color:var(--error);font-weight:600;margin-bottom:0.5rem;">Research failed: ${errMsg}</p>
+        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+          <i data-lucide="refresh-cw" class="icon-sm"></i>
+          Retry Research
+        </button>
+      </div>`;
+
+  } else {
+    content.innerHTML = `
+      <div class="research-placeholder">Research not yet started.</div>
+      <div style="padding:0 1.25rem 1rem;">
+        <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+          <i data-lucide="search" class="icon-sm"></i>
+          Run Agent Research
+        </button>
+      </div>`;
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
 function renderVerification(app) {
   const content = document.getElementById('agentResearchContent');
   const badge   = document.getElementById('agentResearchStatusBadge');
@@ -1829,6 +1948,7 @@ let _researchPollTimer = null;
 function startVerificationPolling() {
   stopVerificationPolling();
   _verificationPollTimer = setInterval(async () => {
+    if (document.visibilityState === 'hidden') return;
     try {
       const res = await fetch(`/api/v1/admin/applications/${appId}`);
       if (!res.ok) return;
@@ -1842,7 +1962,7 @@ function startVerificationPolling() {
         appData = app;
       }
     } catch (_) {}
-  }, 3000);
+  }, 8000);
 }
 
 function stopVerificationPolling() {
@@ -1852,6 +1972,7 @@ function stopVerificationPolling() {
 function startResearchPolling() {
   stopResearchPolling();
   _researchPollTimer = setInterval(async () => {
+    if (document.visibilityState === 'hidden') return;
     try {
       const res = await fetch(`/api/v1/admin/applications/${appId}`);
       if (!res.ok) return;
@@ -1868,7 +1989,7 @@ function startResearchPolling() {
         }
       }
     } catch (_) {}
-  }, 3000);
+  }, 8000);
 }
 
 function stopResearchPolling() {
