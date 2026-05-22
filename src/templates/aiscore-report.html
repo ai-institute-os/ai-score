@@ -888,7 +888,8 @@
     padding: 12px 15px;
   }
   .check-block--success .check-block-title {
-    color: var(--accent);
+    color: var(--white);
+    font-size: 10.5pt;
   }
   .check-block--success .check-list li {
     color: var(--white);
@@ -899,7 +900,7 @@
 
   .check-block--warn {
     background: var(--accent-light);
-    border-left: 3px solid var(--accent);
+    border-left: 5px solid var(--accent);
     border-radius: 6px;
     padding: 12px 15px;
   }
@@ -1567,9 +1568,12 @@
   }
 
   .callout-key {
-    background: #f0fdfa;
-    border-left: 3px solid var(--chosen);
-    color: #134e4a;
+    background: var(--white);
+    border-left: 4px solid var(--accent);
+    color: var(--text);
+  }
+  .callout-key strong {
+    color: var(--accent);
   }
 
   .callout-navy {
@@ -2232,7 +2236,7 @@
   <h2 class="sec-title">{{AI_LANDSCAPE_HEADLINE}}</h2>
   <p class="sec-intro">{{AI_LANDSCAPE_INTRO}}</p>
 
-  <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text-light); margin-bottom:10px;">Kategorirolle-matrix</div>
+  <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:10px;">Kategorirolle-matrix</div>
   <table class="role-table no-break">
     <thead>
       <tr>

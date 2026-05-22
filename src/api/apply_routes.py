@@ -2473,9 +2473,8 @@ def _render_report_html(app: "CustomerApplication") -> str:
         # Section 05 AI landscape
         "{{AI_LANDSCAPE_HEADLINE}}": f"{name} opererer i en kategori med klare positioner — og en åben flanke",
         "{{AI_LANDSCAPE_INTRO}}": (
-            f"Booking-software til skønhedssaloner er en kategori AI-systemerne forstår godt. "
-            f"De primære aktører er veletablerede, men {name}s nordiske nicheprofil er en "
-            f"potentiel differentiator som ikke udnyttes tilstrækkeligt."
+            f"<span class='sec-intro-line'>Booking-software til skønhedssaloner er en kategori AI-systemerne forstår godt.</span>"
+            f"<span class='sec-intro-line'>De primære aktører er veletablerede, men {name}s nordiske nicheprofil er en potentiel differentiator som ikke udnyttes tilstrækkeligt.</span>"
         ),
         "{{CATEGORY_ROLE_ROWS}}": (
             f'<tr class="highlight-row">'
