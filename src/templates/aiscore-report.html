@@ -57,6 +57,7 @@
       padding: 16mm 16mm 20mm 16mm;
       display: flex;
       flex-direction: column;
+      min-height: 297mm;
     }
 
     .cover, .section-divider, .back-cover {
@@ -101,9 +102,9 @@
   .cover::before {
     content: '';
     position: absolute;
-    top: -100mm; right: -100mm;
-    width: 200mm; height: 200mm;
-    background: #1e3d8a;
+    top: -90mm; right: -90mm;
+    width: 190mm; height: 190mm;
+    background: var(--navy-mid);
     border: none;
     border-radius: 50%;
   }
@@ -111,9 +112,9 @@
   .cover::after {
     content: '';
     position: absolute;
-    top: -65mm; right: -65mm;
-    width: 130mm; height: 130mm;
-    background: #0f2040;
+    top: -55mm; right: -55mm;
+    width: 120mm; height: 120mm;
+    background: var(--navy-light);
     border: none;
     border-radius: 50%;
   }
@@ -1652,7 +1653,6 @@
       AIScore
       <span>by AI Institute ApS</span>
     </div>
-    <div class="cover-report-badge">Strategisk Analyse</div>
   </div>
 
   <div class="cover-body">
