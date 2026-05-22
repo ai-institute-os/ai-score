@@ -97,17 +97,23 @@
     overflow: hidden;
   }
 
-  /* Rhino-horn corner decoration: two-layer SVG wing/horn shape */
-  .cover::before, .cover::after { content: none; }
-
-  .cover-corner-horn {
+  /* Corner arc decoration: two concentric quarter-circles at 50% of original size */
+  .cover::before {
+    content: '';
     position: absolute;
-    top: 0;
-    right: 0;
-    width: 105mm;
-    height: 185mm;
-    z-index: 0;
-    pointer-events: none;
+    top: -45mm; right: -45mm;
+    width: 95mm; height: 95mm;
+    background: var(--navy-mid);
+    border-radius: 50%;
+  }
+
+  .cover::after {
+    content: '';
+    position: absolute;
+    top: -27mm; right: -27mm;
+    width: 60mm; height: 60mm;
+    background: var(--navy-light);
+    border-radius: 50%;
   }
 
   .cover-top {
@@ -1639,13 +1645,6 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="page break-after">
 <div class="cover">
-  <!-- Rhino-horn corner decoration: two-layer SVG wing/horn — wide outer arc, concave inner taper -->
-  <svg class="cover-corner-horn" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 700" aria-hidden="true">
-    <!-- Outer band (navy-mid): wide horn, visible as the outer ring -->
-    <path d="M 400,0 C 400,510 210,700 0,700 C 90,640 315,185 295,0 Z" fill="#1a3461"/>
-    <!-- Inner fill (navy-light): tighter horn overlaid, creates the two-tone depth -->
-    <path d="M 400,0 C 400,370 145,530 0,530 C 55,470 215,95 337,0 Z" fill="#152540"/>
-  </svg>
   <div class="cover-top">
     <div class="cover-brand">
       AIScore
