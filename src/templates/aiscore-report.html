@@ -57,22 +57,12 @@
       padding: 16mm 16mm 12mm 16mm;
       display: flex;
       flex-direction: column;
-      height: 297mm;
-      position: relative;
+      min-height: 297mm;
     }
 
     .cover, .section-divider, .back-cover {
       margin: -16mm -16mm -12mm -16mm;
-      height: 297mm;
-    }
-
-    /* Pin footer to the physical bottom of every content page */
-    .pg-footer {
-      position: absolute;
-      bottom: 12mm;
-      left: 16mm;
-      right: 16mm;
-      margin-top: 0;
+      min-height: 297mm;
     }
   }
 
@@ -1637,7 +1627,6 @@
     align-items: center;
     justify-content: center;
     min-height: 297mm;
-    flex: 1;
     padding: 14mm 16mm;
     text-align: center;
     position: relative;
@@ -1727,10 +1716,6 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="page break-after">
 <div class="cover">
-  <svg class="cover-corner-arcs" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <circle cx="200" cy="0" r="200" fill="#152540"/>
-    <circle cx="200" cy="0" r="130" fill="#1a3461"/>
-  </svg>
   <div class="cover-top">
     <div class="cover-brand">
       AIScore
