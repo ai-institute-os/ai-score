@@ -809,6 +809,23 @@ async def move_to_review(
             detail=f"Only APPLIED applications can be moved to review. Current: {app.status.value}",
         )
 
+    if app.agent_verification_status != "COMPLETED":
+        raise HTTPException(
+            status_code=422,
+            detail="Verification must complete before moving to review.",
+        )
+
+    if app.agent_verification_results:
+        has_errors = any(
+            isinstance(v, dict) and v.get("status", "").upper() == "ERROR"
+            for v in app.agent_verification_results.values()
+        )
+        if has_errors:
+            raise HTTPException(
+                status_code=422,
+                detail="Verification has ERROR fields — urge applicant to update first.",
+            )
+
     now = datetime.now(timezone.utc)
     app.status = CustomerApplicationStatus.UNDER_REVIEW
     app.updated_at = now
@@ -847,6 +864,14 @@ async def urge_applicant_update(
 
     app = await _get_application_or_404(application_id, db)
 
+    # Capture results before reset so the email can still list the failed fields
+    prior_verification_results = app.agent_verification_results
+
+    app.agent_verification_status = "PENDING"
+    app.agent_verification_results = None
+    app.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+
     from src.config import get_settings
     settings = get_settings()
     app_base_url = getattr(settings, "app_base_url", "https://app.aiscore.dk")
@@ -856,10 +881,10 @@ async def urge_applicant_update(
         return _html.escape(str(v)) if v is not None else ""
 
     verification_notes = ""
-    if app.agent_verification_results:
+    if prior_verification_results:
         failed_fields = [
             f"<li><strong>{_esc(k)}:</strong> {_esc(v.get('note',''))}</li>"
-            for k, v in app.agent_verification_results.items()
+            for k, v in prior_verification_results.items()
             if isinstance(v, dict) and v.get("status") in ("FAILED", "WARNING", "failed", "warning")
         ]
         if failed_fields:
