@@ -1144,25 +1144,24 @@
     font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
+    border: none;
   }
-
-  .matrix-table thead th:first-child { border-radius: 4px 0 0 0; }
-  .matrix-table thead th:last-child  { border-radius: 0 4px 0 0; }
 
   .matrix-table tbody tr { border-bottom: 1px solid var(--border); }
   .matrix-table tbody tr:nth-child(even) { background: var(--bg); }
   .matrix-table tbody td { padding: 9px 12px; vertical-align: middle; }
 
   .matrix-table tfoot tr {
-    background: var(--navy);
-    color: var(--white);
+    background: #f0fdf4;
+    color: var(--text);
+    border-top: 2px solid var(--chosen);
   }
 
   .matrix-table tfoot td {
     padding: 9px 12px;
     font-weight: 700;
     font-size: 9pt;
-    border-radius: 0 0 4px 4px;
+    border: none;
   }
 
   .rate-badge {
@@ -1235,6 +1234,7 @@
     display: flex;
     gap: 16px;
     margin-top: 8px;
+    margin-left: 90px; /* align with bar start: 80px label + 10px gap */
   }
 
   .gap-legend-item {
@@ -2568,7 +2568,7 @@
     </div>
   </div>
 
-  <div class="callout callout-warn">
+  <div class="callout callout-navy">
     <strong>{{SELECTION_GAP}} procentpoint</strong> er kløften mellem {{COMPANY_NAME}}s omtalefrekvens ({{MENTION_RATE}}) og udvælgelsesfrekvens ({{SELECTION_RATE}}). De øjeblikke ender hos andre brands.
   </div>
 
