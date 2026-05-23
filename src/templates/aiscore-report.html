@@ -1331,9 +1331,17 @@
     color: var(--white);
     border-radius: 8px;
     padding: 20px 24px;
-    min-width: 110px;
+    min-width: 165px;
     text-align: center;
     flex-shrink: 0;
+  }
+
+  .score-context-text {
+    flex: 1;
+    font-size: 9pt;
+    color: var(--text-mid);
+    line-height: 1.6;
+    align-self: center;
   }
 
   .score-big-num {
@@ -1377,7 +1385,6 @@
     flex-direction: column;
     gap: 5px;
     padding: 10px 0;
-    border-bottom: 1px solid var(--border);
     background: none;
     border-radius: 0;
   }
@@ -1393,7 +1400,7 @@
 
   .dim-desc {
     font-size: 8.5pt;
-    color: var(--text-light);
+    color: var(--text);
   }
 
   .dim-score-wrap {
@@ -1454,7 +1461,7 @@
 
   .strategy-highlight-sub {
     font-size: 9pt;
-    color: rgba(255,255,255,.5);
+    color: var(--white);
   }
 
   .why-grid {
@@ -1508,7 +1515,7 @@
     color: var(--text-light);
   }
 
-  .pos-card-header.target { background: var(--navy); color: rgba(255,255,255,.6); border-color: var(--navy); }
+  .pos-card-header.target { background: var(--navy); color: var(--accent); border-color: var(--navy); }
 
   .pos-card-body {
     padding: 12px 14px;
@@ -1616,6 +1623,7 @@
     background: var(--navy);
     color: var(--white);
     border-left: none;
+    padding: 18px 20px;
   }
 
   .callout-navy strong {
@@ -2678,15 +2686,17 @@
   <div class="sec-num">09 &nbsp; AIScore-opdeling</div>
   <h2 class="sec-title">AIScore™ {{OVERALL_SCORE}}/100 dækker over fem dimensioner — styrker og<br>svagheder, der tilsammen afspejler {{COMPANY_NAME}}s samlede AI-position</h2>
 
-  <div class="score-layout no-break">
-    <div class="score-big-block">
-      <div class="score-big-num">{{OVERALL_SCORE}}</div>
-      <div class="score-big-denom">/100</div>
-      <div class="score-big-label">AIScore™</div>
-      <div class="score-big-note">{{SCORE_CONTEXT_NOTE}}</div>
+  <div class="no-break">
+    <div class="score-layout" style="margin-bottom:14px;">
+      <div class="score-big-block">
+        <div class="score-big-num">{{OVERALL_SCORE}}</div>
+        <div class="score-big-denom">/100</div>
+        <div class="score-big-label">AIScore™</div>
+      </div>
+      <div class="score-context-text">{{SCORE_CONTEXT_NOTE}}</div>
     </div>
 
-    <div class="dimensions-list">
+    <div class="dimensions-list" style="margin-bottom:18px;">
       <div class="dim-row">
         <div class="dim-body">
           <div class="dim-name">Entity &amp; Authority</div>
