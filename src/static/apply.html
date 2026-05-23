@@ -24,7 +24,7 @@
     /* ── Left panel ─────────────────────────────── */
     .panel-left {
       flex: 0 0 48%;
-      background: #f0f4ff;
+      background: var(--card);
       border-right: 1px solid var(--border);
       position: relative;
       overflow: hidden;
@@ -91,7 +91,7 @@
 
     /* ── CSS Dashboard Visual ───────────────────── */
     .ai-visual {
-      background: #fff;
+      background: var(--card-dark);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 1.25rem;
@@ -208,7 +208,7 @@
     .ai-bar-track {
       flex: 1;
       height: 5px;
-      background: var(--bg);
+      background: var(--border);
       border-radius: 99px;
       overflow: hidden;
     }
@@ -246,7 +246,7 @@
       height: 32px;
       border-radius: 8px;
       background: var(--primary-light);
-      border: 1px solid rgba(59,130,246,0.2);
+      border: 1px solid rgba(249,115,22,0.25);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -352,7 +352,7 @@
       gap: 0.5rem;
       width: 100%;
       padding: 0.9rem;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      background: var(--primary);
       color: #fff;
       border: none;
       border-radius: var(--radius-sm);
@@ -360,15 +360,15 @@
       font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
       margin-top: 0.75rem;
-      box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+      box-shadow: 0 4px 18px rgba(249,115,22,0.4);
       letter-spacing: -0.01em;
     }
 
     .submit-btn:hover {
-      opacity: 0.92;
-      box-shadow: 0 6px 20px rgba(59,130,246,0.45);
+      background: var(--primary-h);
+      box-shadow: 0 6px 24px rgba(249,115,22,0.5);
     }
 
     .submit-btn:active { transform: scale(0.99); }
