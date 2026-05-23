@@ -2186,6 +2186,48 @@ def _providers_done_for_status(status: CustomerApplicationStatus) -> int:
     return 0
 
 
+@router.get("/applications/{application_id}/status")
+@limiter.limit("30/minute")
+async def get_application_status(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public — returns current status of an application by UUID (the UUID is the secret)."""
+    result = await db.execute(
+        select(CustomerApplication).where(CustomerApplication.id == application_id)
+    )
+    app = result.scalar_one_or_none()
+    if app is None:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    STATUS_LABELS: dict[CustomerApplicationStatus, str] = {
+        CustomerApplicationStatus.APPLIED:              "Modtaget",
+        CustomerApplicationStatus.UNDER_REVIEW:         "Under behandling",
+        CustomerApplicationStatus.APPROVED:             "Godkendt",
+        CustomerApplicationStatus.REJECTED:             "Afvist",
+        CustomerApplicationStatus.CALLED:               "Møde booket",
+        CustomerApplicationStatus.AWAITING_PAYMENT:     "Afventer betaling",
+        CustomerApplicationStatus.PAID:                 "Betaling bekræftet",
+        CustomerApplicationStatus.IN_PRODUCTION:        "Analyserer",
+        CustomerApplicationStatus.QC_REVIEW:            "Kvalitetssikring",
+        CustomerApplicationStatus.QC_PASSED:            "Analyse klar",
+        CustomerApplicationStatus.QC_FAILED:            "Analyserer",
+        CustomerApplicationStatus.ESCALATED:            "Analyserer",
+        CustomerApplicationStatus.RETRY:                "Analyserer",
+        CustomerApplicationStatus.READY_FOR_REVIEW_CALL: "I produktion",
+        CustomerApplicationStatus.CANCELLED:            "Annulleret",
+    }
+
+    return {
+        "application_id": str(application_id),
+        "company_name":   app.firmanavn,
+        "status":         app.status.value,
+        "status_label":   STATUS_LABELS.get(app.status, app.status.value),
+        "submitted_at":   app.submitted_at.isoformat() if app.submitted_at else None,
+    }
+
+
 @router.get("/report-status/{order_id}")
 @limiter.limit("30/minute")
 async def get_report_status(

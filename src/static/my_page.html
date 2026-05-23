@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Application — AIScore</title>
+  <link rel="stylesheet" href="/static/shared.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    .page-wrap {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 2.5rem;
+      text-decoration: none;
+    }
+
+    .brand-logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-logo-text {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+    }
+
+    .status-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem;
+      box-shadow: var(--shadow);
+    }
+
+    .status-header {
+      margin-bottom: 1.75rem;
+    }
+
+    .status-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-subtle);
+      margin-bottom: 0.4rem;
+    }
+
+    .company-name {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--card-dark);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .status-icon.reviewing {
+      background: rgba(251,191,36,0.15);
+      color: #fbbf24;
+      border: 1.5px solid rgba(251,191,36,0.3);
+    }
+
+    .status-icon.approved {
+      background: rgba(34,197,94,0.15);
+      color: #22c55e;
+      border: 1.5px solid rgba(34,197,94,0.3);
+    }
+
+    .status-icon.rejected {
+      background: rgba(239,68,68,0.12);
+      color: #ef4444;
+      border: 1.5px solid rgba(239,68,68,0.25);
+    }
+
+    .status-icon.pending {
+      background: rgba(148,163,184,0.1);
+      color: var(--text-subtle);
+      border: 1.5px solid var(--border);
+    }
+
+    .status-text-wrap { flex: 1; }
+
+    .status-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+
+    .status-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .timeline-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0.6rem 0;
+      position: relative;
+    }
+
+    .timeline-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 17px;
+      top: 36px;
+      bottom: -8px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--card-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+
+    .timeline-dot.done {
+      background: rgba(34,197,94,0.15);
+      border-color: rgba(34,197,94,0.4);
+      color: #22c55e;
+    }
+
+    .timeline-dot.active {
+      background: rgba(249,115,22,0.15);
+      border-color: rgba(249,115,22,0.4);
+      color: var(--primary);
+    }
+
+    .timeline-dot.future {
+      opacity: 0.4;
+    }
+
+    .timeline-content {
+      padding-top: 0.5rem;
+    }
+
+    .timeline-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .timeline-name.future {
+      color: var(--text-subtle);
+    }
+
+    .timeline-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.1rem;
+    }
+
+    .info-box {
+      background: rgba(249,115,22,0.06);
+      border: 1px solid rgba(249,115,22,0.18);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-top: 1.5rem;
+    }
+
+    .refresh-note {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+    }
+
+    .refresh-note svg { flex-shrink: 0; }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--card-dark) 25%, var(--border) 50%, var(--card-dark) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+    }
+
+    .error-state svg {
+      color: var(--error);
+      margin-bottom: 1rem;
+    }
+
+    .error-state h3 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .error-state p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+
+    <a href="/" class="brand-logo">
+      <div class="brand-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+        </svg>
+      </div>
+      <span class="brand-logo-text">AIScore</span>
+    </a>
+
+    <div class="status-card" id="statusCard">
+      <!-- Loading state -->
+      <div id="loadingState">
+        <div class="skeleton" style="height:14px; width:80px; margin-bottom:0.5rem;"></div>
+        <div class="skeleton" style="height:28px; width:60%; margin-bottom:1.75rem;"></div>
+        <div class="skeleton" style="height:80px; border-radius:var(--radius-sm); margin-bottom:1.5rem;"></div>
+        <div class="skeleton" style="height:200px; border-radius:var(--radius-sm);"></div>
+      </div>
+
+      <!-- Content (filled by JS) -->
+      <div id="content" style="display:none;"></div>
+
+      <!-- Error state -->
+      <div id="errorState" class="error-state" style="display:none;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <h3>Application not found</h3>
+        <p>We couldn't load your application status. The link may be incorrect or the application may not exist.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const STATUS_META = {
+      APPLIED:               { label: 'Applied',               friendly: 'Application received',         desc: 'We\'ve received your application and it\'s in our queue.',       icon: 'clock',    cls: 'pending'   },
+      UNDER_REVIEW:          { label: 'Under Review',          friendly: 'We\'re reviewing your case',   desc: 'Our team is reviewing your application. We\'ll be in touch soon.', icon: 'search',   cls: 'reviewing' },
+      APPROVED:              { label: 'Approved',              friendly: 'Application approved!',        desc: 'Great news — your application has been approved.',               icon: 'check',    cls: 'approved'  },
+      CALLED:                { label: 'Intro call scheduled',  friendly: 'Intro call booked',            desc: 'We\'ve scheduled an introductory call with you.',                icon: 'phone',    cls: 'approved'  },
+      AWAITING_PAYMENT:      { label: 'Awaiting payment',      friendly: 'Payment pending',              desc: 'Your order is ready. Please complete payment to proceed.',       icon: 'card',     cls: 'reviewing' },
+      PAID:                  { label: 'Paid',                  friendly: 'Payment received',             desc: 'Payment confirmed — we\'re getting started on your AIScore.',   icon: 'check',    cls: 'approved'  },
+      IN_PRODUCTION:         { label: 'In production',         friendly: 'Building your AIScore',        desc: 'We\'re running the analysis across AI systems. Stay tuned!',    icon: 'cog',      cls: 'reviewing' },
+      QC_REVIEW:             { label: 'Quality check',         friendly: 'Final quality review',         desc: 'Your report is undergoing a final quality check.',               icon: 'shield',   cls: 'reviewing' },
+      QC_PASSED:             { label: 'QC passed',             friendly: 'Report ready soon',            desc: 'Quality check passed — your report will be ready shortly.',     icon: 'check',    cls: 'approved'  },
+      READY_FOR_REVIEW_CALL: { label: 'Ready',                 friendly: 'Report ready for delivery',   desc: 'Your AIScore report is complete and ready for your review call.',icon: 'star',     cls: 'approved'  },
+      REJECTED:              { label: 'Not a fit right now',   friendly: 'Application not approved',    desc: 'Unfortunately we couldn\'t approve this application at this time.', icon: 'x',     cls: 'rejected'  },
+      CANCELLED:             { label: 'Cancelled',             friendly: 'Application cancelled',       desc: 'This application has been cancelled.',                           icon: 'x',        cls: 'rejected'  },
+    };
+
+    const TIMELINE_STEPS = [
+      { statuses: ['APPLIED'],                          label: 'Application received',   sub: 'We\'ve received your details'         },
+      { statuses: ['UNDER_REVIEW'],                     label: 'Under review',           sub: 'Our team is reviewing your application' },
+      { statuses: ['APPROVED', 'CALLED'],               label: 'Approved',               sub: 'Application approved by our team'     },
+      { statuses: ['AWAITING_PAYMENT', 'PAID'],         label: 'Payment',                sub: 'Order confirmed and payment processed' },
+      { statuses: ['IN_PRODUCTION', 'QC_REVIEW', 'QC_PASSED', 'READY_FOR_REVIEW_CALL'], label: 'AIScore in progress', sub: 'Analysis running across AI systems' },
+    ];
+
+    function svgIcon(name, size = 20) {
+      const icons = {
+        clock:  `<path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>`,
+        search: `<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`,
+        check:  `<polyline points="20 6 9 17 4 12"/>`,
+        phone:  `<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.17 2.18 2 2 0 012.16 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>`,
+        card:   `<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>`,
+        cog:    `<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>`,
+        shield: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`,
+        star:   `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`,
+        x:      `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
+      };
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icons[name] || ''}</svg>`;
+    }
+
+    function getStepState(step, currentStatus) {
+      const statusOrder = Object.keys(STATUS_META);
+      const currentIdx = statusOrder.indexOf(currentStatus);
+
+      const stepIndices = step.statuses.map(s => statusOrder.indexOf(s)).filter(i => i >= 0);
+      const stepMin = Math.min(...stepIndices);
+      const stepMax = Math.max(...stepIndices);
+
+      if (step.statuses.includes(currentStatus)) return 'active';
+      if (currentIdx > stepMax) return 'done';
+      return 'future';
+    }
+
+    function renderContent(data) {
+      const meta = STATUS_META[data.status] || STATUS_META['UNDER_REVIEW'];
+
+      const timelineHtml = TIMELINE_STEPS.map(step => {
+        const state = getStepState(step, data.status);
+        const dotIcon = state === 'done'
+          ? svgIcon('check', 16)
+          : state === 'active'
+            ? `<div style="width:8px;height:8px;border-radius:50%;background:currentColor;"></div>`
+            : `<div style="width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.4;"></div>`;
+
+        return `
+          <div class="timeline-step">
+            <div class="timeline-dot ${state}">${dotIcon}</div>
+            <div class="timeline-content">
+              <div class="timeline-name ${state === 'future' ? 'future' : ''}">${step.label}</div>
+              ${state !== 'future' ? `<div class="timeline-sub">${step.sub}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="status-header">
+          <div class="status-label">Your application</div>
+          <div class="company-name">${escHtml(data.company_name || 'Your company')}</div>
+        </div>
+
+        <div class="status-row">
+          <div class="status-icon ${meta.cls}">${svgIcon(meta.icon, 20)}</div>
+          <div class="status-text-wrap">
+            <div class="status-title">${meta.friendly}</div>
+            <div class="status-desc">${meta.desc}</div>
+          </div>
+        </div>
+
+        <div class="timeline">${timelineHtml}</div>
+
+        <div class="info-box">
+          Questions? Reply to the confirmation email or reach us at <strong>hello@aiscore.dk</strong>
+        </div>
+
+        <div class="refresh-note">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+          Status updates automatically every 30 seconds
+        </div>`;
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function loadStatus() {
+      const pathParts = window.location.pathname.split('/');
+      const applicationId = pathParts[pathParts.length - 1];
+
+      if (!applicationId || applicationId === 'my-page') {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/v1/applications/${applicationId}/status`);
+        if (!res.ok) throw new Error('not found');
+        const data = await res.json();
+
+        document.getElementById('loadingState').style.display = 'none';
+        const contentEl = document.getElementById('content');
+        contentEl.innerHTML = renderContent(data);
+        contentEl.style.display = 'block';
+      } catch {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'block';
+      }
+    }
+
+    loadStatus();
+    setInterval(loadStatus, 30000);
+  </script>
+</body>
+</html>

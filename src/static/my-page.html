@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Min AIScore Ansøgning</title>
+  <link rel="stylesheet" href="/static/shared.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    .page-wrap {
+      width: 100%;
+      max-width: 620px;
+    }
+
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 2.5rem;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-name {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+    }
+
+    .status-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .company-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .company-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--primary-light);
+      border: 1px solid rgba(249,115,22,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--primary);
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    .company-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .company-name {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .submitted-date {
+      font-size: 0.82rem;
+      color: var(--text-subtle);
+    }
+
+    .status-label-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--primary);
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.2);
+    }
+
+    .status-dot.done   { background: var(--success); box-shadow: 0 0 0 3px rgba(34,197,94,0.2); }
+    .status-dot.error  { background: var(--error);   box-shadow: 0 0 0 3px var(--error-light); }
+    .status-dot.pulse  { animation: pulse 1.6s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .status-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── Pipeline stepper ───────────────────────── */
+    .stepper {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      position: relative;
+    }
+
+    .step-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 32px;
+      flex-shrink: 0;
+    }
+
+    .step-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-circle.done {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .step-circle.active {
+      border-color: var(--primary);
+      background: rgba(249,115,22,0.1);
+    }
+
+    .step-circle.done svg { display: block; }
+    .step-circle.active svg { display: none; }
+    .step-circle:not(.done):not(.active) svg { display: none; }
+
+    .step-circle .step-num {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-subtle);
+    }
+
+    .step-circle.active .step-num { color: var(--primary); }
+
+    .step-line {
+      width: 2px;
+      flex: 1;
+      background: var(--border);
+      min-height: 24px;
+    }
+
+    .step-line.done { background: var(--success); }
+
+    .step-content {
+      padding: 0 0 1.5rem 1rem;
+      flex: 1;
+    }
+
+    .step:last-child .step-content { padding-bottom: 0; }
+
+    .step-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      line-height: 1.6;
+      padding-top: 0.2rem;
+    }
+
+    .step-label.done   { color: var(--text); }
+    .step-label.active { color: var(--primary); }
+
+    .step-sublabel {
+      font-size: 0.78rem;
+      color: var(--text-subtle);
+      margin-top: 0.1rem;
+    }
+
+    /* ── Info card ──────────────────────────────── */
+    .info-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+    }
+
+    .info-icon {
+      color: var(--text-subtle);
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .info-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .refresh-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.5rem;
+    }
+
+    .refresh-note {
+      font-size: 0.78rem;
+      color: var(--text-subtle);
+    }
+
+    .refresh-btn {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .refresh-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ── Loading / error states ─────────────────── */
+    .skeleton {
+      background: var(--border);
+      border-radius: 6px;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.5; }
+      50%       { opacity: 1; }
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .error-state h3 { color: var(--text); margin-bottom: 0.5rem; }
+
+    @media (max-width: 480px) {
+      body { padding: 2rem 1rem 4rem; }
+      .status-card { padding: 1.5rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+
+    <a href="/" class="brand-bar">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+        </svg>
+      </div>
+      <span class="brand-name">AIScore</span>
+    </a>
+
+    <div id="content">
+      <!-- Skeleton loader -->
+      <div id="loadingState" class="status-card">
+        <div class="company-row">
+          <div class="skeleton" style="width:48px;height:48px;border-radius:12px;flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div class="skeleton" style="height:20px;width:55%;margin-bottom:10px;"></div>
+            <div class="skeleton" style="height:14px;width:35%;"></div>
+          </div>
+        </div>
+        <div class="skeleton" style="height:14px;width:70%;margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:14px;width:50%;"></div>
+      </div>
+
+      <!-- Loaded state (hidden until data fetched) -->
+      <div id="loadedState" style="display:none;">
+        <div class="status-card">
+          <div class="company-row">
+            <div class="company-avatar" id="companyAvatar">A</div>
+            <div class="company-meta">
+              <div class="company-name" id="companyName">—</div>
+              <div class="submitted-date" id="submittedDate">—</div>
+            </div>
+          </div>
+
+          <div class="status-label-row">
+            <div class="status-dot pulse" id="statusDot"></div>
+            <span class="status-text" id="statusText">—</span>
+          </div>
+
+          <div class="stepper" id="stepper"></div>
+
+          <div class="refresh-row">
+            <span class="refresh-note" id="refreshNote">Opdateres automatisk hvert 30. sekund</span>
+            <button class="refresh-btn" onclick="loadStatus(true)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Opdater
+            </button>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="info-text">
+            Vi gennemgår din ansøgning og vender tilbage inden for 1–2 hverdage. Har du spørgsmål? Kontakt os på
+            <a href="mailto:support@aiscore.dk" style="color:var(--primary);">support@aiscore.dk</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error state (hidden) -->
+      <div id="errorState" class="error-state" style="display:none;">
+        <h3>Ansøgning ikke fundet</h3>
+        <p>Vi kunne ikke finde din ansøgning. Tjek linket eller kontakt <a href="mailto:support@aiscore.dk" style="color:var(--primary);">support@aiscore.dk</a>.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const APPLICATION_ID = window.location.pathname.replace('/my-page/', '').replace(/\/$/, '');
+
+    const STATUS_LABELS = {
+      APPLIED:               'Modtaget',
+      UNDER_REVIEW:          'Under behandling',
+      APPROVED:              'Godkendt',
+      REJECTED:              'Afvist',
+      CALLED:                'Møde booket',
+      AWAITING_PAYMENT:      'Afventer betaling',
+      PAID:                  'Betaling bekræftet',
+      IN_PRODUCTION:         'Analyserer',
+      QC_REVIEW:             'Kvalitetssikring',
+      QC_PASSED:             'Analyse klar',
+      QC_FAILED:             'Analyserer',
+      ESCALATED:             'Analyserer',
+      RETRY:                 'Analyserer',
+      READY_FOR_REVIEW_CALL: 'I produktion',
+      CANCELLED:             'Annulleret',
+    };
+
+    const PIPELINE = [
+      {
+        label: 'Ansøgning modtaget',
+        sub:   'Din ansøgning er registreret i systemet',
+        statuses: ['APPLIED'],
+      },
+      {
+        label: 'Under behandling',
+        sub:   'Vores team gennemgår din ansøgning',
+        statuses: ['UNDER_REVIEW'],
+      },
+      {
+        label: 'Godkendt & møde booket',
+        sub:   'Vi har godkendt dig og booker et opstartsmøde',
+        statuses: ['APPROVED', 'CALLED', 'AWAITING_PAYMENT'],
+      },
+      {
+        label: 'Analyse i gang',
+        sub:   'AI-analysen af din synlighed kører nu',
+        statuses: ['PAID', 'IN_PRODUCTION', 'QC_REVIEW', 'QC_PASSED', 'QC_FAILED', 'ESCALATED', 'RETRY'],
+      },
+      {
+        label: 'Rapport klar',
+        sub:   'Din AIScore-rapport er færdig',
+        statuses: ['READY_FOR_REVIEW_CALL'],
+      },
+    ];
+
+    const TERMINAL_ERROR = new Set(['REJECTED', 'CANCELLED']);
+
+    function getStepIndex(status) {
+      for (let i = 0; i < PIPELINE.length; i++) {
+        if (PIPELINE[i].statuses.includes(status)) return i;
+      }
+      return -1;
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      try {
+        return new Date(iso).toLocaleDateString('da-DK', {
+          day: 'numeric', month: 'long', year: 'numeric',
+        });
+      } catch { return iso; }
+    }
+
+    function renderStepper(status) {
+      const activeIdx = getStepIndex(status);
+      return PIPELINE.map((step, i) => {
+        const isDone   = i < activeIdx;
+        const isActive = i === activeIdx;
+        const isLast   = i === PIPELINE.length - 1;
+        const circleClass = isDone ? 'done' : isActive ? 'active' : '';
+        const labelClass  = isDone ? 'done' : isActive ? 'active' : '';
+        return `
+          <div class="step">
+            <div class="step-left">
+              <div class="step-circle ${circleClass}">
+                ${isDone
+                  ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+                  : `<span class="step-num">${i + 1}</span>`}
+              </div>
+              ${!isLast ? `<div class="step-line ${isDone ? 'done' : ''}"></div>` : ''}
+            </div>
+            <div class="step-content">
+              <div class="step-label ${labelClass}">${step.label}</div>
+              ${isActive || isDone ? `<div class="step-sublabel">${step.sub}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    async function loadStatus(manual) {
+      if (!APPLICATION_ID) {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/v1/applications/${APPLICATION_ID}/status`);
+        if (!res.ok) throw new Error('not found');
+        const data = await res.json();
+
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display   = 'none';
+        document.getElementById('loadedState').style.display  = 'block';
+
+        const initial = (data.company_name || '?').charAt(0).toUpperCase();
+        document.getElementById('companyAvatar').textContent = initial;
+        document.getElementById('companyName').textContent   = data.company_name || '—';
+        document.getElementById('submittedDate').textContent =
+          data.submitted_at ? `Indsendt ${formatDate(data.submitted_at)}` : '';
+
+        const label = STATUS_LABELS[data.status] || data.status;
+        document.getElementById('statusText').textContent = label;
+
+        const dot = document.getElementById('statusDot');
+        dot.className = 'status-dot';
+        if (TERMINAL_ERROR.has(data.status)) {
+          dot.classList.add('error');
+        } else if (data.status === 'READY_FOR_REVIEW_CALL') {
+          dot.classList.add('done');
+        } else {
+          dot.classList.add('pulse');
+        }
+
+        document.getElementById('stepper').innerHTML = renderStepper(data.status);
+
+        if (manual) {
+          const note = document.getElementById('refreshNote');
+          note.textContent = 'Opdateret nu';
+          setTimeout(() => { note.textContent = 'Opdateres automatisk hvert 30. sekund'; }, 2500);
+        }
+
+        document.title = `${data.company_name || 'Min ansøgning'} — AIScore`;
+      } catch {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display   = 'block';
+      }
+    }
+
+    loadStatus(false);
+    setInterval(() => loadStatus(false), 30000);
+  </script>
+</body>
+</html>

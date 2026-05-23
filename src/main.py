@@ -223,6 +223,12 @@ async def apply_form():
     return FileResponse(str(_static_dir / "apply.html"))
 
 
+@app.get("/my-page/{application_id}", include_in_schema=False)
+async def my_page(application_id: str):
+    """Customer portal — shows the status of a submitted application."""
+    return FileResponse(str(_static_dir / "my-page.html"))
+
+
 @app.get("/admin/login", include_in_schema=False)
 async def admin_login_page(request: Request):
     """Serve the admin login page; redirect if already authenticated."""
