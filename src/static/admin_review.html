@@ -1301,8 +1301,8 @@ function renderActionPanel(app) {
     let subBadge = '';
     if (substage === 'RESUBMITTED') {
       subBadge = `<span style="font-size:0.75rem;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;padding:0.15rem 0.5rem;border-radius:20px;">Resubmitted</span>`;
-    } else if (substage === 'UPDATE_REQUESTED') {
-      subBadge = `<span style="font-size:0.75rem;color:#d97706;background:#fffbeb;border:1px solid #fde68a;padding:0.15rem 0.5rem;border-radius:20px;">Update Request Sent</span>`;
+    } else if (substage === 'UPDATE_REQUEST_EMAIL_SENT' || substage === 'UPDATE_REQUESTED') {
+      subBadge = `<span style="font-size:0.75rem;color:#d97706;background:#fffbeb;border:1px solid #fde68a;padding:0.15rem 0.5rem;border-radius:20px;">🟡 Update Request Email Sent</span>`;
     } else if (substage === 'VERIFIED' || vPassed) {
       subBadge = `<span style="font-size:0.75rem;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;padding:0.15rem 0.5rem;border-radius:20px;">Verification passed</span>`;
     } else if (substage === 'FAILED') {
@@ -1326,32 +1326,32 @@ function renderActionPanel(app) {
     } else if (substage === 'FAILED') {
       primaryActions = `
         <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-            <i data-lucide="refresh-cw" class="icon-sm"></i>
-            Retry Verification
-          </button>
           <button class="cta-btn cta-btn-secondary" onclick="openUrgeConfirmModal()">
             <i data-lucide="mail" class="icon-sm"></i>
             Send Update Request Email
           </button>
+          <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
+            <i data-lucide="x" class="icon-sm"></i>
+            Reject
+          </button>
         </div>`;
-    } else if (substage === 'UPDATE_REQUESTED') {
+    } else if (substage === 'UPDATE_REQUEST_EMAIL_SENT' || substage === 'UPDATE_REQUESTED') {
       primaryActions = `
         <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-            <i data-lucide="refresh-cw" class="icon-sm"></i>
-            Retry Verification
-          </button>
           <button class="cta-btn cta-btn-secondary" onclick="openUrgeConfirmModal()">
             <i data-lucide="mail" class="icon-sm"></i>
-            Resend Update Request Email
+            Resend Update Request
+          </button>
+          <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
+            <i data-lucide="x" class="icon-sm"></i>
+            Reject
           </button>
         </div>`;
     } else if (substage === 'RESUBMITTED') {
       primaryActions = `
         <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-            <i data-lucide="refresh-cw" class="icon-sm"></i>
+          <button class="cta-btn cta-btn-secondary" onclick="runVerification(this)">
+            <i data-lucide="shield-check" class="icon-sm"></i>
             Verify Again
           </button>
         </div>`;
@@ -1360,20 +1360,29 @@ function renderActionPanel(app) {
         <div class="cta-row">
           <button class="cta-btn cta-btn-approve" onclick="moveToReview(this)">
             <i data-lucide="arrow-right-circle" class="icon-sm"></i>
-            Move to Under Review
+            Move to Review Stage
           </button>
         </div>`;
     } else {
-      // PENDING or unknown
+      // PENDING or unknown — run verification
       primaryActions = `
         <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-            <i data-lucide="refresh-cw" class="icon-sm"></i>
+          <button class="cta-btn cta-btn-secondary" onclick="runVerification(this)">
+            <i data-lucide="shield-check" class="icon-sm"></i>
             Run Verification
           </button>
         </div>`;
     }
 
+    // Only show a standalone reject row for substages where reject isn't already in primaryActions
+    const standaloneReject = (substage === 'FAILED' || substage === 'UPDATE_REQUEST_EMAIL_SENT' || substage === 'UPDATE_REQUESTED' || isRunning || substage === 'VERIFIED' || vPassed) ? '' : `
+        <div style="height:0.75rem;"></div>
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
+            <i data-lucide="x" class="icon-sm"></i>
+            Reject
+          </button>
+        </div>`;
     container.innerHTML = `
       <div class="cta-group">
         <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
@@ -1381,13 +1390,7 @@ function renderActionPanel(app) {
           ${subBadge}
         </div>
         ${primaryActions}
-        <div style="height:0.75rem;"></div>
-        <div class="cta-row">
-          <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
-            <i data-lucide="x" class="icon-sm"></i>
-            Reject
-          </button>
-        </div>
+        ${standaloneReject}
       </div>
       <div id="rejectDialog" style="display:none;margin-top:1rem;background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
         <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Rejection reason (optional)</label>
@@ -1623,7 +1626,7 @@ async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
 async function moveToReview(btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Moving…'; }
   try {
-    const res = await fetch(`/api/v1/admin/applications/${APPLICATION_ID}/move-to-review`, {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/move-to-review`, {
       method: 'POST',
     });
     if (!res.ok) {
@@ -1655,7 +1658,7 @@ async function confirmUrgeApplicantUpdate() {
   if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
   closeUrgeConfirmModal();
   try {
-    const res = await fetch(`/api/v1/admin/applications/${APPLICATION_ID}/urge-update`, {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/urge-update`, {
       method: 'POST',
     });
     if (!res.ok) {

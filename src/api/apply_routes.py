@@ -228,7 +228,7 @@ async def submit_application_public(
 
     settings = get_settings()
     admin_review_email = getattr(settings, "admin_review_email", "amministrazionemfce@gmail.com")
-    app_base_url = getattr(settings, "app_base_url", "https://app.aiscore.dk")
+    app_base_url = settings.app_base_url
     background_tasks.add_task(_send_admin_review_email, app, app_base_url, admin_review_email)
 
     # Trigger background agent research + verification — does not block submission
