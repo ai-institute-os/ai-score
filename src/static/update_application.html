@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opdater din AIScore ansøgning</title>
+  <link rel="stylesheet" href="/static/shared.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    .page-wrap {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 2.5rem;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-name {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+    }
+
+    .page-header {
+      margin-bottom: 1.75rem;
+    }
+
+    .page-title {
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .form-card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .field {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .label-required { color: var(--primary); }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="email"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      box-sizing: border-box;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+    }
+
+    textarea { min-height: 90px; resize: vertical; }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .field-error input,
+    .field-error select,
+    .field-error textarea {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+    }
+
+    .field-error-msg {
+      display: none;
+      font-size: 0.78rem;
+      color: #dc2626;
+      margin-top: 0.3rem;
+      line-height: 1.45;
+    }
+
+    .field-error .field-error-msg { display: block; }
+
+    .section-heading {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-subtle);
+      margin: 1.5rem 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .submit-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      margin-top: 0.75rem;
+      box-shadow: 0 4px 18px rgba(249,115,22,0.35);
+      letter-spacing: -0.01em;
+    }
+
+    .submit-btn:hover { background: var(--primary-h); box-shadow: 0 6px 24px rgba(249,115,22,0.48); }
+    .submit-btn:active { transform: scale(0.99); }
+    .submit-btn:disabled {
+      background: var(--text-subtle);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error-banner {
+      display: none;
+      background: rgba(220,38,38,0.08);
+      border: 1px solid rgba(220,38,38,0.25);
+      border-radius: var(--radius-sm);
+      color: #dc2626;
+      font-size: 0.85rem;
+      padding: 0.65rem 0.9rem;
+      margin-top: 0.75rem;
+    }
+
+    .success-card {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: rgba(34,197,94,0.12);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      border: 2px solid rgba(34,197,94,0.3);
+    }
+
+    .success-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    .success-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.65;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    #loadingCard {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    #errorCard {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 2rem 1rem 4rem; }
+      .field-row { grid-template-columns: 1fr; }
+      .form-card { padding: 1.5rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+
+    <a href="/" class="brand-bar">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+        </svg>
+      </div>
+      <span class="brand-name">AIScore</span>
+    </a>
+
+    <div id="loadingCard">Indlæser din ansøgning…</div>
+
+    <div id="errorCard">
+      <h3 style="margin:0 0 0.5rem;color:var(--text);">Ansøgning ikke fundet</h3>
+      <p>Vi kunne ikke finde din ansøgning. Tjek linket eller kontakt <a href="mailto:support@aiscore.dk" style="color:var(--primary);">support@aiscore.dk</a>.</p>
+    </div>
+
+    <div id="formWrap" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">Opdater din ansøgning</h1>
+        <p class="page-subtitle" id="pageSubtitle">
+          Gennemgå og ret de markerede felter, og send din opdaterede ansøgning ind.
+        </p>
+      </div>
+
+      <div class="form-card">
+        <form id="updateForm" novalidate>
+
+          <div class="section-heading">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+            Virksomhedsoplysninger
+          </div>
+
+          <div class="field" id="field_company_name">
+            <label for="company_name">Virksomhedsnavn <span class="label-required">*</span></label>
+            <input type="text" id="company_name" name="company_name" placeholder="f.eks. Acme ApS" autocomplete="organization" />
+            <div class="field-error-msg" id="err_company_name"></div>
+          </div>
+
+          <div class="field" id="field_website">
+            <label for="website">Virksomhedens hjemmeside <span class="label-required">*</span></label>
+            <input type="url" id="website" name="website" placeholder="https://example.dk" autocomplete="url" />
+            <div class="field-error-msg" id="err_website"></div>
+          </div>
+
+          <div class="field-row">
+            <div class="field" id="field_country">
+              <label for="country">Land / marked <span class="label-required">*</span></label>
+              <select id="country" name="country">
+                <option value="Denmark">Danmark</option>
+                <option value="Sweden">Sverige</option>
+                <option value="Norway">Norge</option>
+                <option value="Finland">Finland</option>
+                <option value="Iceland">Island</option>
+                <option value="Germany">Tyskland</option>
+                <option value="Netherlands">Holland</option>
+                <option value="Belgium">Belgien</option>
+                <option value="France">Frankrig</option>
+                <option value="United Kingdom">Storbritannien</option>
+                <option value="Ireland">Irland</option>
+                <option value="Spain">Spanien</option>
+                <option value="Portugal">Portugal</option>
+                <option value="Italy">Italien</option>
+                <option value="Switzerland">Schweiz</option>
+                <option value="Austria">Østrig</option>
+                <option value="Poland">Polen</option>
+                <option value="Czech Republic">Tjekkiet</option>
+                <option value="United States">USA</option>
+                <option value="Canada">Canada</option>
+                <option value="Australia">Australien</option>
+                <option value="Other">Andet</option>
+              </select>
+              <div class="field-error-msg" id="err_country"></div>
+            </div>
+            <div class="field" id="field_industry">
+              <label for="industry">Branche / kategori <span class="label-required">*</span></label>
+              <select id="industry" name="industry">
+                <option value="">— Vælg branche —</option>
+                <option value="Retail">Retail</option>
+                <option value="E-commerce">E-commerce</option>
+                <option value="SaaS">SaaS</option>
+                <option value="Technology">Teknologi</option>
+                <option value="Consulting">Rådgivning</option>
+                <option value="Finance & Fintech">Finans &amp; Fintech</option>
+                <option value="Healthcare">Sundhed</option>
+                <option value="Manufacturing">Produktion</option>
+                <option value="Food & Beverage">Mad &amp; Drikke</option>
+                <option value="Media & Entertainment">Medier &amp; Underholdning</option>
+                <option value="Education">Uddannelse</option>
+                <option value="Real Estate">Ejendomme</option>
+                <option value="Travel & Hospitality">Rejser &amp; Hospitality</option>
+                <option value="Logistics & Supply Chain">Logistik &amp; Forsyningskæde</option>
+                <option value="Energy & Utilities">Energi &amp; Forsyning</option>
+                <option value="Other">Andet</option>
+              </select>
+              <div class="field-error-msg" id="err_industry"></div>
+            </div>
+          </div>
+
+          <div class="field" id="field_business_description">
+            <label for="business_description">Kort beskrivelse af virksomheden <span class="label-required">*</span></label>
+            <textarea id="business_description" name="business_description"
+              placeholder="Beskriv hvad din virksomhed laver, og hvad der gør den unik…"></textarea>
+            <div class="field-error-msg" id="err_business_description"></div>
+          </div>
+
+          <div class="field" id="field_competitors">
+            <label for="competitors">Vigtigste konkurrenter <span style="color:var(--text-subtle);font-weight:400;">(valgfrit)</span></label>
+            <input type="text" id="competitors" name="competitors"
+              placeholder="f.eks. Konkurrent A, Konkurrent B" />
+            <div class="field-error-msg" id="err_competitors"></div>
+          </div>
+
+          <div class="section-heading">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Kontaktoplysninger
+          </div>
+
+          <div class="field" id="field_contact_name">
+            <label for="contact_name">Kontaktperson <span class="label-required">*</span></label>
+            <input type="text" id="contact_name" name="contact_name"
+              placeholder="Fulde navn" autocomplete="name" />
+            <div class="field-error-msg" id="err_contact_name"></div>
+          </div>
+
+          <div class="field" id="field_contact_email">
+            <label for="contact_email">Kontakt-e-mail <span class="label-required">*</span></label>
+            <input type="email" id="contact_email" name="contact_email"
+              placeholder="navn@virksomhed.dk" autocomplete="email" />
+            <div class="field-error-msg" id="err_contact_email"></div>
+          </div>
+
+          <div class="section-heading">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            Dit mål
+          </div>
+
+          <div class="field" id="field_application_goal">
+            <label for="application_goal">Formål med AIScore <span class="label-required">*</span></label>
+            <textarea id="application_goal" name="application_goal"
+              placeholder="Hvad vil du lære eller opnå med AIScore?"
+              style="min-height:90px;"></textarea>
+            <div class="field-error-msg" id="err_application_goal"></div>
+          </div>
+
+          <div class="error-banner" id="errorBanner"></div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Opdater min ansøgning
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="success-card" id="successCard">
+      <div class="success-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div class="success-title">Ansøgning opdateret!</div>
+      <p class="success-text">
+        Dine oplysninger er gemt. Vores team gennemgår dem og vender tilbage til dig snarest.
+      </p>
+      <p style="color:var(--text-subtle);font-size:0.82rem;margin-top:1.25rem;">
+        Viderestiller til din statusside om <span id="countdown">3</span>s…
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    const APPLICATION_ID = window.location.pathname.replace('/update-application/', '').replace(/\/$/, '');
+
+    const FIELD_MAP = {
+      company_name:        'company_name',
+      website:             'website',
+      country:             'country',
+      industry:            'industry',
+      business_description:'business_description',
+      competitors:         'competitors',
+      contact_name:        'contact_name',
+      contact_email:       'contact_email',
+      application_goal:    'application_goal',
+    };
+
+    async function loadData() {
+      if (!APPLICATION_ID) {
+        showError();
+        return;
+      }
+      try {
+        const res = await fetch(`/api/v1/applications/${APPLICATION_ID}/update-data`);
+        if (!res.ok) { showError(); return; }
+        const data = await res.json();
+
+        // Pre-fill fields
+        for (const [field, key] of Object.entries(FIELD_MAP)) {
+          const el = document.getElementById(field);
+          if (!el) continue;
+          const val = data[key];
+          if (val == null) continue;
+          if (el.tagName === 'SELECT') {
+            for (const opt of el.options) {
+              if (opt.value === val) { opt.selected = true; break; }
+            }
+          } else {
+            el.value = val;
+          }
+        }
+
+        // Highlight error fields from verification results
+        const results = data.verification_results || {};
+        let hasErrors = false;
+        for (const [key, info] of Object.entries(results)) {
+          const s = (info?.status || '').toUpperCase();
+          if (s === 'ERROR' || s === 'FAILED') {
+            hasErrors = true;
+            const fieldEl = document.getElementById(`field_${key}`);
+            const errEl   = document.getElementById(`err_${key}`);
+            if (fieldEl) fieldEl.classList.add('field-error');
+            if (errEl)   errEl.textContent = info?.message || info?.note || 'Dette felt kræver rettelse.';
+          }
+        }
+
+        if (hasErrors) {
+          document.getElementById('pageSubtitle').textContent =
+            'Felter markeret med rødt kræver rettelse. Opdater dem og indsend igen.';
+        }
+
+        document.getElementById('loadingCard').style.display = 'none';
+        document.getElementById('formWrap').style.display    = 'block';
+      } catch {
+        showError();
+      }
+    }
+
+    function showError() {
+      document.getElementById('loadingCard').style.display = 'none';
+      document.getElementById('errorCard').style.display   = 'block';
+    }
+
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const banner = document.getElementById('errorBanner');
+      banner.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Gemmer…';
+
+      const payload = {};
+      for (const field of Object.keys(FIELD_MAP)) {
+        const el = document.getElementById(field);
+        if (el) payload[field] = el.value.trim();
+      }
+
+      try {
+        const res = await fetch(`/api/v1/applications/${APPLICATION_ID}/update`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          banner.textContent = d.detail || 'Der opstod en fejl. Prøv igen.';
+          banner.style.display = 'block';
+          btn.disabled = false;
+          btn.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Opdater min ansøgning`;
+          return;
+        }
+
+        document.getElementById('formWrap').style.display   = 'none';
+        document.getElementById('successCard').style.display = 'block';
+
+        let n = 3;
+        const cd = document.getElementById('countdown');
+        cd.textContent = n;
+        const iv = setInterval(() => {
+          n--;
+          cd.textContent = n;
+          if (n <= 0) {
+            clearInterval(iv);
+            window.location.href = `/my-page/${APPLICATION_ID}`;
+          }
+        }, 1000);
+      } catch {
+        banner.textContent = 'Netværksfejl — tjek din forbindelse og prøv igen.';
+        banner.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Opdater min ansøgning`;
+      }
+    });
+
+    loadData();
+  </script>
+</body>
+</html>

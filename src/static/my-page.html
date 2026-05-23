@@ -380,7 +380,7 @@
     const APPLICATION_ID = window.location.pathname.replace('/my-page/', '').replace(/\/$/, '');
 
     const STATUS_LABELS = {
-      APPLIED:               'Modtaget',
+      APPLIED:               'Verificering igangsat',
       UNDER_REVIEW:          'Under behandling',
       APPROVED:              'Godkendt',
       REJECTED:              'Afvist',
@@ -402,6 +402,11 @@
         label: 'Ansøgning modtaget',
         sub:   'Din ansøgning er registreret i systemet',
         statuses: ['APPLIED'],
+      },
+      {
+        label: 'Verificering',
+        sub:   'Vi verificerer dine oplysninger',
+        statuses: [],
       },
       {
         label: 'Under behandling',
@@ -428,6 +433,8 @@
     const TERMINAL_ERROR = new Set(['REJECTED', 'CANCELLED']);
 
     function getStepIndex(status) {
+      // APPLIED → show "Verificering" as active (step 1); application received is done
+      if (status === 'APPLIED') return 1;
       for (let i = 0; i < PIPELINE.length; i++) {
         if (PIPELINE[i].statuses.includes(status)) return i;
       }
