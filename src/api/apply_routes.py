@@ -2632,7 +2632,6 @@ def _render_report_html(app: "CustomerApplication") -> str:
     include_in_schema=True,
     summary="Admin — download AIScore rapport som PDF",
 )
-@limiter.limit("10/minute")
 async def download_report_pdf(
     request: Request,
     application_id: uuid.UUID,
