@@ -190,8 +190,8 @@ async def submit_application_public(
 ):
     """Public endpoint — new application flow with English field names.
 
-    Creates the application as APPLIED, immediately transitions to UNDER_REVIEW,
-    and sends an admin notification email via Resend.
+    Creates the application as APPLIED and triggers background verification.
+    Admin manually moves to UNDER_REVIEW via move-to-review endpoint after verification.
     """
     from src.config import get_settings
     now = datetime.now(timezone.utc)
@@ -222,17 +222,6 @@ async def submit_application_public(
         note="Application submitted via public endpoint",
     ))
 
-    # Immediately move to UNDER_REVIEW
-    app.status = CustomerApplicationStatus.UNDER_REVIEW
-    app.updated_at = now
-    db.add(CustomerApplicationStateLog(
-        application_id=app.id,
-        from_status=CustomerApplicationStatus.APPLIED,
-        to_status=CustomerApplicationStatus.UNDER_REVIEW,
-        changed_by="system",
-        note="Auto-transitioned to UNDER_REVIEW on submission",
-    ))
-
     await db.commit()
     await db.refresh(app)
 
@@ -241,9 +230,10 @@ async def submit_application_public(
     app_base_url = getattr(settings, "app_base_url", "https://app.aiscore.dk")
     background_tasks.add_task(_send_admin_review_email, app, app_base_url, admin_review_email)
 
-    # Trigger background agent research — does not block submission
+    # Trigger background agent research + verification — does not block submission
     saved_app_id = app.id
     background_tasks.add_task(_run_research_background, saved_app_id)
+    background_tasks.add_task(_run_verification_background, saved_app_id)
 
     result = await db.execute(
         select(CustomerApplication)
@@ -796,6 +786,224 @@ async def update_application_notes(
         .where(CustomerApplication.id == app.id)
     )
     return result.scalar_one()
+
+
+# ─────────────────────────────────────────────
+# Admin: move APPLIED → UNDER_REVIEW
+# ─────────────────────────────────────────────
+
+@router.post("/admin/applications/{application_id}/move-to-review", response_model=ApplicationResponse)
+@limiter.limit("30/minute")
+async def move_to_review(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_admin_key),
+):
+    """Admin — manually transition APPLIED → UNDER_REVIEW after verification."""
+    app = await _get_application_or_404(application_id, db)
+
+    if app.status != CustomerApplicationStatus.APPLIED:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Only APPLIED applications can be moved to review. Current: {app.status.value}",
+        )
+
+    now = datetime.now(timezone.utc)
+    app.status = CustomerApplicationStatus.UNDER_REVIEW
+    app.updated_at = now
+    db.add(CustomerApplicationStateLog(
+        application_id=app.id,
+        from_status=CustomerApplicationStatus.APPLIED,
+        to_status=CustomerApplicationStatus.UNDER_REVIEW,
+        changed_by="admin",
+        note="Manually moved to Under Review after verification",
+    ))
+    await db.commit()
+
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == app.id)
+    )
+    return result.scalar_one()
+
+
+# ─────────────────────────────────────────────
+# Admin: urge applicant to update their data
+# ─────────────────────────────────────────────
+
+@router.post("/admin/applications/{application_id}/urge-update")
+@limiter.limit("10/minute")
+async def urge_applicant_update(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(require_admin_key),
+):
+    """Admin — send email to applicant with link to update their application data."""
+    from src.payments.emailer import send_email
+    import html as _html
+
+    app = await _get_application_or_404(application_id, db)
+
+    from src.config import get_settings
+    settings = get_settings()
+    app_base_url = getattr(settings, "app_base_url", "https://app.aiscore.dk")
+    update_url = f"{app_base_url.rstrip('/')}/update-application/{app.id}"
+
+    def _esc(v: object) -> str:
+        return _html.escape(str(v)) if v is not None else ""
+
+    verification_notes = ""
+    if app.agent_verification_results:
+        failed_fields = [
+            f"<li><strong>{_esc(k)}:</strong> {_esc(v.get('note',''))}</li>"
+            for k, v in app.agent_verification_results.items()
+            if isinstance(v, dict) and v.get("status") in ("FAILED", "WARNING", "failed", "warning")
+        ]
+        if failed_fields:
+            verification_notes = (
+                "<p style='color:#374151;margin:0 0 8px;'>Our review found the following items need attention:</p>"
+                "<ul style='margin:0 0 16px;padding-left:20px;color:#374151;'>"
+                + "".join(failed_fields)
+                + "</ul>"
+            )
+
+    html_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111">
+  <h2 style="color:#111;margin-bottom:8px;">Action required: Update your AIScore application</h2>
+  <p style="color:#374151;">Hi {_esc(app.kontaktperson)},</p>
+  <p style="color:#374151;">Thank you for applying to AIScore. We've reviewed your application
+  and would like you to update a few details before we proceed.</p>
+  {verification_notes}
+  <p>
+    <a href="{_esc(update_url)}"
+       style="display:inline-block;padding:12px 24px;background:#f97316;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+      Update my application
+    </a>
+  </p>
+  <p style="color:#6b7280;font-size:0.875rem;">
+    Or copy this link: {_esc(update_url)}
+  </p>
+</body>
+</html>"""
+
+    try:
+        await send_email(
+            to=app.email,
+            subject="Action required: Update your AIScore application",
+            html_body=html_body,
+        )
+    except Exception as exc:
+        log.error("urge_update.email_failed", application_id=str(application_id), error=str(exc))
+        raise HTTPException(status_code=502, detail=f"Email send failed: {exc}")
+
+    return {"sent": True, "to": app.email, "update_url": update_url}
+
+
+# ─────────────────────────────────────────────
+# Public: pre-fill data for update page
+# ─────────────────────────────────────────────
+
+@router.get("/applications/{application_id}/update-data")
+@limiter.limit("30/minute")
+async def get_update_data(
+    request: Request,
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public — returns current application data + verification results for the update form.
+
+    UUID acts as unguessable token; no auth required.
+    """
+    result = await db.execute(
+        select(CustomerApplication).where(CustomerApplication.id == application_id)
+    )
+    app = result.scalar_one_or_none()
+    if app is None:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    return {
+        "id": str(app.id),
+        "company_name": app.firmanavn,
+        "website": app.website,
+        "country": app.country,
+        "industry": app.industry,
+        "business_description": app.virksomhedsinfo or app.business_description,
+        "competitors": app.competitors,
+        "contact_name": app.kontaktperson,
+        "contact_email": app.email,
+        "application_goal": app.application_goal,
+        "status": app.status.value if hasattr(app.status, "value") else str(app.status),
+        "verification_results": app.agent_verification_results,
+        "verification_status": app.agent_verification_status,
+    }
+
+
+class ApplicationUpdatePublic(BaseModel):
+    company_name: Optional[str] = None
+    website: Optional[str] = None
+    country: Optional[str] = None
+    industry: Optional[str] = None
+    business_description: Optional[str] = None
+    competitors: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    application_goal: Optional[str] = None
+
+
+@router.patch("/applications/{application_id}/update", response_model=dict)
+@limiter.limit("10/minute")
+async def update_application_public(
+    request: Request,
+    application_id: uuid.UUID,
+    body: ApplicationUpdatePublic,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public — applicant updates their data. Resets verification so admin runs it again."""
+    result = await db.execute(
+        select(CustomerApplication).where(CustomerApplication.id == application_id)
+    )
+    app = result.scalar_one_or_none()
+    if app is None:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    now = datetime.now(timezone.utc)
+    if body.company_name is not None:
+        app.firmanavn = body.company_name
+    if body.website is not None:
+        app.website = body.website
+    if body.country is not None:
+        app.country = body.country
+    if body.industry is not None:
+        app.industry = body.industry
+    if body.business_description is not None:
+        app.virksomhedsinfo = body.business_description
+        app.business_description = body.business_description
+    if body.competitors is not None:
+        app.competitors = body.competitors
+    if body.contact_name is not None:
+        app.kontaktperson = body.contact_name
+    if body.contact_email is not None:
+        app.email = body.contact_email
+    if body.application_goal is not None:
+        app.application_goal = body.application_goal
+
+    # Reset verification so admin can re-run it on updated data
+    app.agent_verification_status = "PENDING"
+    app.agent_verification_results = None
+    app.updated_at = now
+
+    await db.commit()
+
+    # Trigger verification in background
+    background_tasks.add_task(_run_verification_background, application_id)
+
+    return {"updated": True, "id": str(application_id)}
 
 
 # ─────────────────────────────────────────────

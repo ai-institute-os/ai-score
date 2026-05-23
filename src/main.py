@@ -229,6 +229,12 @@ async def my_page(application_id: str):
     return FileResponse(str(_static_dir / "my-page.html"))
 
 
+@app.get("/update-application/{application_id}", include_in_schema=False)
+async def update_application_page(application_id: str):
+    """Customer portal — pre-filled form to update application data after verification."""
+    return FileResponse(str(_static_dir / "update_application.html"))
+
+
 @app.get("/admin/login", include_in_schema=False)
 async def admin_login_page(request: Request):
     """Serve the admin login page; redirect if already authenticated."""

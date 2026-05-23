@@ -771,8 +771,8 @@ const VALID_TRANSITIONS = {
 
 const WIZARD_STEPS = [
   { id: 'APPLIED',               label: 'Applied',               icon: 'mail-open'       },
-  { id: 'UNDER_REVIEW',          label: 'Under Review',          icon: 'eye'             },
   { id: 'AGENT_RESEARCH',        label: 'Verification',          icon: 'shield-check'    },
+  { id: 'UNDER_REVIEW',          label: 'Under Review',          icon: 'eye'             },
   { id: 'APPROVED',              label: 'Call Booking',          icon: 'calendar'        },
   { id: 'CALL_BOOKING',          label: 'Call Booked',           icon: 'calendar-check'  },
   { id: 'CALLED',                label: 'Called',                icon: 'phone'           },
@@ -785,7 +785,7 @@ const WIZARD_STEPS = [
 
 const STATUS_STEP_INDEX = {
   APPLIED:               0,
-  UNDER_REVIEW:          1,
+  UNDER_REVIEW:          2,
   APPROVED:              3,
   CALLED:                5,
   AWAITING_PAYMENT:      6,
@@ -799,10 +799,10 @@ const STATUS_STEP_INDEX = {
 
 function getWizardActiveIndex(app) {
   const s = app.status;
-  if (s === 'UNDER_REVIEW') {
+  if (s === 'APPLIED') {
     const vs = (app.agent_verification_status || '').toUpperCase();
     const rs = (app.agent_research_status || '').toUpperCase();
-    if (vs === 'IN_PROGRESS' || rs === 'IN_PROGRESS') return { idx: 2, researchActive: true };
+    if (vs === 'IN_PROGRESS' || rs === 'IN_PROGRESS') return { idx: 1, researchActive: true };
   }
   return { idx: STATUS_STEP_INDEX[s] ?? 0, researchActive: false };
 }
@@ -976,8 +976,8 @@ function renderApp(app) {
 
 // ─── Stage-aware Status Tab ───────────────────────
 
-const VERIFICATION_STAGES = new Set(['APPLIED', 'UNDER_REVIEW']);
-const INTERVIEW_STAGES    = new Set(['APPROVED', 'CALLED', 'AWAITING_PAYMENT', 'PAID', 'IN_PRODUCTION', 'QC_REVIEW', 'QC_PASSED', 'QC_FAILED', 'ESCALATED', 'RETRY', 'READY_FOR_REVIEW_CALL', 'CANCELLED', 'REJECTED']);
+const VERIFICATION_STAGES = new Set(['APPLIED']);
+const INTERVIEW_STAGES    = new Set(['UNDER_REVIEW', 'APPROVED', 'CALLED', 'AWAITING_PAYMENT', 'PAID', 'IN_PRODUCTION', 'QC_REVIEW', 'QC_PASSED', 'QC_FAILED', 'ESCALATED', 'RETRY', 'READY_FOR_REVIEW_CALL', 'CANCELLED', 'REJECTED']);
 
 function renderStageContent(app) {
   const sc = document.getElementById('stageContent');
@@ -1272,9 +1272,65 @@ function renderActionPanel(app) {
 
   if (panelEl) panelEl.style.display = status === 'CALLED' ? 'none' : '';
 
-  if (status === 'UNDER_REVIEW') {
+  if (status === 'APPLIED') {
+    titleEl.textContent = 'Verification & Review';
+    descEl.textContent = 'Run verification first, then move the application to Under Review.';
+    const vStatus = (app.agent_verification_status || '').toUpperCase();
+    const vPassed = isVerificationPassed(app);
+    const isRunning = vStatus === 'IN_PROGRESS';
+    const moveDisabled = vPassed ? '' : 'disabled title="Run verification first and ensure all fields pass"';
+    const moveCls = vPassed ? '' : ' disabled';
+    const vStatusBadge = isRunning
+      ? `<span style="font-size:0.75rem;color:var(--warning);background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);padding:0.15rem 0.5rem;border-radius:20px;">Verification running…</span>`
+      : vPassed
+        ? `<span style="font-size:0.75rem;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;padding:0.15rem 0.5rem;border-radius:20px;">Verification passed</span>`
+        : vStatus === 'FAILED'
+          ? `<span style="font-size:0.75rem;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:0.15rem 0.5rem;border-radius:20px;">Verification failed</span>`
+          : `<span style="font-size:0.75rem;color:var(--text-subtle);background:var(--card-dark);border:1px solid var(--border);padding:0.15rem 0.5rem;border-radius:20px;">Not run yet</span>`;
+    container.innerHTML = `
+      <div class="cta-group">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+          <span style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Verification status:</span>
+          ${vStatusBadge}
+        </div>
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+            <i data-lucide="refresh-cw" class="icon-sm"></i>
+            ${isRunning ? 'Verification running…' : 'Run / Retry Verification'}
+          </button>
+        </div>
+        <div style="height:0.75rem;"></div>
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-approve${moveCls}" ${moveDisabled} onclick="moveToReview(this)">
+            <i data-lucide="arrow-right-circle" class="icon-sm"></i>
+            Move to Under Review
+          </button>
+          <button class="cta-btn cta-btn-secondary" onclick="urgeApplicantUpdate(this)">
+            <i data-lucide="mail" class="icon-sm"></i>
+            Urge applicant to update
+          </button>
+        </div>
+        <div style="height:0.75rem;"></div>
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
+            <i data-lucide="x" class="icon-sm"></i>
+            Reject
+          </button>
+        </div>
+      </div>
+      <div id="rejectDialog" style="display:none;margin-top:1rem;background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
+        <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Rejection reason (optional)</label>
+        <textarea id="rejectNote" placeholder="Enter reason for rejection…" style="min-height:80px;"></textarea>
+        <div style="margin-top:0.75rem;display:flex;gap:0.5rem;">
+          <button class="btn btn-danger" onclick="confirmReject()">Confirm Rejection</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('rejectDialog').style.display='none'">Cancel</button>
+        </div>
+      </div>`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  } else if (status === 'UNDER_REVIEW') {
     titleEl.textContent = 'Review Actions';
-    descEl.textContent = 'This application is under review. Approve or reject it below.';
+    descEl.textContent = 'Verification passed — approve or reject this application.';
     const hasQuestions = Array.isArray(app.agent_interview_questions) && app.agent_interview_questions.length > 0;
     const verified = isVerificationPassed(app);
     const vStatus = (app.agent_verification_status || '').toUpperCase();
@@ -1492,6 +1548,46 @@ async function confirmReject() {
 async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
+
+async function moveToReview(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Moving…'; }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${APPLICATION_ID}/move-to-review`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      toast(d.detail || 'Failed to move to review', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-right-circle" class="icon-sm"></i> Move to Under Review'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+      return;
+    }
+    toast('Moved to Under Review', 'success');
+    setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    toast('Network error', 'error');
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+async function urgeApplicantUpdate(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${APPLICATION_ID}/urge-update`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      toast(d.detail || 'Failed to send email', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="mail" class="icon-sm"></i> Urge applicant to update'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+      return;
+    }
+    toast('Email sent to applicant', 'success');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="check" class="icon-sm"></i> Email sent'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+  } catch (e) {
+    toast('Network error', 'error');
+    if (btn) { btn.disabled = false; }
+  }
+}
 
 
 function downloadPdfReport() {
