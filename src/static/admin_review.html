@@ -1067,7 +1067,7 @@ function renderStageContent(app) {
         </div>
       </div>` : '';
 
-    const showInterviewQuestions = status !== 'APPLIED' && status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION';
+    const showInterviewQuestions = status !== 'APPLIED' && status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION' && status !== 'REJECTED' && status !== 'CANCELLED';
     const showInterviewSummary = status === 'IN_PRODUCTION' || status === 'PAID';
     sc.innerHTML = transcriptionCard + (showInterviewQuestions ? `
       <div class="review-card" id="interviewQuestionsCard">
