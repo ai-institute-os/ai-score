@@ -865,17 +865,18 @@ async def urge_applicant_update(
 
     app = await _get_application_or_404(application_id, db)
 
-    # Capture results before reset so the email can still list the failed fields
+    # Keep verification results so the email can list the failed fields
     prior_verification_results = app.agent_verification_results
 
-    app.agent_verification_status = "PENDING"
-    app.agent_verification_results = None
-    app.updated_at = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc)
+    app.verification_substage = "UPDATE_REQUEST_EMAIL_SENT"
+    app.update_request_email_sent_at = now
+    app.updated_at = now
     await db.commit()
 
     from src.config import get_settings
     settings = get_settings()
-    app_base_url = getattr(settings, "app_base_url", "https://app.aiscore.dk")
+    app_base_url = settings.app_base_url
     update_url = f"{app_base_url.rstrip('/')}/update-application/{app.id}"
 
     def _esc(v: object) -> str:
@@ -1019,9 +1020,11 @@ async def update_application_public(
     if body.application_goal is not None:
         app.application_goal = body.application_goal
 
-    # Reset verification so admin can re-run it on updated data
+    # Reset verification; mark as RESUBMITTED so admin sees the applicant responded
     app.agent_verification_status = "PENDING"
     app.agent_verification_results = None
+    app.verification_substage = "RESUBMITTED"
+    app.resubmitted_at = now
     app.updated_at = now
 
     await db.commit()

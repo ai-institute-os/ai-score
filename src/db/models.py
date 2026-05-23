@@ -225,6 +225,11 @@ class CustomerApplication(Base):
     agent_verification_status: Mapped[str] = mapped_column(String, nullable=False, default="PENDING")
     agent_verification_results: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     agent_verified_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    # Substage: PENDING | RUNNING | FAILED | UPDATE_REQUESTED | RESUBMITTED | VERIFIED
+    verification_substage: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    verification_failed_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    update_request_email_sent_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    resubmitted_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

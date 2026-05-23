@@ -384,6 +384,12 @@ Verify the following fields and return the JSON verification report."""
             app.agent_verification_status = overall_status
             app.agent_verification_results = data
             app.agent_verified_at = now
+            # Set verification substage based on outcome
+            if overall_status == "FAILED":
+                app.verification_substage = "FAILED"
+                app.verification_failed_at = now
+            elif overall_status in ("COMPLETED", "VERIFIED", "PASSED"):
+                app.verification_substage = "VERIFIED"
 
             # --- Step 3: Auto-reject if FAILED due to website ERROR ---
             auto_rejected = False

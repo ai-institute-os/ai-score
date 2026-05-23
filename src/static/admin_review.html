@@ -714,6 +714,24 @@
 
 <div class="toast-wrap" id="toastWrap"></div>
 
+<!-- Send update request email confirmation modal -->
+<div id="urgeConfirmModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;">
+      <i data-lucide="mail" style="width:18px;height:18px;color:var(--text-muted);flex-shrink:0;"></i>
+      <span style="font-weight:700;font-size:0.95rem;">Send update request email?</span>
+    </div>
+    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+      An email will be sent to the applicant asking them to correct the fields that failed verification.
+      They will receive a link to update their application.
+    </p>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeUrgeConfirmModal()">Cancel</button>
+      <button class="btn btn-primary" id="btnConfirmUrge" onclick="confirmUrgeApplicantUpdate()">Send Email</button>
+    </div>
+  </div>
+</div>
+
 <!-- Expire payment link confirmation modal -->
 <div id="expireModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;">
   <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
@@ -1049,7 +1067,7 @@ function renderStageContent(app) {
         </div>
       </div>` : '';
 
-    const showInterviewQuestions = status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION';
+    const showInterviewQuestions = status !== 'APPLIED' && status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION';
     const showInterviewSummary = status === 'IN_PRODUCTION' || status === 'PAID';
     sc.innerHTML = transcriptionCard + (showInterviewQuestions ? `
       <div class="review-card" id="interviewQuestionsCard">
@@ -1275,41 +1293,94 @@ function renderActionPanel(app) {
   if (status === 'APPLIED') {
     titleEl.textContent = 'Verification & Review';
     descEl.textContent = 'Run verification first, then move the application to Under Review.';
-    const vStatus = (app.agent_verification_status || '').toUpperCase();
+    const substage = (app.verification_substage || '').toUpperCase();
     const vPassed = isVerificationPassed(app);
-    const isRunning = vStatus === 'IN_PROGRESS';
-    const moveDisabled = vPassed ? '' : 'disabled title="Run verification first and ensure all fields pass"';
-    const moveCls = vPassed ? '' : ' disabled';
-    const vStatusBadge = isRunning
-      ? `<span style="font-size:0.75rem;color:var(--warning);background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);padding:0.15rem 0.5rem;border-radius:20px;">Verification running…</span>`
-      : vPassed
-        ? `<span style="font-size:0.75rem;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;padding:0.15rem 0.5rem;border-radius:20px;">Verification passed</span>`
-        : vStatus === 'FAILED'
-          ? `<span style="font-size:0.75rem;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:0.15rem 0.5rem;border-radius:20px;">Verification failed</span>`
-          : `<span style="font-size:0.75rem;color:var(--text-subtle);background:var(--card-dark);border:1px solid var(--border);padding:0.15rem 0.5rem;border-radius:20px;">Not run yet</span>`;
+    const isRunning = (app.agent_verification_status || '').toUpperCase() === 'IN_PROGRESS';
+
+    // Substage badge
+    let subBadge = '';
+    if (substage === 'RESUBMITTED') {
+      subBadge = `<span style="font-size:0.75rem;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;padding:0.15rem 0.5rem;border-radius:20px;">Resubmitted</span>`;
+    } else if (substage === 'UPDATE_REQUESTED') {
+      subBadge = `<span style="font-size:0.75rem;color:#d97706;background:#fffbeb;border:1px solid #fde68a;padding:0.15rem 0.5rem;border-radius:20px;">Update Request Sent</span>`;
+    } else if (substage === 'VERIFIED' || vPassed) {
+      subBadge = `<span style="font-size:0.75rem;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;padding:0.15rem 0.5rem;border-radius:20px;">Verification passed</span>`;
+    } else if (substage === 'FAILED') {
+      subBadge = `<span style="font-size:0.75rem;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:0.15rem 0.5rem;border-radius:20px;">Verification failed</span>`;
+    } else if (isRunning || substage === 'RUNNING') {
+      subBadge = `<span style="font-size:0.75rem;color:var(--warning);background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);padding:0.15rem 0.5rem;border-radius:20px;">Verification running…</span>`;
+    } else {
+      subBadge = `<span style="font-size:0.75rem;color:var(--text-subtle);background:var(--card-dark);border:1px solid var(--border);padding:0.15rem 0.5rem;border-radius:20px;">Not run yet</span>`;
+    }
+
+    // Primary action buttons based on substage
+    let primaryActions = '';
+    if (isRunning || substage === 'RUNNING') {
+      primaryActions = `
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary disabled" disabled>
+            <i data-lucide="loader" class="icon-sm"></i>
+            Verification running…
+          </button>
+        </div>`;
+    } else if (substage === 'FAILED') {
+      primaryActions = `
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+            <i data-lucide="refresh-cw" class="icon-sm"></i>
+            Retry Verification
+          </button>
+          <button class="cta-btn cta-btn-secondary" onclick="openUrgeConfirmModal()">
+            <i data-lucide="mail" class="icon-sm"></i>
+            Send Update Request Email
+          </button>
+        </div>`;
+    } else if (substage === 'UPDATE_REQUESTED') {
+      primaryActions = `
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+            <i data-lucide="refresh-cw" class="icon-sm"></i>
+            Retry Verification
+          </button>
+          <button class="cta-btn cta-btn-secondary" onclick="openUrgeConfirmModal()">
+            <i data-lucide="mail" class="icon-sm"></i>
+            Resend Update Request Email
+          </button>
+        </div>`;
+    } else if (substage === 'RESUBMITTED') {
+      primaryActions = `
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+            <i data-lucide="refresh-cw" class="icon-sm"></i>
+            Verify Again
+          </button>
+        </div>`;
+    } else if (substage === 'VERIFIED' || vPassed) {
+      primaryActions = `
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-approve" onclick="moveToReview(this)">
+            <i data-lucide="arrow-right-circle" class="icon-sm"></i>
+            Move to Under Review
+          </button>
+        </div>`;
+    } else {
+      // PENDING or unknown
+      primaryActions = `
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
+            <i data-lucide="refresh-cw" class="icon-sm"></i>
+            Run Verification
+          </button>
+        </div>`;
+    }
+
     container.innerHTML = `
       <div class="cta-group">
         <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
           <span style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Verification status:</span>
-          ${vStatusBadge}
+          ${subBadge}
         </div>
-        <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-            <i data-lucide="refresh-cw" class="icon-sm"></i>
-            ${isRunning ? 'Verification running…' : 'Run / Retry Verification'}
-          </button>
-        </div>
-        <div style="height:0.75rem;"></div>
-        <div class="cta-row">
-          <button class="cta-btn cta-btn-approve${moveCls}" ${moveDisabled} onclick="moveToReview(this)">
-            <i data-lucide="arrow-right-circle" class="icon-sm"></i>
-            Move to Under Review
-          </button>
-          <button class="cta-btn cta-btn-secondary" onclick="urgeApplicantUpdate(this)">
-            <i data-lucide="mail" class="icon-sm"></i>
-            Urge applicant to update
-          </button>
-        </div>
+        ${primaryActions}
         <div style="height:0.75rem;"></div>
         <div class="cta-row">
           <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
@@ -1569,8 +1640,20 @@ async function moveToReview(btn) {
   }
 }
 
-async function urgeApplicantUpdate(btn) {
+function openUrgeConfirmModal() {
+  const modal = document.getElementById('urgeConfirmModal');
+  modal.style.display = 'flex';
+}
+
+function closeUrgeConfirmModal() {
+  const modal = document.getElementById('urgeConfirmModal');
+  modal.style.display = 'none';
+}
+
+async function confirmUrgeApplicantUpdate() {
+  const btn = document.getElementById('btnConfirmUrge');
   if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  closeUrgeConfirmModal();
   try {
     const res = await fetch(`/api/v1/admin/applications/${APPLICATION_ID}/urge-update`, {
       method: 'POST',
@@ -1578,15 +1661,20 @@ async function urgeApplicantUpdate(btn) {
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       toast(d.detail || 'Failed to send email', 'error');
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="mail" class="icon-sm"></i> Urge applicant to update'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
-      return;
+    } else {
+      toast('Update request email sent to applicant', 'success');
+      setTimeout(() => location.reload(), 800);
     }
-    toast('Email sent to applicant', 'success');
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="check" class="icon-sm"></i> Email sent'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
   } catch (e) {
     toast('Network error', 'error');
-    if (btn) { btn.disabled = false; }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Email'; }
   }
+}
+
+// kept for backwards compatibility (no longer called from action panel)
+async function urgeApplicantUpdate() {
+  openUrgeConfirmModal();
 }
 
 
