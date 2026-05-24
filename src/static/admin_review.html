@@ -1718,12 +1718,28 @@ function renderActionPanel(app) {
             <i data-lucide="shield-check" style="width:14px;height:14px;margin-right:0.35rem;"></i>
             Run Checker
           </button>
-          ${status === 'IN_PRODUCTION' ? `
-          <button class="btn btn-primary" id="btnDownloadPdf" onclick="downloadPdfReport()"
-             style="font-size:0.85rem;padding:0.5rem 1.1rem;">
-            <i data-lucide="download" style="width:14px;height:14px;margin-right:0.35rem;"></i>
-            Download PDF Rapport
-          </button>` : `
+          ${status === 'IN_PRODUCTION' ? (() => {
+            const scoringStatus = app.scoring_status || 'not_started';
+            if (scoringStatus === 'done') {
+              return `<button class="btn btn-primary" id="btnDownloadPdf" onclick="downloadPdfReport()"
+                 style="font-size:0.85rem;padding:0.5rem 1.1rem;">
+                <i data-lucide="download" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+                Download PDF Rapport
+              </button>`;
+            } else if (scoringStatus === 'running') {
+              return `<button class="btn btn-primary" id="btnGenerateReport" disabled
+                 style="font-size:0.85rem;padding:0.5rem 1.1rem;">
+                <i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i>
+                Genererer rapport…
+              </button>`;
+            } else {
+              return `<button class="btn btn-primary" id="btnGenerateReport" onclick="triggerGenerateReport()"
+                 style="font-size:0.85rem;padding:0.5rem 1.1rem;"${scoringStatus === 'error' ? ' title="Forrige kørsel fejlede — prøv igen"' : ''}>
+                <i data-lucide="play-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+                ${scoringStatus === 'error' ? 'Prøv Igen' : 'Generer Rapport'}
+              </button>`;
+            }
+          })() : `
           <button class="btn btn-primary" onclick="generateReport()" style="font-size:0.85rem;padding:0.5rem 1.1rem;" id="btnGenerateReport" disabled>
             <i data-lucide="file-text" style="width:14px;height:14px;margin-right:0.35rem;"></i>
             Generate Report
@@ -1930,6 +1946,62 @@ function downloadPdfReport() {
       if (window.lucide) lucide.createIcons();
     }
   }, 35000);
+}
+
+async function triggerGenerateReport() {
+  const btn = document.getElementById('btnGenerateReport');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Starter…';
+    if (window.lucide) lucide.createIcons();
+  }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/generate-report`, { method: 'POST' });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${res.status}`);
+    }
+    toast('Rapport-generering startet — vent venligst…', 'success');
+    // Update appData so the action panel re-renders with "running" state
+    if (appData) {
+      appData.scoring_status = 'running';
+      renderApp(appData);
+    }
+    _pollScoringStatus();
+  } catch (err) {
+    toast('Fejl: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+let _scoringPollTimer = null;
+function _pollScoringStatus() {
+  if (_scoringPollTimer) clearTimeout(_scoringPollTimer);
+  _scoringPollTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/v1/admin/applications/${appId}/generate-report/status`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.scoring_status === 'done' || data.scoring_status === 'error') {
+        // Reload full app data so the panel re-renders correctly
+        const appRes = await fetch(`/api/v1/admin/applications/${appId}`);
+        if (appRes.ok) {
+          const updated = await appRes.json();
+          renderApp(updated);
+          if (data.scoring_status === 'done') {
+            toast(`Rapport genereret! Score: ${data.overall_score ?? '–'}`, 'success');
+          } else {
+            toast('Rapport-generering fejlede — se konsollen for detaljer.', 'error');
+          }
+        }
+      } else {
+        // Still running — poll again
+        _pollScoringStatus();
+      }
+    } catch (_) {
+      _pollScoringStatus();
+    }
+  }, 5000);
 }
 
 function runDataChecker() {

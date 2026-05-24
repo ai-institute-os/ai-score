@@ -208,6 +208,10 @@ class CustomerApplication(Base):
     overall_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     queries_run: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     rank: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # Async scoring pipeline state — not_started | running | done | error
+    scoring_status: Mapped[str] = mapped_column(String, nullable=False, default="not_started")
+    # Per-provider results JSON (mentioned/selected counts, avg dimensions, sample quote)
+    scoring_results: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     # Agent research fields — populated by background research task after UNDER_REVIEW
     agent_research_status: Mapped[str] = mapped_column(String, nullable=False, default="PENDING")
     agent_website_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

@@ -248,6 +248,8 @@ class ApplicationResponse(BaseModel):
     overall_score: Optional[int] = None
     queries_run: Optional[int] = None
     rank: Optional[int] = None
+    scoring_status: str = "not_started"
+    scoring_results: Optional[dict] = None
     # Agent research
     agent_research_status: str = "PENDING"
     agent_website_summary: Optional[str] = None

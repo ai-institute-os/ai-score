@@ -2902,12 +2902,230 @@ async def set_scoring_data(
 
 
 # ─────────────────────────────────────────────
+# Admin: Production scoring pipeline
+# ─────────────────────────────────────────────
+
+async def _run_scoring_pipeline(application_id: uuid.UUID) -> None:
+    """Background task: run report_questions against all 4 LLM providers and store results."""
+    from src.config import get_settings
+    from src.db.connection import get_session_factory
+    from src.llm.providers import REGISTRY
+    from src.llm.providers.base import ProviderConfig
+    from src.scoring.calculator import AIScore, ScoreCalculator
+    from src.scoring.aggregator import aggregate_scores
+
+    settings = get_settings()
+    calculator = ScoreCalculator()
+
+    async with get_session_factory()() as session:
+        result = await session.execute(
+            select(CustomerApplication).where(CustomerApplication.id == application_id)
+        )
+        app = result.scalar_one_or_none()
+        if not app:
+            log.error("scoring_pipeline.app_not_found", application_id=str(application_id))
+            return
+
+        questions = app.report_questions or []
+        if not questions:
+            app.scoring_status = "error"
+            app.scoring_results = {"error": "Ingen report_questions fundet — generer dem først."}
+            await session.commit()
+            return
+
+        keyword = app.firmanavn
+        provider_configs = {
+            "openai": ProviderConfig(api_key=settings.openai_api_key),
+            "claude": ProviderConfig(api_key=settings.anthropic_api_key),
+            "gemini": ProviderConfig(api_key=settings.google_api_key),
+            "perplexity": ProviderConfig(api_key=settings.perplexity_api_key),
+        }
+
+        # Per-provider accumulators
+        provider_ai_scores: dict[str, list[AIScore]] = {p: [] for p in provider_configs}
+        provider_responses: dict[str, list[str]] = {p: [] for p in provider_configs}
+
+        try:
+            for question in questions:
+                prompt = question.get("question", "") if isinstance(question, dict) else str(question)
+                if not prompt:
+                    continue
+
+                tasks = {
+                    provider: REGISTRY[provider].complete(prompt, provider_configs[provider])
+                    for provider in provider_configs
+                    if provider in REGISTRY
+                }
+                results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+
+                for provider, llm_result in zip(tasks.keys(), results):
+                    if isinstance(llm_result, Exception) or (hasattr(llm_result, "error") and llm_result.error):
+                        provider_ai_scores[provider].append(AIScore.zero())
+                        log.warning(
+                            "scoring_pipeline.provider_error",
+                            provider=provider,
+                            error=str(llm_result),
+                            application_id=str(application_id),
+                        )
+                    else:
+                        score = calculator.calculate(llm_result, keyword)
+                        provider_ai_scores[provider].append(score)
+                        if llm_result.response_text:
+                            provider_responses[provider].append(llm_result.response_text)
+
+            # Compute per-provider averages and build scoring_results dict
+            avg_scores: dict[str, AIScore] = {}
+            scoring_results: dict = {}
+
+            for provider, scores in provider_ai_scores.items():
+                if not scores:
+                    continue
+                n = len(scores)
+                avg = AIScore(
+                    naevnt=sum(s.naevnt for s in scores) / n,
+                    valgt=sum(s.valgt for s in scores) / n,
+                    valgbarhed=sum(s.valgbarhed for s in scores) / n,
+                    konkurrenceposition=sum(s.konkurrenceposition for s in scores) / n,
+                    total=sum(s.total for s in scores) / n,
+                )
+                avg_scores[provider] = avg
+
+                # Pick best response: prefer one that mentions the company keyword
+                responses = provider_responses.get(provider, [])
+                best = next(
+                    (r for r in responses if keyword.lower() in r.lower()),
+                    responses[0] if responses else "",
+                )
+
+                scoring_results[provider] = {
+                    "mentioned_count": sum(1 for s in scores if s.naevnt > 0),
+                    "selected_count": sum(1 for s in scores if s.valgt > 0),
+                    "total_queries": n,
+                    "avg_naevnt": round(avg.naevnt, 2),
+                    "avg_valgt": round(avg.valgt, 2),
+                    "avg_valgbarhed": round(avg.valgbarhed, 2),
+                    "avg_konkurrenceposition": round(avg.konkurrenceposition, 2),
+                    "avg_total": round(avg.total, 2),
+                    # Truncate to first 400 chars for PDF quote
+                    "best_response": best[:400] if best else "",
+                }
+
+            agg = aggregate_scores(avg_scores)
+            overall = round(agg.total) if agg else 0
+            queries_total = sum(r["total_queries"] for r in scoring_results.values())
+
+            app.overall_score = overall
+            app.queries_run = queries_total
+            app.scoring_status = "done"
+            app.scoring_results = scoring_results
+            log.info(
+                "scoring_pipeline.completed",
+                application_id=str(application_id),
+                overall_score=overall,
+                queries_run=queries_total,
+            )
+
+        except Exception as exc:
+            log.error("scoring_pipeline.failed", application_id=str(application_id), error=str(exc))
+            app.scoring_status = "error"
+            app.scoring_results = {"error": str(exc)}
+
+        await session.commit()
+
+
+@router.post(
+    "/admin/applications/{application_id}/generate-report",
+    summary="Admin — start async AIScore scoring pipeline for this application",
+)
+@limiter.limit("5/minute")
+async def trigger_generate_report(
+    request: Request,
+    application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
+):
+    """Kick off the production scoring pipeline for *application_id*.
+
+    Runs all report_questions against the 4 LLM providers, scores responses,
+    aggregates results, and persists overall_score + per-provider data.
+    Poll ``GET /admin/applications/{id}/generate-report/status`` for completion.
+    """
+    app = await _get_application_or_404(application_id, db)
+
+    if app.scoring_status == "running":
+        return {
+            "application_id": str(application_id),
+            "scoring_status": "running",
+            "message": "Scoring pipeline kører allerede.",
+        }
+
+    if not app.report_questions:
+        raise HTTPException(
+            status_code=422,
+            detail="Ingen report_questions fundet. Generer dem først via /report-questions/generate.",
+        )
+
+    app.scoring_status = "running"
+    await db.commit()
+
+    background_tasks.add_task(_run_scoring_pipeline, application_id)
+
+    return {
+        "application_id": str(application_id),
+        "scoring_status": "running",
+        "message": "Scoring pipeline startet.",
+    }
+
+
+@router.get(
+    "/admin/applications/{application_id}/generate-report/status",
+    summary="Admin — poll scoring pipeline status",
+)
+async def get_generate_report_status(
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
+):
+    """Return current scoring_status and overall_score for *application_id*."""
+    app = await _get_application_or_404(application_id, db)
+    return {
+        "application_id": str(application_id),
+        "scoring_status": app.scoring_status,
+        "overall_score": app.overall_score,
+        "queries_run": app.queries_run,
+    }
+
+
+# ─────────────────────────────────────────────
 # Admin: HTML-to-PDF report download
 # ─────────────────────────────────────────────
 
 _REPORT_TEMPLATE = (
     Path(__file__).parent.parent / "templates" / "aiscore-report.html"
 )
+
+
+def _extract_competitors(app: "CustomerApplication") -> list[str]:
+    """Extract competitor names from agent research or call data."""
+    import re
+
+    notes = app.agent_competitor_notes or ""
+    if notes:
+        caps = re.findall(r'\b[A-ZÆØÅ][a-zæøå]{2,}(?:\s+[A-ZÆØÅ][a-zæøå]{2,})?\b', notes)
+        # Filter out common non-company words
+        skip = {"En", "Et", "De", "Den", "Det", "Med", "Og", "For", "Til"}
+        competitors = [c for c in dict.fromkeys(caps) if c not in skip][:4]
+        if competitors:
+            return competitors
+
+    extracted = (app.call_extracted_data or {}).get("competitors", "")
+    if isinstance(extracted, list):
+        return extracted[:4]
+    if isinstance(extracted, str) and extracted.strip():
+        return [c.strip() for c in re.split(r"[,;/]", extracted) if c.strip()][:4]
+
+    return []
 
 
 def _render_report_html(app: "CustomerApplication") -> str:
@@ -2928,40 +3146,123 @@ def _render_report_html(app: "CustomerApplication") -> str:
     overall = app.overall_score if app.overall_score is not None else 74
     queries = app.queries_run if app.queries_run is not None else 36
     name = app.firmanavn
+    sector = app.industry or app.detected_company_type or "tech"
+    competitors = _extract_competitors(app)
+    primary_competitor = competitors[0] if competitors else "de globale alternativer"
+    secondary_competitors = competitors[1:3] if len(competitors) > 1 else []
+    business_context = (
+        app.agent_business_summary
+        or app.virksomhedsinfo
+        or f"{name} er en virksomhed inden for {sector}."
+    )
 
-    # Computed metrics (illustrative defaults — replace with real pipeline data)
-    mention_count = round(queries * 0.72)
-    selection_count = round(queries * 0.42)
-    mention_rate = f"{round(mention_count / queries * 100)}%"
-    selection_rate = f"{round(selection_count / queries * 100)}%"
-    selection_gap = round(mention_count / queries * 100) - round(selection_count / queries * 100)
-    queries_per_system = queries // 4
+    sr = app.scoring_results or {}
+    has_real_data = bool(sr)
 
-    # Per-system illustrative stats
-    chatgpt_m = round(queries_per_system * 0.78)
-    chatgpt_s = round(queries_per_system * 0.44)
-    claude_m  = round(queries_per_system * 0.67)
-    claude_s  = round(queries_per_system * 0.33)
-    perp_m    = round(queries_per_system * 0.89)
-    perp_s    = round(queries_per_system * 0.56)
-    gemini_m  = round(queries_per_system * 0.56)
-    gemini_s  = round(queries_per_system * 0.33)
+    queries_per_system = max(queries // 4, 1)
 
-    chatgpt_mp = round(chatgpt_m / queries_per_system * 100)
-    chatgpt_sp = round(chatgpt_s / queries_per_system * 100)
-    claude_mp  = round(claude_m  / queries_per_system * 100)
-    claude_sp  = round(claude_s  / queries_per_system * 100)
-    perp_mp    = round(perp_m    / queries_per_system * 100)
-    perp_sp    = round(perp_s    / queries_per_system * 100)
-    gemini_mp  = round(gemini_m  / queries_per_system * 100)
-    gemini_sp  = round(gemini_s  / queries_per_system * 100)
+    def _prov(key: str) -> dict:
+        """Return per-provider display values from scoring_results or illustrative fallbacks."""
+        d = sr.get(key, {})
+        n = d.get("total_queries", queries_per_system)
+        m = d.get("mentioned_count", 0)
+        s = d.get("selected_count", 0)
+        if not has_real_data:
+            # illustrative fallbacks keyed by provider
+            fallback = {
+                "openai":      (round(queries_per_system * 0.78), round(queries_per_system * 0.44)),
+                "claude":      (round(queries_per_system * 0.67), round(queries_per_system * 0.33)),
+                "perplexity":  (round(queries_per_system * 0.89), round(queries_per_system * 0.56)),
+                "gemini":      (round(queries_per_system * 0.56), round(queries_per_system * 0.33)),
+            }
+            m, s = fallback.get(key, (round(queries_per_system * 0.60), round(queries_per_system * 0.30)))
+            n = queries_per_system
+        mp = round(m / n * 100) if n > 0 else 0
+        sp = round(s / n * 100) if n > 0 else 0
+        quote = d.get("best_response", "")
+        return {"m": m, "s": s, "n": n, "mp": mp, "sp": sp, "quote": quote}
 
-    # Dimension scores (illustrative)
-    d_entity      = min(overall + 8, 100)
-    d_category    = overall
-    d_competitive = max(overall - 6, 0)
-    d_context     = min(overall + 4, 100)
-    d_decision    = max(overall - 14, 0)
+    og = _prov("openai")
+    cl = _prov("claude")
+    pe = _prov("perplexity")
+    ge = _prov("gemini")
+
+    # Aggregate mention/selection counts across all providers
+    total_mentioned = og["m"] + cl["m"] + pe["m"] + ge["m"]
+    total_selected  = og["s"] + cl["s"] + pe["s"] + ge["s"]
+    total_q = og["n"] + cl["n"] + pe["n"] + ge["n"]
+    mention_rate    = f"{round(total_mentioned / total_q * 100)}%" if total_q > 0 else "–"
+    selection_rate  = f"{round(total_selected  / total_q * 100)}%" if total_q > 0 else "–"
+    selection_gap   = (
+        round(total_mentioned / total_q * 100) - round(total_selected / total_q * 100)
+        if total_q > 0 else 0
+    )
+
+    # Dimension scores from real data (average across providers) or illustrative offsets
+    if has_real_data:
+        all_naevnt = [sr[p]["avg_naevnt"] for p in sr if "avg_naevnt" in sr[p]]
+        all_valgt  = [sr[p]["avg_valgt"]  for p in sr if "avg_valgt"  in sr[p]]
+        all_valgb  = [sr[p]["avg_valgbarhed"] for p in sr if "avg_valgbarhed" in sr[p]]
+        all_konk   = [sr[p]["avg_konkurrenceposition"] for p in sr if "avg_konkurrenceposition" in sr[p]]
+        avg_n = sum(all_naevnt) / len(all_naevnt) if all_naevnt else 0
+        avg_v = sum(all_valgt)  / len(all_valgt)  if all_valgt  else 0
+        avg_b = sum(all_valgb)  / len(all_valgb)  if all_valgb  else 0
+        avg_k = sum(all_konk)   / len(all_konk)   if all_konk   else 0
+        # Map raw dimension values to 0-100 score for the template display
+        d_entity      = min(round(avg_n / 30 * 100), 100)
+        d_category    = min(round(avg_b / 25 * 100), 100)
+        d_competitive = min(round(avg_k / 15 * 100), 100)
+        d_context     = overall
+        d_decision    = min(round(avg_v / 30 * 100), 100)
+    else:
+        d_entity      = min(overall + 8, 100)
+        d_category    = overall
+        d_competitive = max(overall - 6, 0)
+        d_context     = min(overall + 4, 100)
+        d_decision    = max(overall - 14, 0)
+
+    # Ratings for matrix section
+    def _rating(mp: int) -> tuple[str, str]:
+        if mp >= 75: return "Høj", "rate-high"
+        if mp >= 50: return "God", "rate-high"
+        if mp >= 30: return "Moderat", "rate-mod"
+        return "Lav", "rate-low"
+
+    cg_r, cg_rc   = _rating(og["mp"])
+    cl_r, cl_rc   = _rating(cl["mp"])
+    pe_r, pe_rc   = _rating(pe["mp"])
+    ge_r, ge_rc   = _rating(ge["mp"])
+
+    # Build competitor rows for the AI landscape table
+    def _competitor_rows() -> str:
+        rows = (
+            f'<tr class="highlight-row">'
+            f'<td><span class="role-badge">{name}</span></td>'
+            f'<td>{name}</td>'
+            f'<td>Analyseret virksomhed · nævnt {og["mp"]}–{pe["mp"]}% afhængigt af system</td>'
+            f'</tr>'
+        )
+        for comp in competitors[:3]:
+            rows += (
+                f'<tr><td>{comp}</td><td>{comp}</td>'
+                f'<td>Konkurrent i {sector} · nævnt i AI-svar</td></tr>'
+            )
+        if not competitors:
+            rows += (
+                f'<tr><td>Globale alternativer</td><td>–</td>'
+                f'<td>Bredere alternativer uden nichefokus</td></tr>'
+            )
+        return rows
+
+    # Quote display: use real response if available, else generic
+    def _quote(prov_data: dict, provider_name: str) -> str:
+        q = prov_data.get("quote", "").strip()
+        if q:
+            # Return first 2 sentences
+            import re
+            sentences = re.split(r'(?<=[.!?])\s+', q)
+            return " ".join(sentences[:3]) if sentences else q[:300]
+        return f"{provider_name} genkender {name} i {sector}-kontekster."
 
     substitutions = {
         "{{COMPANY_NAME}}": name,
@@ -2973,180 +3274,164 @@ def _render_report_html(app: "CustomerApplication") -> str:
         "{{QUERIES_RUN}}": str(queries),
         "{{QUERIES_PER_SYSTEM}}": str(queries_per_system),
         "{{RANK}}": str(app.rank) if app.rank is not None else "–",
-        "{{COMPANY_SECTOR}}": app.industry or "Softwarevirksomhed",
+        "{{COMPANY_SECTOR}}": sector,
         # Rates
         "{{MENTION_RATE}}": mention_rate,
-        "{{MENTION_COUNT}}": str(mention_count),
+        "{{MENTION_COUNT}}": str(total_mentioned),
         "{{SELECTION_RATE}}": selection_rate,
-        "{{SELECTION_COUNT}}": str(selection_count),
+        "{{SELECTION_COUNT}}": str(total_selected),
         "{{SELECTION_GAP}}": str(selection_gap),
         # Section 00
         "{{WHY_ANALYSIS_TEXT}}": (
-            f"<span class='sec-intro-line'>Når en potentiel kunde spørger ChatGPT, Gemini, Perplexity eller Claude efter "
-            f"'bedste booking-software til neglesalon', sker der noget afgørende: AI-systemet vælger.</span>"
+            f"<span class='sec-intro-line'>Når en potentiel kunde spørger ChatGPT, Gemini, Perplexity eller Claude "
+            f"efter en løsning inden for {sector}, sker der noget afgørende: AI-systemet vælger.</span>"
             f"<span class='sec-intro-line'>Det er ikke en søgerangering — det er en anbefaling.</span>"
             f"<span>Denne analyse kortlægger præcist, hvordan {name} fremstår i de fire primære AI-systemer, "
             f"og hvad der skal til for at flytte positionen fra 'nævnt' til 'valgt som primær'.</span>"
         ),
         # Section 01 Executive Summary
         "{{EXEC_SUMMARY_HEADLINE}}": (
-            f"{name} er synlig på tværs af alle fire AI-systemer — men konverterer endnu ikke til "
+            f"{name} er synlig på tværs af AI-systemer — men konverterer endnu ikke til "
             f"primært valg i tilstrækkelig grad"
         ),
-        "{{STRONGEST_DIMENSION}}": "Category Relevance — stærk kategorisering som booking-løsning",
+        "{{STRONGEST_DIMENSION}}": f"Entity Authority — AI-systemerne genkender {name} som etableret aktør",
         "{{KEY_LIMITATION}}": "Decision Relevance — fremstår som alternativ, sjældent som primær anbefaling",
         "{{STRATEGIC_TENSION}}": f"Bred synlighed ({mention_rate}) vs. lav konvertering til valg ({selection_rate})",
         # Section 02
         "{{METHODOLOGY_TEXT}}": (
             f"<span class='sec-intro-line'>Analysen er baseret på {queries} strukturerede testprompts fordelt ligeligt over "
             f"ChatGPT (GPT-4o), Claude (Anthropic), Perplexity AI og Google Gemini.</span>"
-            f"<span class='sec-intro-line'>Prompterne dækker fire kategorier: generel kategorisøgning, "
-            f"problembaserede spørgsmål, sammenligning med konkurrenter og professionel beslutningsstøtte.</span>"
+            f"<span class='sec-intro-line'>Prompterne dækker virksomhedens specifikke synlighedskriterier inden for {sector}: "
+            f"kategorisøgning, problembaserede spørgsmål, sammenligning og professionel beslutningsstøtte.</span>"
         ),
-        "{{PROMPT_CAT_1_EXAMPLE}}": f'"Hvad er de bedste booking-apps til neglesalon?"',
-        "{{PROMPT_CAT_2_EXAMPLE}}": f'"Jeg driver en neglesalon og har brug for online booking — hvad anbefaler du?"',
-        "{{PROMPT_CAT_3_EXAMPLE}}": f'"Sammenlign {name} med Fresha og Treatwell"',
-        "{{PROMPT_CAT_4_EXAMPLE}}": f'"Hvilket salon-booking-system har den bedste kundeoplevelse?"',
+        "{{PROMPT_CAT_1_EXAMPLE}}": f'"Hvad er de bedste løsninger inden for {sector}?"',
+        "{{PROMPT_CAT_2_EXAMPLE}}": f'"Jeg har brug for en løsning til {sector} — hvad anbefaler du?"',
+        "{{PROMPT_CAT_3_EXAMPLE}}": (
+            f'"Sammenlign {name} med {primary_competitor}"'
+            if primary_competitor != "de globale alternativer"
+            else f'"Hvad adskiller {name} fra konkurrenterne?"'
+        ),
+        "{{PROMPT_CAT_4_EXAMPLE}}": f'"Hvilken {sector}-løsning har den bedste kundeoplevelse?"',
         # Section 03
         "{{BRAND_POSITION_HEADLINE}}": (
-            f"{name} er veletableret i booking-kategorien — men AI-systemer opfatter ikke differentieringen skarpt nok"
+            f"{name} er etableret i sin kategori — men AI-systemerne mangler differentierende indhold "
+            f"til at positionere virksomheden frem for bredere alternativer"
         ),
         "{{BRAND_POSITION_INTRO}}": (
-            f"<span class='sec-intro-line'>Den offentlige tilgængelige information om {name} tegner et billede af en nordisk booking-platform med fokus på neglesaloner.</span>"
-            f"<span class='sec-intro-line'>AI-systemerne genkender dette profil, men mangler konkret differentierende indhold til at positionere {name} frem for bredere alternativer.</span>"
+            f"<span class='sec-intro-line'>Den offentligt tilgængelige information om {name} tegner et billede "
+            f"af en virksomhed inden for {sector}.</span>"
+            f"<span class='sec-intro-line'>AI-systemerne genkender dette profil, men mangler konkret differentierende "
+            f"indhold til at positionere {name} frem for bredere alternativer.</span>"
         ),
         "{{BRAND_STRENGTHS_LIST}}": (
-            f"<li>Stærk kategorisering som neglesalon-specifik booking-platform</li>"
-            f"<li>Nordisk markedsposition anerkendt i alle fire systemer</li>"
-            f"<li>Online booking og kalender-håndtering konsekvent nævnt som kernekompetence</li>"
+            f"<li>Brand genkendes i {sector}-kontekster på tværs af alle fire systemer</li>"
+            f"<li>Kategorisering er korrekt — AI-systemerne forbinder {name} med det rette segment</li>"
+            f"<li>Eksisterende synlighed giver et etableret udgangspunkt at bygge videre på</li>"
         ),
         "{{BRAND_GAPS_LIST}}": (
-            f"<li>Manglende differentiering fra Fresha, Treatwell og Booksy i AI-svar</li>"
-            f"<li>Kundeudtalelser og ROI-dokumentation fraværende i AI-citérbar form</li>"
-            f"<li>Teknisk dybde (API, integrationer) ikke repræsenteret i AI-synlighed</li>"
+            (
+                f"<li>Manglende differentiering fra {', '.join(competitors[:2])} i AI-svar</li>"
+                if competitors else
+                "<li>Manglende differentiering fra generiske alternativer i AI-svar</li>"
+            )
+            + "<li>Kundeudtalelser og ROI-dokumentation fraværende i AI-citérbar form</li>"
+            + "<li>Dybde og autoritet i AI-citérbart indhold er ikke tilstrækkeligt etableret</li>"
         ),
         "{{BRAND_POSITION_CONCLUSION}}": (
-            f"{name}s brand er anerkendt, men ikke differentieret. AI-systemerne placerer platformen "
-            f"i den rette kategori — men mangler grunden til at foretrække den frem for alternativerne."
+            f"{name}s brand er anerkendt, men ikke differentieret. AI-systemerne placerer "
+            f"virksomheden i den rette kategori — men mangler grunden til at foretrække den "
+            f"frem for {primary_competitor} og andre alternativer."
         ),
         # Section 04 AI descriptions
         "{{AI_DESCRIPTIONS_HEADLINE}}": f"Hvad de fire AI-systemer siger om {name} i dag",
-        "{{CHATGPT_MENTIONED}}": f"{chatgpt_m}/{queries_per_system}",
-        "{{CHATGPT_SELECTED}}": f"{chatgpt_s}/{queries_per_system}",
-        "{{CHATGPT_QUOTE}}": (
-            f"{name} er en dansk booking-platform primært rettet mod neglesaloner. "
-            f"Den tilbyder online booking, kalender-styring og klienthåndtering. "
-            f"Til neglesaloner i Norden er det et relevant valg, men Fresha og Booksy "
-            f"er bredere tilgængelige med mere international dokumentation."
-        ),
-        "{{CLAUDE_MENTIONED}}": f"{claude_m}/{queries_per_system}",
-        "{{CLAUDE_SELECTED}}": f"{claude_s}/{queries_per_system}",
-        "{{CLAUDE_QUOTE}}": (
-            f"Jeg kender {name} som et nordisk salon-booking-system. "
-            f"Til neglesaloner der primært opererer i Danmark eller Skandinavien kan det "
-            f"være et passende valg. Jeg vil dog anbefale at sammenligne med Fresha, "
-            f"som er gratis og bredt anvendt globalt."
-        ),
-        "{{GEMINI_MENTIONED}}": f"{gemini_m}/{queries_per_system}",
-        "{{GEMINI_SELECTED}}": f"{gemini_s}/{queries_per_system}",
-        "{{GEMINI_QUOTE}}": (
-            f"For neglesaloner i Danmark er der flere booking-løsninger. {name} er en "
-            f"af dem med fokus på den nordiske branche. Treatwell og Fresha har dog "
-            f"større markedsandel og bredere integration med betalingsplatforme."
-        ),
-        "{{PERPLEXITY_MENTIONED}}": f"{perp_m}/{queries_per_system}",
-        "{{PERPLEXITY_SELECTED}}": f"{perp_s}/{queries_per_system}",
-        "{{PERPLEXITY_QUOTE}}": (
-            f"{name} (nailster.dk) er en danskudviklet booking-platform designet til "
-            f"neglesaloner og skønhedssaloner. Platformen tilbyder online booking, "
-            f"betalingsintegration og klientkort. Den er stærkest repræsenteret i "
-            f"det danske og nordiske marked."
-        ),
+        "{{CHATGPT_MENTIONED}}": f"{og['m']}/{og['n']}",
+        "{{CHATGPT_SELECTED}}": f"{og['s']}/{og['n']}",
+        "{{CHATGPT_QUOTE}}": _quote(sr.get("openai", {}), "ChatGPT"),
+        "{{CLAUDE_MENTIONED}}": f"{cl['m']}/{cl['n']}",
+        "{{CLAUDE_SELECTED}}": f"{cl['s']}/{cl['n']}",
+        "{{CLAUDE_QUOTE}}": _quote(sr.get("claude", {}), "Claude"),
+        "{{GEMINI_MENTIONED}}": f"{ge['m']}/{ge['n']}",
+        "{{GEMINI_SELECTED}}": f"{ge['s']}/{ge['n']}",
+        "{{GEMINI_QUOTE}}": _quote(sr.get("gemini", {}), "Gemini"),
+        "{{PERPLEXITY_MENTIONED}}": f"{pe['m']}/{pe['n']}",
+        "{{PERPLEXITY_SELECTED}}": f"{pe['s']}/{pe['n']}",
+        "{{PERPLEXITY_QUOTE}}": _quote(sr.get("perplexity", {}), "Perplexity"),
         "{{AI_DESCRIPTIONS_INTERPRETATION}}": (
-            f"Alle fire systemer genkender {name} som en nordisk neglesalon-platform. "
+            f"Alle fire systemer genkender {name} som aktør inden for {sector}. "
             f"Udfordringen er konsekvent: AI-systemerne tilbyder altid ét eller flere alternativer "
             f"i samme svar, og {name} positioneres sjældent som den primære anbefaling."
         ),
         # Section 05 AI landscape
         "{{AI_LANDSCAPE_HEADLINE}}": f"{name} opererer i en kategori med klare positioner — og en åben flanke",
         "{{AI_LANDSCAPE_INTRO}}": (
-            f"<span class='sec-intro-line'>Booking-software til skønhedssaloner er en kategori AI-systemerne forstår godt.</span>"
-            f"<span class='sec-intro-line'>De primære aktører er veletablerede, men {name}s nordiske nicheprofil er en potentiel differentiator som ikke udnyttes tilstrækkeligt.</span>"
+            f"<span class='sec-intro-line'>{sector.capitalize()} er en kategori AI-systemerne forstår godt.</span>"
+            f"<span class='sec-intro-line'>De primære aktører er veletablerede, men {name}s profil er en "
+            f"potentiel differentiator som ikke udnyttes tilstrækkeligt.</span>"
         ),
-        "{{CATEGORY_ROLE_ROWS}}": (
-            f'<tr class="highlight-row">'
-            f'<td><span class="role-badge">{name}</span></td>'
-            f'<td>Nailster</td>'
-            f'<td>Nordisk neglesalon-specialist · nævnt {chatgpt_mp}–{perp_mp}% afhængigt af system</td>'
-            f'</tr>'
-            f'<tr><td>Fresha</td><td>Fresha (Shortcut)</td><td>Global leder · konsekvent primær anbefaling</td></tr>'
-            f'<tr><td>Treatwell</td><td>Treatwell (EKI Digital)</td><td>Markedsplads + booking · stærk i Europa</td></tr>'
-            f'<tr><td>Booksy</td><td>Booksy</td><td>International platform · stærk i US og UK</td></tr>'
-            f'<tr><td>Timely</td><td>Timely Software</td><td>Premium salon management · nævnt ved professionelle spørgsmål</td></tr>'
-        ),
+        "{{CATEGORY_ROLE_ROWS}}": _competitor_rows(),
         "{{AI_LANDSCAPE_KEY_OBS}}": (
-            f"Fresha dominerer AI-anbefalinger i kategorien takket være dokumenteret gratis model "
-            f"og globalt indhold. {name}s styrke er nichefokus — men det er ikke synliggjort "
+            f"{primary_competitor.capitalize()} dominerer AI-anbefalinger i kategorien. "
+            f"{name}s styrke er fokus og nichekendskab — men det er ikke synliggjort "
             f"i AI-citérbart indhold."
         ),
         # Section 06 model analysis
         "{{MODEL_ANALYSIS_HEADLINE}}": f"Systemspecifikke fund — fire modeller, fire perspektiver på {name}",
-        "{{CHATGPT_VERDICT}}": "Moderat synlighed",
+        "{{CHATGPT_VERDICT}}": f"{cg_r} synlighed",
         "{{CHATGPT_ANALYSIS}}": (
-            f"ChatGPT nævner {name} i booking-kontekster, men placerer det konsekvent som "
-            f"et nordisk alternativ frem for primær anbefaling. Manglende engelsk indhold "
-            f"og internationale cases begrænser scoren."
+            f"ChatGPT nævner {name} i {og['mp']}% af testene, men primær anbefaling opnås kun i {og['sp']}%. "
+            f"Manglende struktureret indhold om differentiering begrænser scoren. "
+            f"Faktabaserede produktsider og use cases vil styrke positionen markant."
         ),
-        "{{CLAUDE_VERDICT}}": "Lav-moderat synlighed",
+        "{{CLAUDE_VERDICT}}": f"{cl_r} synlighed",
         "{{CLAUDE_ANALYSIS}}": (
-            f"Claude genkender platformen, men citerer primært Fresha og Treatwell ved "
-            f"direkte anbefalingsspørgsmål. Mere struktureret produktindhold med klare "
-            f"use cases vil styrke Claudes valgscore markant."
+            f"Claude nævner {name} i {cl['mp']}% af forespørgslerne. "
+            f"Mere struktureret produktindhold med klare use cases og sammenligningstabeller "
+            f"vil styrke Claudes valgscore markant."
         ),
-        "{{PERPLEXITY_VERDICT}}": "Bedst synlighed",
+        "{{PERPLEXITY_VERDICT}}": f"{pe_r} synlighed",
         "{{PERPLEXITY_ANALYSIS}}": (
-            f"Perplexity viser den stærkeste synlighed drevet af direkte web-crawling af "
-            f"nailster.dk og brancheomtale. Faktabaseret indhold i struktureret format "
-            f"(FAQ, features, priser) vil yderligere styrke positionen."
+            f"Perplexity nævner {name} i {pe['mp']}% af testene — drevet af direkte web-crawling. "
+            f"Faktabaseret indhold i struktureret format (FAQ, features, priser) "
+            f"vil yderligere styrke positionen."
         ),
-        "{{GEMINI_VERDICT}}": "Lav synlighed",
+        "{{GEMINI_VERDICT}}": f"{ge_r} synlighed",
         "{{GEMINI_ANALYSIS}}": (
-            f"Gemini viser den svageste synlighed. Google-indexeret indhold om {name} "
-            f"mangler den autoritetssignatur (presseomtale, backlinks, schema-markup) "
+            f"Gemini nævner {name} i {ge['mp']}% af testene. Google-indexeret indhold "
+            f"mangler autoritetssignaler (presseomtale, backlinks, schema-markup) "
             f"som Gemini vægter højt i sine anbefalinger."
         ),
         # Section 07 matrix
         "{{MATRIX_HEADLINE}}": f"Synlighedsmatrix — {name} på tværs af alle fire AI-systemer",
-        "{{CHATGPT_MENTION_PCT}}": str(chatgpt_mp),
-        "{{CHATGPT_SELECT_PCT}}": str(chatgpt_sp),
-        "{{CHATGPT_RATING}}": "Moderat",
-        "{{CHATGPT_RATING_CLASS}}": "rate-mod",
-        "{{CLAUDE_MENTION_PCT}}": str(claude_mp),
-        "{{CLAUDE_SELECT_PCT}}": str(claude_sp),
-        "{{CLAUDE_RATING}}": "Lav",
-        "{{CLAUDE_RATING_CLASS}}": "rate-low",
-        "{{PERPLEXITY_MENTION_PCT}}": str(perp_mp),
-        "{{PERPLEXITY_SELECT_PCT}}": str(perp_sp),
-        "{{PERPLEXITY_RATING}}": "God",
-        "{{PERPLEXITY_RATING_CLASS}}": "rate-high",
-        "{{GEMINI_MENTION_PCT}}": str(gemini_mp),
-        "{{GEMINI_SELECT_PCT}}": str(gemini_sp),
-        "{{GEMINI_RATING}}": "Lav",
-        "{{GEMINI_RATING_CLASS}}": "rate-low",
+        "{{CHATGPT_MENTION_PCT}}": str(og["mp"]),
+        "{{CHATGPT_SELECT_PCT}}": str(og["sp"]),
+        "{{CHATGPT_RATING}}": cg_r,
+        "{{CHATGPT_RATING_CLASS}}": cg_rc,
+        "{{CLAUDE_MENTION_PCT}}": str(cl["mp"]),
+        "{{CLAUDE_SELECT_PCT}}": str(cl["sp"]),
+        "{{CLAUDE_RATING}}": cl_r,
+        "{{CLAUDE_RATING_CLASS}}": cl_rc,
+        "{{PERPLEXITY_MENTION_PCT}}": str(pe["mp"]),
+        "{{PERPLEXITY_SELECT_PCT}}": str(pe["sp"]),
+        "{{PERPLEXITY_RATING}}": pe_r,
+        "{{PERPLEXITY_RATING_CLASS}}": pe_rc,
+        "{{GEMINI_MENTION_PCT}}": str(ge["mp"]),
+        "{{GEMINI_SELECT_PCT}}": str(ge["sp"]),
+        "{{GEMINI_RATING}}": ge_r,
+        "{{GEMINI_RATING_CLASS}}": ge_rc,
         # Section 08 structural gaps
         "{{STRUCTURAL_GAPS_HEADLINE}}": f"Tre strukturelle svagheder gentager sig på tværs af alle fire systemer",
         "{{GAP_1_TITLE}}": "Manglende differentiering fra generiske alternativer",
         "{{GAP_1_BODY}}": (
-            f"AI-systemerne ved, at {name} er en booking-platform — men kan ikke forklare "
-            f"hvorfor den er bedre end Fresha eller Treatwell til en specifik bruger. "
+            f"AI-systemerne ved, at {name} opererer inden for {sector} — men kan ikke forklare "
+            f"præcis, hvad der gør virksomheden bedre end {primary_competitor} til en specifik bruger. "
             f"Uden konkret differentiering vinder det bredeste alternativ altid."
         ),
         "{{GAP_1_CALLOUT}}": "Løsning: Publicér konkrete sammenligningstabeller og use-case dokumentation.",
         "{{GAP_2_TITLE}}": "Svag international/engelsk tilstedeværelse",
         "{{GAP_2_BODY}}": (
             f"Claude og Gemini trækker primært på engelsksprogede autoritetskilder. "
-            f"{name}s dansksprogede indhold giver god synlighed i Perplexity, "
-            f"men begrænser scoren i de to øvrige store systemer."
+            f"Dansksprogede ressourcer giver god synlighed i Perplexity, "
+            f"men begrænser scoren i de øvrige store systemer."
         ),
         "{{GAP_2_CALLOUT}}": "Løsning: Engelsksprogede hjælpeartikler, presseomtale og case studies.",
         "{{GAP_3_TITLE}}": "Manglende social proof i AI-citérbar form",
@@ -3158,65 +3443,71 @@ def _render_report_html(app: "CustomerApplication") -> str:
         "{{GAP_3_CALLOUT}}": "Løsning: Schema-markup på testimonials og publicerede case studies med tal.",
         # Section 09 score dimensions
         "{{SCORE_CONTEXT_NOTE}}": f"Baseret på {queries} testprompts",
-        "{{DIM_ENTITY_DESC}}": "Genkendelse af brand og platform på tværs af systemer",
+        "{{DIM_ENTITY_DESC}}": "Genkendelse af brand og virksomhed på tværs af systemer",
         "{{ENTITY_AUTHORITY_SCORE}}": str(d_entity),
-        "{{DIM_CATEGORY_DESC}}": "Placering i booking/salon-software kategorien",
+        "{{DIM_CATEGORY_DESC}}": f"Placering i {sector}-kategorien",
         "{{CATEGORY_RELEVANCE_SCORE}}": str(d_category),
-        "{{DIM_COMPETITIVE_DESC}}": "Position relativt til Fresha, Treatwell og Booksy",
+        "{{DIM_COMPETITIVE_DESC}}": (
+            f"Position relativt til {', '.join(competitors[:2]) if competitors else 'konkurrenterne'}"
+        ),
         "{{COMPETITIVE_POSITIONING_SCORE}}": str(d_competitive),
         "{{DIM_CONTEXT_DESC}}": "Konsistent beskrivelse på tværs af prompttyper",
         "{{CONTEXT_CONSISTENCY_SCORE}}": str(d_context),
         "{{DIM_DECISION_DESC}}": "Valgt som primær anbefaling (ikke blot nævnt)",
         "{{DECISION_RELEVANCE_SCORE}}": str(d_decision),
         # Section 10 strategy
-        "{{STRATEGY_HEADLINE}}": f"{name} bør ejerke positionen som 'den nordiske neglesalon-specialist'",
-        "{{RECOMMENDED_POSITION}}": "Nordisk neglesalon-specialist — designet til den professionelle negle-branche",
+        "{{STRATEGY_HEADLINE}}": (
+            f"{name} bør konsolidere positionen som den foretrukne aktør i sin niche inden for {sector}"
+        ),
+        "{{RECOMMENDED_POSITION}}": (
+            f"Specialiseret {sector}-aktør — dybde og fokus som generalisterne ikke kan matche"
+        ),
         "{{RECOMMENDED_POSITION_SUB}}": (
-            f"En klar, specifik position som Fresha og Treatwell ikke kan matche i det nordiske marked"
+            f"En klar, specifik position som {primary_competitor} og andre brede alternativer ikke kan matche"
         ),
         "{{WHY_1}}": (
-            f"Alle fire AI-systemer genkender {name} som nordisk og neglesalon-fokuseret — "
+            f"Alle fire AI-systemer genkender {name} som etableret aktør inden for {sector} — "
             f"dette er et etableret signal at bygge videre på."
         ),
         "{{WHY_2}}": (
-            f"Fresha ejer 'gratis og global'. {name} kan eje 'professionel og nordisk' "
-            f"— en position konkurrenterne ikke prioriterer."
+            f"{primary_competitor.capitalize()} ejer den brede position. "
+            f"{name} kan eje 'specialist med dybde' — en position konkurrenterne ikke prioriterer."
         ),
         "{{WHY_3}}": (
-            f"'Neglesalon-specialist' er specifik nok til at differentiere, men bred nok "
+            f"Specialistpositionen er specifik nok til at differentiere, men bred nok "
             f"til at dække den primære målgruppe."
         ),
         "{{WHY_4}}": (
-            f"Nordiske neglesaloner er en vækstmålgruppe med høj betalingsvillighed "
-            f"og lav digital modenhed — præcis det {name} er bygget til."
+            f"AI-systemernes perception er stadig under dannelse — der er plads til at "
+            f"etablere en stærk position nu, før konkurrenterne konsoliderer."
         ),
         "{{STRATEGIC_TASK_TEXT}}": (
-            f"Den strategiske opgave er ikke at kæmpe mod Fresha globalt — det er at gøre "
-            f"positionen som nordisk neglesalon-specialist så veldokumenteret og AI-citérbar, "
-            f"at systemerne vælger {name} konsekvent i den kontekst."
+            f"Den strategiske opgave er ikke at kæmpe mod {primary_competitor} globalt — "
+            f"det er at gøre {name}s unikke position så veldokumenteret og AI-citérbar, "
+            f"at systemerne vælger {name} konsekvent inden for sit nichesegment."
         ),
         "{{CURRENT_POSITION_ITEMS}}": (
-            f'<div class="pos-item">Nævnt som nordisk alternativ</div>'
+            f'<div class="pos-item">Nævnt som alternativ i {mention_rate} af forespørgslerne</div>'
             f'<div class="pos-item">Positioneret som ét valg blandt mange</div>'
-            f'<div class="pos-item">Stærk i DK, svag internationalt</div>'
+            f'<div class="pos-item">Kategoriseret korrekt, men ikke differentieret</div>'
         ),
         "{{TARGET_POSITION_ITEMS}}": (
-            f'<div class="pos-item">Primær anbefaling til nordiske neglesaloner</div>'
-            f'<div class="pos-item">Differentieret fra Fresha og Treatwell</div>'
-            f'<div class="pos-item">Dokumenteret social proof og case studies</div>'
+            f'<div class="pos-item">Primær anbefaling i sit nichesegment</div>'
+            f'<div class="pos-item">Differentieret fra {primary_competitor} og andre alternativer</div>'
+            f'<div class="pos-item">Dokumenteret social proof og case studies på plads</div>'
         ),
         # Section 11 perspective
         "{{PERSPECTIVE_INTRO}}": (
-            f"AI-systemernes perception af booking-platforme er stadig under dannelse. "
+            f"AI-systemernes perception inden for {sector} er stadig under dannelse. "
             f"De store globale spillere er ved at konsolidere deres positioner, men der "
             f"er stadig plads til en stærk nichespiller som {name} — hvis positionen "
             f"dokumenteres nu."
         ),
         "{{COMPANY_STARTING_POINTS}}": (
-            f"<li>Etableret brand og produkt med reel markedsandel i Norden</li>"
+            f"<li>Etableret brand med reel markedsandel og kunder</li>"
             f"<li>AI-synlighed er allerede til stede — konverteringsfrekvensen er opgaven</li>"
-            f"<li>Nichefokus på neglesaloner er en styrke, ikke en begrænsning</li>"
-            f"<li>Lokal markedskendskab er en fordel konkurrenterne ikke let kan kopiere</li>"
+            f"<li>Specialistfokus er en styrke, ikke en begrænsning</li>"
+            f"<li>Markedskendskab er en fordel konkurrenterne ikke let kan kopiere</li>"
         ),
     }
     for placeholder, value in substitutions.items():
