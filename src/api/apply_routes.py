@@ -869,6 +869,23 @@ async def urge_applicant_update(
     prior_verification_results = app.agent_verification_results
 
     now = datetime.now(timezone.utc)
+
+    # If the application was auto-rejected, re-open it to APPLIED so the
+    # applicant can resubmit and the admin can retry verification.
+    if app.status == CustomerApplicationStatus.REJECTED:
+        prev_status = app.status
+        app.status = CustomerApplicationStatus.APPLIED
+        app.rejected_at = None
+        app.rejected_by = None
+        app.rejection_reason = None
+        db.add(CustomerApplicationStateLog(
+            application_id=app.id,
+            from_status=prev_status,
+            to_status=CustomerApplicationStatus.APPLIED,
+            changed_by="admin-urge-update",
+            note="Application re-opened: admin sent update request email after auto-rejection",
+        ))
+
     app.verification_substage = "UPDATE_REQUEST_EMAIL_SENT"
     app.update_request_email_sent_at = now
     app.updated_at = now
@@ -1020,7 +1037,23 @@ async def update_application_public(
     if body.application_goal is not None:
         app.application_goal = body.application_goal
 
-    # Reset verification; mark as RESUBMITTED so admin sees the applicant responded
+    # Reset verification; mark as RESUBMITTED so admin sees the applicant responded.
+    # If the application was auto-rejected, restore status to APPLIED so the
+    # admin can see the RESUBMITTED substage panel and retry verification.
+    if app.status == CustomerApplicationStatus.REJECTED:
+        prev_status = app.status
+        app.status = CustomerApplicationStatus.APPLIED
+        app.rejected_at = None
+        app.rejected_by = None
+        app.rejection_reason = None
+        db.add(CustomerApplicationStateLog(
+            application_id=app.id,
+            from_status=prev_status,
+            to_status=CustomerApplicationStatus.APPLIED,
+            changed_by="applicant-resubmit",
+            note="Application re-opened after auto-rejection: applicant submitted updated data",
+        ))
+
     app.agent_verification_status = "PENDING"
     app.agent_verification_results = None
     app.verification_substage = "RESUBMITTED"

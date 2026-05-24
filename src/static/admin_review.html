@@ -1465,11 +1465,24 @@ function renderActionPanel(app) {
 
   } else if (status === 'REJECTED') {
     titleEl.textContent = 'Application Rejected';
-    descEl.textContent = 'This application has been rejected. No further actions are available.';
+    descEl.textContent = 'This application has been rejected.';
     const note = getLatestNote(app);
-    container.innerHTML = note
+    container.innerHTML = (note
       ? `<div class="rejection-reason-box"><strong>Rejection reason:</strong> ${esc(note)}</div>`
-      : `<div class="already-done">No rejection reason was recorded.</div>`;
+      : `<div class="already-done">No rejection reason was recorded.</div>`) + `
+      <div style="height:0.75rem;"></div>
+      <div class="cta-group">
+        <div class="cta-row">
+          <button class="cta-btn cta-btn-secondary" onclick="openUrgeConfirmModal()">
+            <i data-lucide="mail" class="icon-sm"></i>
+            Send Update Request Email
+          </button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">
+          Sends the applicant a link to update their data and re-opens the application for verification.
+        </p>
+      </div>`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
   } else if (status === 'CALLED') {
     // Action panel is hidden for CALLED stage; buttons live in the transcription card.
