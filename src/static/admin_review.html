@@ -1005,16 +1005,6 @@ function renderStageContent(app) {
 
   if (VERIFICATION_STAGES.has(status)) {
     sc.innerHTML = `
-      <div class="review-card" id="agentResearchResultCard">
-        <div class="card-header" style="justify-content:space-between;">
-          <span style="display:flex;align-items:center;gap:0.4rem;">
-            <i data-lucide="search" class="icon-xs"></i>
-            Agent Research
-          </span>
-          <span id="agentResearchResultBadge"></span>
-        </div>
-        <div id="agentResearchResultContent"></div>
-      </div>
       <div class="review-card" id="agentResearchCard">
         <div class="card-header" style="justify-content:space-between;">
           <span style="display:flex;align-items:center;gap:0.4rem;">
@@ -1025,7 +1015,6 @@ function renderStageContent(app) {
         </div>
         <div id="agentResearchContent"></div>
       </div>`;
-    renderAgentResearch(app);
     renderVerification(app);
 
   } else if (INTERVIEW_STAGES.has(status)) {

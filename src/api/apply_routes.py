@@ -935,9 +935,11 @@ async def urge_applicant_update(
 </body>
 </html>"""
 
+    # Temporary: send to admin email until applicant auth is implemented
+    recipient = settings.admin_review_email or app.email
     try:
         await send_email(
-            to=app.email,
+            to=recipient,
             subject="Action required: Update your AIScore application",
             html_body=html_body,
         )
@@ -945,7 +947,7 @@ async def urge_applicant_update(
         log.error("urge_update.email_failed", application_id=str(application_id), error=str(exc))
         raise HTTPException(status_code=502, detail=f"Email send failed: {exc}")
 
-    return {"sent": True, "to": app.email, "update_url": update_url}
+    return {"sent": True, "to": recipient, "update_url": update_url}
 
 
 # ─────────────────────────────────────────────
