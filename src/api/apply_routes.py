@@ -1814,6 +1814,20 @@ async def verify_payment(
         await db.commit()
         log.info("verify_payment.confirmed", application_id=str(order_id))
 
+        amount_total = stripe_session.get("amount_total")
+        amount_dkk_val = (amount_total // 100) if amount_total is not None else None
+        try:
+            from src.payments.emailer import send_admin_payment_notification_email
+            await send_admin_payment_notification_email(
+                company_name=app.firmanavn,
+                kontaktperson=app.kontaktperson,
+                customer_email=app.email,
+                amount_dkk=amount_dkk_val,
+                payment_intent_id=payment_intent_id,
+            )
+        except Exception as exc:
+            log.error("verify_payment.admin_notification_failed", application_id=str(order_id), error=str(exc))
+
     return {"status": "paid", "application_id": str(order_id)}
 
 
@@ -1923,6 +1937,17 @@ async def stripe_webhook(request: Request, background_tasks: BackgroundTasks, db
                         application_id=application_id_str,
                         error=str(exc),
                     )
+                try:
+                    from src.payments.emailer import send_admin_payment_notification_email
+                    await send_admin_payment_notification_email(
+                        company_name=app.firmanavn,
+                        kontaktperson=app.kontaktperson,
+                        customer_email=app.email,
+                        amount_dkk=amount_dkk,
+                        payment_intent_id=payment_intent_id,
+                    )
+                except Exception as exc:
+                    log.error("stripe_webhook.admin_notification_failed", application_id=application_id_str, error=str(exc))
 
         elif mode == "subscription":
             # AISelect new subscription checkout completed

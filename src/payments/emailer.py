@@ -219,6 +219,41 @@ async def send_aiselect_crosssell_email(
         )
 
 
+async def send_admin_payment_notification_email(
+    company_name: str,
+    kontaktperson: str,
+    customer_email: str,
+    amount_dkk: Optional[int] = None,
+    payment_intent_id: Optional[str] = None,
+) -> None:
+    """Notify the admin review inbox when an AIScore one-time payment is confirmed."""
+    settings = get_settings()
+    safe_company = html.escape(company_name)
+    safe_contact = html.escape(kontaktperson)
+    safe_customer_email = html.escape(customer_email)
+    amount_line = f"<p><strong>Beløb:</strong> {amount_dkk:,} kr.</p>" if amount_dkk else ""
+    ref_line = f"<p><strong>Reference:</strong> {html.escape(payment_intent_id)}</p>" if payment_intent_id else ""
+
+    subject = f"[AIScore] Betaling modtaget — {company_name}"
+    html_body = f"""
+<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
+  <h2 style="color:#16a34a;">Betaling modtaget</h2>
+  <p><strong>{safe_contact}</strong> ({safe_customer_email}) fra <strong>{safe_company}</strong> har gennemført betaling for en AIScore-rapport.</p>
+  {amount_line}
+  {ref_line}
+  <p style="color:#6b7280;font-size:13px;">AIScore intern system</p>
+</body>
+</html>""".strip()
+
+    try:
+        await send_email(to=settings.admin_review_email, subject=subject, html_body=html_body)
+    except Exception as exc:
+        log.error("email.admin_payment_notification_failed", company=company_name, error=str(exc))
+
+
 async def send_payment_link_email(
     customer_email: str,
     customer_name: str,

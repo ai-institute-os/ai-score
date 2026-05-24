@@ -765,6 +765,23 @@
   </div>
 </div>
 
+<!-- Confirm payment + move to next stage modal -->
+<div id="confirmPaymentModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;">
+      <i data-lucide="arrow-right-circle" style="width:18px;height:18px;color:var(--primary);"></i>
+      <span style="font-weight:700;font-size:1rem;">Move to next stage</span>
+    </div>
+    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;">
+      I confirm the applicant paid for the report.
+    </p>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="document.getElementById('confirmPaymentModal').style.display='none'">Cancel</button>
+      <button class="btn btn-approve" id="btnConfirmPaymentMove" onclick="doConfirmPaymentMove()">Confirm &amp; Move</button>
+    </div>
+  </div>
+</div>
+
 <!-- Reject confirmation modal -->
 <div id="rejectModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
   <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:440px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
@@ -845,8 +862,7 @@ const WIZARD_STEPS = [
   { id: 'UNDER_REVIEW',          label: 'Under Review',          icon: 'eye'             },
   { id: 'APPROVED',              label: 'Book a call',           icon: 'calendar'        },
   { id: 'CALLED',                label: 'Called',                icon: 'phone'           },
-  { id: 'AWAITING_PAYMENT',      label: 'Awaiting Payment',      icon: 'credit-card'     },
-  { id: 'PAID',                  label: 'Paid',                  icon: 'badge-check'     },
+  { id: 'AWAITING_PAYMENT',      label: 'Payment',               icon: 'credit-card'     },
   { id: 'PDF_REPORT',            label: 'PDF Report',            icon: 'file-text'       },
   { id: 'QC_REVIEW',             label: 'QC Review',             icon: 'shield-check'    },
   { id: 'READY_FOR_REVIEW_CALL', label: 'Ready for Review Call', icon: 'video'           },
@@ -858,12 +874,12 @@ const STATUS_STEP_INDEX = {
   APPROVED:              3,
   CALLED:                4,
   AWAITING_PAYMENT:      5,
-  PAID:                  6,
-  IN_PRODUCTION:         7,
-  QC_REVIEW:             8,
-  QC_PASSED:             9,
-  QC_FAILED:             8,
-  READY_FOR_REVIEW_CALL: 9,
+  PAID:                  5,
+  IN_PRODUCTION:         6,
+  QC_REVIEW:             7,
+  QC_PASSED:             8,
+  QC_FAILED:             7,
+  READY_FOR_REVIEW_CALL: 8,
 };
 
 function getWizardActiveIndex(app) {
@@ -1156,7 +1172,7 @@ function renderStageContent(app) {
       </div>` : '';
 
     const showInterviewQuestions = status !== 'APPLIED' && status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION' && status !== 'REJECTED' && status !== 'CANCELLED';
-    const showInterviewSummary = status === 'IN_PRODUCTION' || status === 'PAID';
+    const showInterviewSummary = status === 'IN_PRODUCTION';
     sc.innerHTML = transcriptionCard + (showInterviewQuestions ? `
       <div class="review-card" id="interviewQuestionsCard">
         <div class="card-header" style="justify-content:space-between;">
@@ -1593,11 +1609,18 @@ function renderActionPanel(app) {
   } else if (status === 'CALLED') {
     // Action panel is hidden for CALLED stage; buttons live in the transcription card.
 
-  } else if (status === 'AWAITING_PAYMENT') {
+  } else if (status === 'AWAITING_PAYMENT' || status === 'PAID') {
     titleEl.textContent = 'Payment';
-    descEl.textContent = 'Generate a Stripe payment link for the customer.';
+    descEl.textContent = status === 'PAID'
+      ? 'Payment received. Move to the next stage to start the PDF report.'
+      : 'Generate a Stripe payment link for the customer.';
     const existingUrl = app.stripe_checkout_url || app.payment_url || null;
     container.innerHTML = `
+      ${status === 'PAID' ? `
+      <div style="margin-bottom:1.1rem;padding:0.65rem 1rem;border-radius:var(--radius-sm);background:#f0fdf4;border:1px solid #bbf7d0;display:flex;gap:0.5rem;align-items:center;">
+        <i data-lucide="badge-check" style="width:16px;height:16px;color:#16a34a;flex-shrink:0;"></i>
+        <span style="font-size:0.875rem;font-weight:600;color:#15803d;">Payment confirmed</span>
+      </div>` : ''}
       ${existingUrl ? `
       <div style="margin-bottom:1.25rem;">
         <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Payment link</label>
@@ -1619,6 +1642,10 @@ function renderActionPanel(app) {
           <i data-lucide="credit-card" style="width:14px;height:14px;margin-right:0.35rem;"></i>
           ${existingUrl ? 'Regenerate Payment Link' : 'Generate Payment Link'}
         </button>
+        <button class="btn btn-approve" onclick="openConfirmPaymentModal()" style="display:flex;align-items:center;gap:0.35rem;">
+          <i data-lucide="arrow-right-circle" style="width:14px;height:14px;"></i>
+          Move to next stage
+        </button>
       </div>
       ${app.payment_failure_reason ? `
       <div style="margin-top:0.85rem;padding:0.75rem 1rem;border-radius:var(--radius-sm);background:#fef2f2;border:1px solid #fecaca;display:flex;gap:0.6rem;align-items:flex-start;">
@@ -1630,11 +1657,9 @@ function renderActionPanel(app) {
         </div>
       </div>` : ''}`;
 
-  } else if (status === 'IN_PRODUCTION' || status === 'PAID') {
-    titleEl.textContent = status === 'IN_PRODUCTION' ? 'PDF Report' : 'Rapport';
-    descEl.textContent = status === 'IN_PRODUCTION'
-      ? 'Gennemgå kundens oplysninger og download den færdige PDF rapport.'
-      : 'Gennemgå kundens oplysninger og start rapport-generering.';
+  } else if (status === 'IN_PRODUCTION') {
+    titleEl.textContent = 'PDF Report';
+    descEl.textContent = 'Gennemgå kundens oplysninger og download den færdige PDF rapport.';
 
     // Public application data
     const fields = [
@@ -1787,6 +1812,19 @@ async function confirmReject() {
 async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
+function openConfirmPaymentModal() {
+  document.getElementById('confirmPaymentModal').style.display = 'flex';
+}
+async function doConfirmPaymentMove() {
+  const btn = document.getElementById('btnConfirmPaymentMove');
+  if (btn) { btn.disabled = true; btn.textContent = 'Moving…'; }
+  try {
+    await doStatusChange('IN_PRODUCTION', 'Admin confirmed payment received — moving to PDF report stage.');
+    document.getElementById('confirmPaymentModal').style.display = 'none';
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Move'; }
+  }
+}
 
 async function moveToReview(btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Moving…'; }
