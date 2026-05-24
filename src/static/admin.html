@@ -327,6 +327,11 @@
           <span class="sidebar-text" data-i18n="sidebar.escalated">Escalated</span>
           <span class="sidebar-count" id="cnt-ESCALATED">—</span>
         </a>
+        <a class="sidebar-item" data-filter="COMPLETED" onclick="setFilter(this, 'COMPLETED')" data-label="sidebar.completed">
+          <i data-lucide="check-circle" class="icon-sm"></i>
+          <span class="sidebar-text" data-i18n="sidebar.completed">Completed</span>
+          <span class="sidebar-count" id="cnt-COMPLETED">—</span>
+        </a>
       </div>
 
     </div>
@@ -445,7 +450,7 @@ let currentPage = 1;
 const PAGE_SIZE = 20;
 
 // ─── Status config ────────────────────────────────
-const STATUS_KEYS = ['APPLIED','UNDER_REVIEW','APPROVED','REJECTED','CALLED','AWAITING_PAYMENT','PAID','IN_PRODUCTION','QC_REVIEW','QC_PASSED','QC_FAILED','ESCALATED','RETRY','CANCELLED','READY_FOR_REVIEW_CALL'];
+const STATUS_KEYS = ['APPLIED','UNDER_REVIEW','APPROVED','REJECTED','CALLED','AWAITING_PAYMENT','PAID','IN_PRODUCTION','QC_REVIEW','QC_PASSED','QC_FAILED','ESCALATED','RETRY','CANCELLED','READY_FOR_REVIEW_CALL','COMPLETED'];
 
 function statusLabel(s) {
   return (window.i18n ? window.i18n.t('status.' + s) : null) || s;

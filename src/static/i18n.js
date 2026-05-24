@@ -22,6 +22,7 @@
       'sidebar.qc_passed': 'QC passed',
       'sidebar.ready_for_review': 'Ready for review',
       'sidebar.escalated': 'Escalated',
+      'sidebar.completed': 'Completed',
       'sidebar.collapse': 'Collapse sidebar',
       'sidebar.navigation': 'Navigation',
       'sidebar.leads_pipeline': 'Leads & Pipeline',
@@ -67,6 +68,7 @@
       'status.RETRY': 'Retrying',
       'status.CANCELLED': 'Cancelled',
       'status.READY_FOR_REVIEW_CALL': 'Ready for review',
+      'status.COMPLETED': 'Completed',
 
       // Dynamic table text
       'table.loading': 'Loading applications…',
@@ -185,6 +187,7 @@
       'sidebar.qc_passed': 'QC godkendt',
       'sidebar.ready_for_review': 'Klar til review',
       'sidebar.escalated': 'Eskaleret',
+      'sidebar.completed': 'Afsluttet',
       'sidebar.collapse': 'Kollaps sidebar',
       'sidebar.navigation': 'Navigation',
       'sidebar.leads_pipeline': 'Leads & Pipeline',
@@ -230,6 +233,7 @@
       'status.RETRY': 'Genprøver',
       'status.CANCELLED': 'Annulleret',
       'status.READY_FOR_REVIEW_CALL': 'Klar til review',
+      'status.COMPLETED': 'Afsluttet',
 
       // Dynamic table text
       'table.loading': 'Indlæser ansøgninger…',

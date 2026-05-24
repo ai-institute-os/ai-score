@@ -334,6 +334,7 @@ select {
 .chip-retry             { background: rgba(249,115,22,0.15);  color: #fb923c; }
 .chip-cancelled         { background: rgba(148,163,184,0.12); color: #94a3b8; }
 .chip-ready_for_review_call { background: rgba(6,182,212,0.15); color: #22d3ee; }
+.chip-completed             { background: linear-gradient(135deg, rgba(34,197,94,0.2) 0%, rgba(16,185,129,0.2) 100%); color: #34d399; border: 1px solid rgba(52,211,153,0.3); font-weight: 600; letter-spacing: 0.02em; }
 
 /* ── Spinner ────────────────────────────────────── */
 .spinner {

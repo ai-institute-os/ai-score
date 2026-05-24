@@ -870,24 +870,18 @@
 let appId = null;
 let appData = null;
 
-const STATUS_LABELS = {
-  APPLIED: 'Applied',
-  UNDER_REVIEW: 'Under Review',
-  APPROVED: 'Call Booking',
-  REJECTED: 'Rejected',
-  CALLED: 'Meeting Booked',
-  AWAITING_PAYMENT: 'Awaiting Payment',
-  PAID: 'Paid',
-  IN_PRODUCTION: 'In Production',
-  QC_REVIEW: 'QC Review',
-  QC_PASSED: 'QC Passed',
-  QC_FAILED: 'QC Failed',
-  ESCALATED: 'Escalated',
-  RETRY: 'Retry',
-  CANCELLED: 'Cancelled',
-  READY_FOR_REVIEW_CALL: 'Review Call',
-  COMPLETED: 'Completed',
-};
+const _STATUS_KEYS_REVIEW = ['APPLIED','UNDER_REVIEW','APPROVED','REJECTED','CALLED','AWAITING_PAYMENT','PAID','IN_PRODUCTION','QC_REVIEW','QC_PASSED','QC_FAILED','ESCALATED','RETRY','CANCELLED','READY_FOR_REVIEW_CALL','COMPLETED'];
+
+function statusLabel(s) {
+  return (window.i18n ? window.i18n.t('status.' + s) : null) || s;
+}
+
+const STATUS_LABELS = new Proxy({}, {
+  get(_, key) { return statusLabel(key); },
+  has(_, key) { return _STATUS_KEYS_REVIEW.includes(key); },
+  ownKeys() { return _STATUS_KEYS_REVIEW; },
+  getOwnPropertyDescriptor(_, key) { return _STATUS_KEYS_REVIEW.includes(key) ? { enumerable: true, configurable: true } : undefined; },
+});
 
 const VALID_TRANSITIONS = {
   APPLIED: ['UNDER_REVIEW', 'REJECTED'],
@@ -3072,6 +3066,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('langchange', () => {
   if (window.i18n) window.i18n.applyTranslations();
+  // Re-render dynamic content (status chips, action panel labels) with new language
+  if (appData) renderApp(appData);
 });
 </script>
 </body>
