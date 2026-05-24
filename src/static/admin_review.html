@@ -1104,8 +1104,10 @@ function renderStageContent(app) {
           <i data-lucide="mic" class="icon-xs"></i>
           Call Transcription
         </div>
-        <div id="transcriptionContent">
-          <div style="padding:1.25rem;">
+        <div id="transcriptionContent" style="display:grid;grid-template-columns:1fr 1fr;min-height:320px;">
+          <!-- Left: upload + input -->
+          <div style="padding:1.25rem;border-right:1px solid var(--bg);">
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.75rem;">Public information</div>
             <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
               Upload the call recording or paste the transcript. The AI will extract key information, concerns, and follow-up actions.
             </p>
@@ -1132,7 +1134,16 @@ function renderStageContent(app) {
               <div id="transcriptError" style="display:none;margin-top:0.5rem;padding:0.65rem 0.85rem;border-radius:var(--radius-sm);background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:0.82rem;"></div>
             </div>
           </div>
-          <div id="transcriptResult" style="display:none;"></div>
+          <!-- Right: extracted information -->
+          <div id="transcriptResult" style="display:flex;flex-direction:column;">
+            <div style="padding:0.65rem 1.25rem;border-bottom:1px solid var(--bg);">
+              <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);">Extracted information</span>
+            </div>
+            <div id="transcriptResultBody" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.5rem;padding:2rem;color:var(--text-muted);">
+              <i data-lucide="file-x" style="width:2.5rem;height:2.5rem;opacity:0.35;"></i>
+              <span style="font-size:0.8rem;">No extracted data yet</span>
+            </div>
+          </div>
         </div>
       </div>` : '';
 
@@ -1162,8 +1173,8 @@ function renderStageContent(app) {
     if (status === 'CALLED' && app.call_transcript) {
       const textEl = document.getElementById('transcriptText');
       if (textEl) textEl.value = app.call_transcript;
-      const resultEl = document.getElementById('transcriptResult');
-      if (resultEl && app.call_extracted_data && Object.keys(app.call_extracted_data).length) {
+      const bodyEl = document.getElementById('transcriptResultBody');
+      if (bodyEl && app.call_extracted_data && Object.keys(app.call_extracted_data).length) {
         const ext = app.call_extracted_data;
         const rows = [
           ['Summary',          ext.summary],
@@ -1177,13 +1188,10 @@ function renderStageContent(app) {
             <div class="field-label">${esc(k)}</div>
             <div class="field-value" style="margin-top:0.2rem;">${esc(String(v))}</div>
           </div>`).join('');
-        resultEl.innerHTML = `
-          <div style="padding:0.65rem 1.25rem;border-top:1.5px solid var(--bg);background:var(--bg);">
-            <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);">Extracted Information</span>
-          </div>
-          ${rows || '<div style="padding:1rem;color:var(--text-muted);font-size:0.85rem;">No structured data could be extracted.</div>'}
-          <div style="padding:0.65rem 1.25rem;border-top:1px solid var(--bg);"><div class="field-label">Raw transcript</div><div class="textarea-val" style="margin-top:0.25rem;max-height:200px;overflow-y:auto;">${esc(app.call_transcript)}</div></div>`;
-        resultEl.style.display = '';
+        bodyEl.style.display = 'block';
+        bodyEl.style.alignItems = '';
+        bodyEl.style.justifyContent = '';
+        bodyEl.innerHTML = rows || '<div style="padding:1rem;color:var(--text-muted);font-size:0.85rem;">No structured data could be extracted.</div>';
       }
     }
 
@@ -2514,7 +2522,7 @@ function onTranscriptFileChange(input) {
 async function processTranscript(btn) {
   const fileInput = document.getElementById('transcriptFile');
   const textInput = document.getElementById('transcriptText');
-  const resultEl  = document.getElementById('transcriptResult');
+  const bodyEl    = document.getElementById('transcriptResultBody');
   const file = fileInput?.files?.[0];
   const text = textInput?.value?.trim();
 
@@ -2531,7 +2539,13 @@ async function processTranscript(btn) {
 
   clearTranscriptError();
   if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="cpu" class="icon-sm"></i>Processing…'; if (window.lucide) lucide.createIcons(); }
-  if (resultEl) resultEl.style.display = 'none';
+  if (bodyEl) {
+    bodyEl.style.display = 'flex';
+    bodyEl.style.alignItems = 'center';
+    bodyEl.style.justifyContent = 'center';
+    bodyEl.innerHTML = '<i data-lucide="loader-2" style="width:1.5rem;height:1.5rem;opacity:0.4;animation:spin 1s linear infinite;"></i>';
+    if (window.lucide) lucide.createIcons();
+  }
 
   try {
     let body, headers = {};
@@ -2551,7 +2565,7 @@ async function processTranscript(btn) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
 
-    if (resultEl) {
+    if (bodyEl) {
       const ext = data.extracted || {};
       const rows = [
         ['Summary',          ext.summary],
@@ -2566,17 +2580,21 @@ async function processTranscript(btn) {
           <div class="field-value" style="margin-top:0.2rem;">${esc(String(v))}</div>
         </div>`).join('');
 
-      resultEl.innerHTML = `
-        <div style="padding:0.65rem 1.25rem;border-top:1.5px solid var(--bg);background:var(--bg);">
-          <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);">Extracted Information</span>
-        </div>
-        ${rows || '<div style="padding:1rem;color:var(--text-muted);font-size:0.85rem;">No structured data could be extracted.</div>'}
-        ${data.transcript ? `<div style="padding:0.65rem 1.25rem;border-top:1px solid var(--bg);"><div class="field-label">Raw transcript</div><div class="textarea-val" style="margin-top:0.25rem;max-height:200px;overflow-y:auto;">${esc(data.transcript)}</div></div>` : ''}`;
-      resultEl.style.display = '';
+      bodyEl.style.display = 'block';
+      bodyEl.style.alignItems = '';
+      bodyEl.style.justifyContent = '';
+      bodyEl.innerHTML = rows || '<div style="padding:1rem;color:var(--text-muted);font-size:0.85rem;">No structured data could be extracted.</div>';
     }
     toast('Transcript processed and saved', 'success');
   } catch (err) {
     showTranscriptError(err.message);
+    if (bodyEl) {
+      bodyEl.style.display = 'flex';
+      bodyEl.style.alignItems = 'center';
+      bodyEl.style.justifyContent = 'center';
+      bodyEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);"><i data-lucide="file-x" style="width:2.5rem;height:2.5rem;opacity:0.35;"></i><div style="font-size:0.8rem;margin-top:0.5rem;">No extracted data yet</div></div>';
+      if (window.lucide) lucide.createIcons();
+    }
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="cpu" class="icon-sm"></i>Process & Extract Information'; if (window.lucide) lucide.createIcons(); }
   }
