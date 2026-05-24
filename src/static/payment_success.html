@@ -50,10 +50,14 @@
   <script>
     const params = new URLSearchParams(location.search);
     const orderId = params.get('order_id') || '';
-    if (orderId) {
-      document.getElementById('statusLink').href = '/my-page/' + orderId;
-    } else {
-      document.getElementById('statusLink').href = '/my-page';
+    const sessionId = params.get('session_id') || '';
+
+    document.getElementById('statusLink').href = orderId ? '/my-page/' + orderId : '/my-page';
+
+    if (orderId && sessionId) {
+      fetch(`/api/v1/verify-payment?order_id=${encodeURIComponent(orderId)}&session_id=${encodeURIComponent(sessionId)}`, {
+        method: 'POST',
+      }).catch(() => { /* webhook may already have handled it */ });
     }
   </script>
 </body>

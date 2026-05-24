@@ -34,7 +34,7 @@ def _build_checkout_session(
             }
         ],
         mode="payment",
-        success_url=settings.app_base_url.rstrip("/") + f"/payment/success?order_id={order_id}",
+        success_url=settings.app_base_url.rstrip("/") + f"/payment/success?order_id={order_id}&session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=settings.app_base_url.rstrip("/") + f"/payment/cancel?order_id={order_id}",
         metadata={"order_id": order_id},
         expires_at=int(__import__("time").time()) + 3600,  # 1 hour window
@@ -58,6 +58,17 @@ async def create_checkout_session(
         settings,
     )
     return session
+
+
+def _retrieve_checkout_session(session_id: str, settings: Any) -> stripe.checkout.Session:
+    stripe.api_key = settings.stripe_secret_key
+    return stripe.checkout.Session.retrieve(session_id)
+
+
+async def retrieve_checkout_session(session_id: str) -> stripe.checkout.Session:
+    """Fetch a Checkout Session directly from Stripe — used to verify payment on the success page."""
+    settings = get_settings()
+    return await asyncio.to_thread(_retrieve_checkout_session, session_id, settings)
 
 
 def construct_stripe_event(payload: bytes, sig_header: str) -> stripe.Event:

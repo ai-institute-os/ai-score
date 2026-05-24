@@ -1765,6 +1765,58 @@ async def _upsert_subscription(
     return sub
 
 
+@router.post("/verify-payment")
+@limiter.limit("30/minute")
+async def verify_payment(
+    request: Request,
+    order_id: uuid.UUID,
+    session_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Called from the payment success page. Retrieves the Stripe session directly
+    and transitions the application AWAITING_PAYMENT → PAID if payment_status == paid.
+    Idempotent — safe to call even if the webhook already handled the transition.
+    """
+    from src.payments import retrieve_checkout_session
+
+    try:
+        stripe_session = await retrieve_checkout_session(session_id)
+    except Exception as exc:
+        log.error("verify_payment.stripe_error", order_id=str(order_id), error=str(exc))
+        raise HTTPException(status_code=502, detail="Could not verify payment with Stripe")
+
+    if stripe_session.get("payment_status") != "paid":
+        raise HTTPException(status_code=402, detail="Payment not yet confirmed")
+
+    result = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == order_id)
+    )
+    app = result.scalar_one_or_none()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    if app.status == CustomerApplicationStatus.AWAITING_PAYMENT:
+        payment_intent_id = stripe_session.get("payment_intent")
+        prev_status = app.status
+        app.status = CustomerApplicationStatus.PAID
+        app.stripe_payment_intent_id = payment_intent_id
+        app.updated_at = datetime.now(timezone.utc)
+        await _add_state_log(
+            db, app,
+            from_status=prev_status,
+            to_status=CustomerApplicationStatus.PAID,
+            changed_by="stripe_verify",
+            note=f"Payment verified via success page — session {session_id}",
+        )
+        await db.commit()
+        log.info("verify_payment.confirmed", application_id=str(order_id))
+
+    return {"status": "paid", "application_id": str(order_id)}
+
+
 @router.post("/webhooks/stripe", include_in_schema=False)
 async def stripe_webhook(request: Request, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     """
