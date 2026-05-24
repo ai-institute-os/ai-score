@@ -235,11 +235,6 @@ class CustomerApplication(Base):
     verification_failed_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     update_request_email_sent_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     resubmitted_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
-    # Manual meeting booking fields (set by admin via book-call endpoint)
-    interviewer_email: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    interview_start_time: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
-    interview_duration_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=30)
-    interview_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

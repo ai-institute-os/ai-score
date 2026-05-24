@@ -1069,6 +1069,35 @@ function renderStageContent(app) {
     renderVerification(app);
 
   } else if (INTERVIEW_STAGES.has(status)) {
+    const bookedDetailsCard = (status === 'CALLED' && app.interview_start_time) ? (() => {
+      const startFmt = new Date(app.interview_start_time).toLocaleString('da-DK', { dateStyle:'long', timeStyle:'short' });
+      return `
+      <div class="review-card">
+        <div class="card-header">
+          <i data-lucide="calendar-check" class="icon-xs"></i>
+          Booked Meeting Details
+        </div>
+        <div style="padding:1rem 1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;">
+          <div>
+            <div class="field-label">Interviewer</div>
+            <div class="field-value">${esc(app.interviewer_email || '—')}</div>
+          </div>
+          <div>
+            <div class="field-label">Date &amp; Time</div>
+            <div class="field-value">${esc(startFmt)}</div>
+          </div>
+          <div>
+            <div class="field-label">Duration</div>
+            <div class="field-value">${esc(String(app.interview_duration_minutes || 30))} minutes</div>
+          </div>
+          ${app.interview_notes ? `<div style="grid-column:1/-1;">
+            <div class="field-label">Notes</div>
+            <div class="field-value">${esc(app.interview_notes)}</div>
+          </div>` : ''}
+        </div>
+      </div>`;
+    })() : '';
+
     const transcriptionCard = status === 'CALLED' ? `
       <div class="review-card" id="transcriptionCard">
         <div class="card-header">
@@ -1109,7 +1138,7 @@ function renderStageContent(app) {
 
     const showInterviewQuestions = status !== 'APPLIED' && status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION' && status !== 'REJECTED' && status !== 'CANCELLED';
     const showInterviewSummary = status === 'IN_PRODUCTION' || status === 'PAID';
-    sc.innerHTML = transcriptionCard + (showInterviewQuestions ? `
+    sc.innerHTML = bookedDetailsCard + transcriptionCard + (showInterviewQuestions ? `
       <div class="review-card" id="interviewQuestionsCard">
         <div class="card-header" style="justify-content:space-between;">
           <span style="display:flex;align-items:center;gap:0.4rem;">
@@ -2462,8 +2491,9 @@ async function confirmBookCall() {
       if (btn) { btn.disabled = false; btn.textContent = 'Book Meeting'; }
       return;
     }
-    toast('Call booked — moved to Called', 'success');
-    setTimeout(() => location.reload(), 800);
+    toast('Meeting booked — confirmation email sent', 'success');
+    renderApp(data);
+    if (btn) { btn.disabled = false; btn.textContent = 'Book Meeting'; }
   } catch (e) {
     const msg = 'Network error: ' + e.message;
     if (errEl) { errEl.textContent = msg; errEl.style.display = ''; }
