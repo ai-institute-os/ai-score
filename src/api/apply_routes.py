@@ -3128,6 +3128,71 @@ async def get_generate_report_status(
 
 
 # ─────────────────────────────────────────────
+# Admin: Review call invitation email
+# ─────────────────────────────────────────────
+
+class ReviewCallInvitationBody(BaseModel):
+    recipient_email: str
+    meeting_link: str
+    meeting_time: str
+    duration_minutes: int = 30
+    note: str = ""
+
+
+@router.post(
+    "/admin/applications/{application_id}/send-review-call-invitation",
+    summary="Admin — send review call meeting invitation email",
+)
+@limiter.limit("10/minute")
+async def send_review_call_invitation(
+    request: Request,
+    application_id: uuid.UUID,
+    body: ReviewCallInvitationBody,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
+):
+    """Send meeting invitation email for the review call stage."""
+    import html as _html
+    from src.payments.emailer import send_email
+
+    app = await _get_application_or_404(application_id, db)
+
+    note_html = f"<p style='margin:1rem 0 0;'><strong>Note:</strong> {_html.escape(body.note)}</p>" if body.note.strip() else ""
+
+    html_body = f"""
+<div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e;">
+  <div style="background:#6c47ff;padding:2rem;border-radius:8px 8px 0 0;">
+    <h1 style="color:#fff;margin:0;font-size:1.4rem;">AI Institute — Review Call Invitation</h1>
+  </div>
+  <div style="background:#f8f8ff;padding:2rem;border-radius:0 0 8px 8px;border:1px solid #e0e0f0;">
+    <p style="margin:0 0 1rem;">Hej,</p>
+    <p>Din AIScore rapport er klar. Vi inviterer dig til et review-møde for at gennemgå resultaterne:</p>
+    <table style="width:100%;border-collapse:collapse;margin:1.5rem 0;">
+      <tr><td style="padding:0.5rem;font-weight:600;color:#555;width:140px;">Tidspunkt</td><td style="padding:0.5rem;">{_html.escape(body.meeting_time)}</td></tr>
+      <tr style="background:#f0eeff;"><td style="padding:0.5rem;font-weight:600;color:#555;">Varighed</td><td style="padding:0.5rem;">{body.duration_minutes} minutter</td></tr>
+      <tr><td style="padding:0.5rem;font-weight:600;color:#555;">Mødelink</td><td style="padding:0.5rem;"><a href="{_html.escape(body.meeting_link)}" style="color:#6c47ff;">{_html.escape(body.meeting_link)}</a></td></tr>
+      <tr style="background:#f0eeff;"><td style="padding:0.5rem;font-weight:600;color:#555;">Virksomhed</td><td style="padding:0.5rem;">{_html.escape(app.firmanavn or '')}</td></tr>
+    </table>
+    {note_html}
+    <p style="margin:1.5rem 0 0;">Vi glæder os til at se dig!</p>
+    <p style="color:#999;font-size:0.85rem;margin-top:2rem;">AI Institute ApS</p>
+  </div>
+</div>
+"""
+
+    await send_email(
+        to=body.recipient_email,
+        subject=f"Review Call Invitation — {app.firmanavn or 'AIScore rapport'}",
+        html_body=html_body,
+    )
+
+    app.review_call_invitation_sent_at = datetime.now(timezone.utc)
+    await db.commit()
+
+    return {"sent": True, "recipient": body.recipient_email}
+
+
+# ─────────────────────────────────────────────
 # Admin: HTML-to-PDF report download
 # ─────────────────────────────────────────────
 

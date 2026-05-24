@@ -43,6 +43,7 @@ class CustomerApplicationStatus(str, Enum):
     RETRY = "RETRY"
     CANCELLED = "CANCELLED"
     READY_FOR_REVIEW_CALL = "READY_FOR_REVIEW_CALL"
+    COMPLETED = "COMPLETED"
 
 
 # Valid state transitions: current_state -> set of allowed next states
@@ -56,7 +57,8 @@ VALID_TRANSITIONS: dict[CustomerApplicationStatus, set[CustomerApplicationStatus
     CustomerApplicationStatus.AWAITING_PAYMENT: {CustomerApplicationStatus.PAID, CustomerApplicationStatus.IN_PRODUCTION},
     CustomerApplicationStatus.PAID: {CustomerApplicationStatus.IN_PRODUCTION},
     CustomerApplicationStatus.IN_PRODUCTION: {CustomerApplicationStatus.QC_REVIEW},
-    CustomerApplicationStatus.QC_REVIEW: {CustomerApplicationStatus.QC_PASSED, CustomerApplicationStatus.QC_FAILED},
+    # QC_REVIEW: admin can pass to QC_PASSED, fail, or move directly to review call
+    CustomerApplicationStatus.QC_REVIEW: {CustomerApplicationStatus.QC_PASSED, CustomerApplicationStatus.QC_FAILED, CustomerApplicationStatus.READY_FOR_REVIEW_CALL},
     CustomerApplicationStatus.QC_PASSED: {CustomerApplicationStatus.READY_FOR_REVIEW_CALL},
     # QC_FAILED: auto-retry (< 3 failures) goes back to IN_PRODUCTION;
     # after 3 failures, system escalates (ESCALATED). Managed by qc_result endpoint.
@@ -64,7 +66,8 @@ VALID_TRANSITIONS: dict[CustomerApplicationStatus, set[CustomerApplicationStatus
     # ESCALATED: Dennis makes manual correction → RETRY (back into IN_PRODUCTION cycle)
     CustomerApplicationStatus.ESCALATED: {CustomerApplicationStatus.RETRY},
     CustomerApplicationStatus.RETRY: {CustomerApplicationStatus.IN_PRODUCTION},
-    CustomerApplicationStatus.READY_FOR_REVIEW_CALL: set(),
+    CustomerApplicationStatus.READY_FOR_REVIEW_CALL: {CustomerApplicationStatus.COMPLETED},
+    CustomerApplicationStatus.COMPLETED: set(),
     CustomerApplicationStatus.CANCELLED: set(),
     CustomerApplicationStatus.REJECTED: set(),
 }
@@ -242,6 +245,7 @@ class CustomerApplication(Base):
     verification_failed_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     update_request_email_sent_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     resubmitted_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    review_call_invitation_sent_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

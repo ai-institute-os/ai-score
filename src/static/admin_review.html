@@ -843,7 +843,8 @@ const STATUS_LABELS = {
   ESCALATED: 'Escalated',
   RETRY: 'Retry',
   CANCELLED: 'Cancelled',
-  READY_FOR_REVIEW_CALL: 'Ready for Review',
+  READY_FOR_REVIEW_CALL: 'Review Call',
+  COMPLETED: 'Completed',
 };
 
 const VALID_TRANSITIONS = {
@@ -854,8 +855,9 @@ const VALID_TRANSITIONS = {
   AWAITING_PAYMENT: ['PAID'],
   PAID: ['IN_PRODUCTION'],
   IN_PRODUCTION: ['QC_REVIEW'],
-  QC_REVIEW: ['QC_PASSED', 'QC_FAILED'],
+  QC_REVIEW: ['QC_PASSED', 'QC_FAILED', 'READY_FOR_REVIEW_CALL'],
   QC_PASSED: ['READY_FOR_REVIEW_CALL'],
+  READY_FOR_REVIEW_CALL: ['COMPLETED'],
   ESCALATED: ['RETRY'],
 };
 
@@ -870,7 +872,8 @@ const WIZARD_STEPS = [
   { id: 'AWAITING_PAYMENT',      label: 'Payment',               icon: 'credit-card'     },
   { id: 'PDF_REPORT',            label: 'PDF Report',            icon: 'file-text'       },
   { id: 'QC_REVIEW',             label: 'QC Review',             icon: 'shield-check'    },
-  { id: 'READY_FOR_REVIEW_CALL', label: 'Ready for Review Call', icon: 'video'           },
+  { id: 'READY_FOR_REVIEW_CALL', label: 'Review Call',           icon: 'video'           },
+  { id: 'COMPLETED',             label: 'Completed',             icon: 'check-circle'    },
 ];
 
 const STATUS_STEP_INDEX = {
@@ -885,6 +888,7 @@ const STATUS_STEP_INDEX = {
   QC_PASSED:             8,
   QC_FAILED:             7,
   READY_FOR_REVIEW_CALL: 8,
+  COMPLETED:             9,
 };
 
 function getWizardActiveIndex(app) {
@@ -1067,7 +1071,7 @@ function renderApp(app) {
 // ─── Stage-aware Status Tab ───────────────────────
 
 const VERIFICATION_STAGES = new Set(['APPLIED']);
-const INTERVIEW_STAGES    = new Set(['UNDER_REVIEW', 'APPROVED', 'CALLED', 'AWAITING_PAYMENT', 'PAID', 'IN_PRODUCTION', 'QC_REVIEW', 'QC_PASSED', 'QC_FAILED', 'ESCALATED', 'RETRY', 'READY_FOR_REVIEW_CALL', 'CANCELLED', 'REJECTED']);
+const INTERVIEW_STAGES    = new Set(['UNDER_REVIEW', 'APPROVED', 'CALLED', 'AWAITING_PAYMENT', 'PAID', 'IN_PRODUCTION', 'QC_REVIEW', 'QC_PASSED', 'QC_FAILED', 'ESCALATED', 'RETRY', 'READY_FOR_REVIEW_CALL', 'COMPLETED', 'CANCELLED', 'REJECTED']);
 
 function renderStageContent(app) {
   const sc = document.getElementById('stageContent');
@@ -1725,7 +1729,18 @@ function renderActionPanel(app) {
                  style="font-size:0.85rem;padding:0.5rem 1.1rem;">
                 <i data-lucide="download" style="width:14px;height:14px;margin-right:0.35rem;"></i>
                 Download PDF Rapport
-              </button>`;
+              </button>
+              <div id="qcMoveSection" style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);flex-wrap:wrap;">
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer;color:var(--text);">
+                  <input type="checkbox" id="chkQcConfirm" onchange="document.getElementById('btnMoveToQc').disabled=!this.checked" style="width:16px;height:16px;cursor:pointer;">
+                  Rapport er gennemgået og klar til QC
+                </label>
+                <button class="btn btn-success" id="btnMoveToQc" onclick="moveToQcReview()" disabled
+                   style="font-size:0.85rem;padding:0.5rem 1.1rem;">
+                  <i data-lucide="arrow-right-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+                  Flyt til QC Review
+                </button>
+              </div>`;
             } else if (scoringStatus === 'running') {
               return `<button class="btn btn-primary" id="btnGenerateReport" disabled
                  style="font-size:0.85rem;padding:0.5rem 1.1rem;">
@@ -1746,6 +1761,102 @@ function renderActionPanel(app) {
           </button>`}
         </div>
       </div>`;
+
+  } else if (status === 'QC_REVIEW') {
+    titleEl.textContent = 'QC Review';
+    descEl.textContent = 'Åbn rapporten i en ny fane og gennemgå kvaliteten, inden du sender kunden til review-mødet.';
+    container.innerHTML = `
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem;">
+        <button class="btn btn-ghost" onclick="openReportInNewTab()" style="font-size:0.85rem;padding:0.5rem 1.1rem;">
+          <i data-lucide="external-link" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+          Åbn rapport i ny fane
+        </button>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:1.25rem;">
+        <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer;color:var(--text);margin-bottom:1rem;">
+          <input type="checkbox" id="chkQcReviewConfirm" onchange="document.getElementById('btnMoveToReviewCall').disabled=!this.checked" style="width:16px;height:16px;cursor:pointer;">
+          Rapport er godkendt og klar til Review Call
+        </label>
+        <button class="btn btn-success" id="btnMoveToReviewCall" onclick="moveToReviewCall()" disabled
+           style="font-size:0.85rem;padding:0.5rem 1.1rem;">
+          <i data-lucide="video" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+          Flyt til Review Call
+        </button>
+      </div>`;
+
+  } else if (status === 'READY_FOR_REVIEW_CALL') {
+    const invitationSent = !!app.review_call_invitation_sent_at;
+    titleEl.textContent = 'Review Call';
+    descEl.textContent = 'Send møde-invitation til kunden og afslut forløbet.';
+    container.innerHTML = `
+      <div style="display:grid;gap:0.75rem;margin-bottom:1.25rem;">
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Modtager e-mail *</label>
+          <input id="rcEmail" type="email" value="${esc(app.email || '')}" placeholder="kunde@example.com"
+            style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:0.9rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Mødelink *</label>
+          <input id="rcLink" type="url" placeholder="https://cal.com/..."
+            style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:0.9rem;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div>
+            <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Mødedato & -tid *</label>
+            <input id="rcTime" type="datetime-local"
+              style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:0.9rem;">
+          </div>
+          <div>
+            <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Varighed (min)</label>
+            <input id="rcDuration" type="number" value="30" min="15" max="120"
+              style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:0.9rem;">
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Note (valgfri)</label>
+          <textarea id="rcNote" placeholder="Evt. besked til kunden…"
+            style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:0.9rem;min-height:70px;resize:vertical;"></textarea>
+        </div>
+        <div>
+          <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer;color:var(--text);">
+            <input type="checkbox" id="chkSendInvite" onchange="document.getElementById('btnSendInvitation').disabled=!this.checked" style="width:16px;height:16px;cursor:pointer;">
+            Bekræft: oplysningerne er korrekte
+          </label>
+        </div>
+        <button class="btn btn-primary" id="btnSendInvitation" onclick="sendReviewCallInvitation()" disabled
+           style="font-size:0.85rem;padding:0.5rem 1.1rem;">
+          <i data-lucide="mail" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+          Send møde-invitation
+        </button>
+        ${invitationSent ? `<p style="font-size:0.8rem;color:var(--success,#22c55e);margin:0;">
+          <i data-lucide="check" style="width:12px;height:12px;margin-right:0.25rem;vertical-align:middle;"></i>
+          Invitation sendt ${new Date(app.review_call_invitation_sent_at).toLocaleString('da-DK')}
+        </p>` : ''}
+      </div>
+      ${invitationSent ? `
+      <div style="border-top:1px solid var(--border);padding-top:1.25rem;">
+        <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer;color:var(--text);margin-bottom:1rem;">
+          <input type="checkbox" id="chkCallFinished" onchange="document.getElementById('btnCallFinished').disabled=!this.checked" style="width:16px;height:16px;cursor:pointer;">
+          Review Call er gennemført
+        </label>
+        <button class="btn btn-success" id="btnCallFinished" onclick="markReviewCallFinished()" disabled
+           style="font-size:0.85rem;padding:0.5rem 1.1rem;">
+          <i data-lucide="check-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+          Review Call Finished
+        </button>
+      </div>` : ''}`;
+
+  } else if (status === 'COMPLETED') {
+    titleEl.textContent = 'Completed';
+    descEl.textContent = '';
+    container.innerHTML = `
+      <div style="text-align:center;padding:2rem 1rem;">
+        <div id="fireworksContainer" style="position:relative;"></div>
+        <div style="font-size:3rem;margin-bottom:1rem;">🎉</div>
+        <h2 style="color:var(--success,#22c55e);margin:0 0 0.5rem;font-size:1.4rem;">This application has been successfully finished!</h2>
+        <p style="color:var(--text-muted);margin:0;">${esc(app.firmanavn || 'Ansøgningen')} er gennemført og afsluttet.</p>
+      </div>`;
+    _launchFireworks();
 
   } else {
     const nextStatuses = VALID_TRANSITIONS[status] || [];
@@ -2002,6 +2113,86 @@ function _pollScoringStatus() {
       _pollScoringStatus();
     }
   }, 5000);
+}
+
+async function moveToQcReview() {
+  const btn = document.getElementById('btnMoveToQc');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Flytter…'; if (window.lucide) lucide.createIcons(); }
+  await doStatusChange('QC_REVIEW', 'Admin moved application to QC Review after confirming report.');
+}
+
+function openReportInNewTab() {
+  window.open(`/api/v1/admin/applications/${appId}/report/pdf`, '_blank');
+}
+
+async function moveToReviewCall() {
+  const btn = document.getElementById('btnMoveToReviewCall');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Flytter…'; if (window.lucide) lucide.createIcons(); }
+  await doStatusChange('READY_FOR_REVIEW_CALL', 'Admin approved QC and moved application to Review Call stage.');
+}
+
+async function sendReviewCallInvitation() {
+  const email = document.getElementById('rcEmail')?.value?.trim();
+  const link = document.getElementById('rcLink')?.value?.trim();
+  const time = document.getElementById('rcTime')?.value?.trim();
+  const duration = parseInt(document.getElementById('rcDuration')?.value || '30', 10);
+  const note = document.getElementById('rcNote')?.value?.trim() || '';
+
+  if (!email || !link || !time) { toast('Udfyld e-mail, mødelink og tidspunkt.', 'error'); return; }
+
+  const btn = document.getElementById('btnSendInvitation');
+  const origHTML = btn?.innerHTML;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Sender…'; if (window.lucide) lucide.createIcons(); }
+
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/send-review-call-invitation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient_email: email, meeting_link: link, meeting_time: time, duration_minutes: duration, note }),
+    });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
+    toast('Invitation sendt!', 'success');
+    // Reload app so invitation timestamp shows and "Review Call Finished" button appears
+    const appRes = await fetch(`/api/v1/admin/applications/${appId}`);
+    if (appRes.ok) { const updated = await appRes.json(); renderApp(updated); }
+  } catch (err) {
+    toast('Fejl: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = origHTML; if (window.lucide) lucide.createIcons(); }
+  }
+}
+
+async function markReviewCallFinished() {
+  const btn = document.getElementById('btnCallFinished');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Afslutter…'; if (window.lucide) lucide.createIcons(); }
+  await doStatusChange('COMPLETED', 'Review call completed. Application successfully finished.');
+}
+
+function _launchFireworks() {
+  const container = document.getElementById('fireworksContainer');
+  if (!container) return;
+  const colors = ['#6c47ff','#f59e0b','#22c55e','#ec4899','#3b82f6','#f97316'];
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement('div');
+    const angle = Math.random() * 360;
+    const dist = 60 + Math.random() * 120;
+    const size = 6 + Math.random() * 8;
+    p.style.cssText = `position:absolute;left:50%;top:50%;width:${size}px;height:${size}px;border-radius:50%;background:${colors[Math.floor(Math.random()*colors.length)]};pointer-events:none;opacity:1;transform:translate(-50%,-50%);transition:transform 1.2s ease-out,opacity 1.2s ease-out;`;
+    container.appendChild(p);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const rad = angle * Math.PI / 180;
+        p.style.transform = `translate(calc(-50% + ${Math.cos(rad)*dist}px), calc(-50% + ${Math.sin(rad)*dist}px))`;
+        p.style.opacity = '0';
+      });
+    });
+    setTimeout(() => p.remove(), 1400);
+  }
+  // Repeat a few times
+  let count = 0;
+  const interval = setInterval(() => {
+    if (++count >= 4) { clearInterval(interval); return; }
+    setTimeout(() => _launchFireworks(), count * 600);
+  }, 600);
 }
 
 function runDataChecker() {

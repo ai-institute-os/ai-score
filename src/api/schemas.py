@@ -276,6 +276,7 @@ class ApplicationResponse(BaseModel):
     verification_failed_at: Optional[datetime] = None
     update_request_email_sent_at: Optional[datetime] = None
     resubmitted_at: Optional[datetime] = None
+    review_call_invitation_sent_at: Optional[datetime] = None
     # Manual call booking
     interviewer_email: Optional[str] = None
     interview_start_time: Optional[datetime] = None
