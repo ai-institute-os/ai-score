@@ -51,9 +51,9 @@
     const params = new URLSearchParams(location.search);
     const orderId = params.get('order_id') || '';
     if (orderId) {
-      document.getElementById('statusLink').href = '/admin/applications/' + orderId + '/review';
+      document.getElementById('statusLink').href = '/my-page/' + orderId;
     } else {
-      document.getElementById('statusLink').href = '/admin';
+      document.getElementById('statusLink').href = '/my-page';
     }
   </script>
 </body>

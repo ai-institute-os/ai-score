@@ -231,6 +231,8 @@ class ApplicationResponse(BaseModel):
     # Payment
     payment_url: Optional[str] = None
     stripe_session_id: Optional[str] = None
+    payment_failure_reason: Optional[str] = None
+    payment_failed_at: Optional[datetime] = None
     # QC loop
     qc_failure_count: int = 0
     has_been_escalated: bool = False

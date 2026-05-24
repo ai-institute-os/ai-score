@@ -2096,6 +2096,29 @@ async def stripe_webhook(request: Request, background_tasks: BackgroundTasks, db
                 subscription_id=subscription_id,
             )
 
+    # ── payment_intent.payment_failed (one-time AIScore payment) ───────────
+    elif event_type == "payment_intent.payment_failed":
+        pi = event["data"]["object"]
+        pi_id = pi.get("id")
+        last_error = pi.get("last_payment_error") or {}
+        reason = last_error.get("message") or last_error.get("code") or "Payment failed"
+
+        result = await db.execute(
+            select(CustomerApplication).where(
+                CustomerApplication.stripe_payment_intent_id == pi_id
+            )
+        )
+        app = result.scalar_one_or_none()
+        if app and app.status == CustomerApplicationStatus.AWAITING_PAYMENT:
+            app.payment_failure_reason = reason
+            app.payment_failed_at = datetime.now(timezone.utc)
+            await db.commit()
+            log.info(
+                "stripe_webhook.payment_intent.failed",
+                application_id=str(app.id),
+                reason=reason,
+            )
+
     else:
         log.debug("stripe_webhook.ignored_event_type", event_type=event_type)
 

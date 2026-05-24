@@ -1619,11 +1619,16 @@ function renderActionPanel(app) {
           <i data-lucide="credit-card" style="width:14px;height:14px;margin-right:0.35rem;"></i>
           ${existingUrl ? 'Regenerate Payment Link' : 'Generate Payment Link'}
         </button>
-        <button class="btn btn-ghost" onclick="changeStatus('PAID')" style="border-color:var(--success,#16a34a);color:var(--success,#16a34a);">
-          <i data-lucide="badge-check" style="width:14px;height:14px;margin-right:0.35rem;"></i>
-          Mark as Paid
-        </button>
-      </div>`;
+      </div>
+      ${app.payment_failure_reason ? `
+      <div style="margin-top:0.85rem;padding:0.75rem 1rem;border-radius:var(--radius-sm);background:#fef2f2;border:1px solid #fecaca;display:flex;gap:0.6rem;align-items:flex-start;">
+        <i data-lucide="alert-circle" style="width:14px;height:14px;color:#dc2626;flex-shrink:0;margin-top:0.1rem;"></i>
+        <div>
+          <div style="font-size:0.78rem;font-weight:700;color:#dc2626;margin-bottom:0.2rem;">Payment failed</div>
+          <div style="font-size:0.8rem;color:#991b1b;">${esc(app.payment_failure_reason)}</div>
+          ${app.payment_failed_at ? `<div style="font-size:0.72rem;color:#b91c1c;margin-top:0.2rem;">${new Date(app.payment_failed_at).toLocaleString('da-DK')}</div>` : ''}
+        </div>
+      </div>` : ''}`;
 
   } else if (status === 'IN_PRODUCTION' || status === 'PAID') {
     titleEl.textContent = status === 'IN_PRODUCTION' ? 'PDF Report' : 'Rapport';
