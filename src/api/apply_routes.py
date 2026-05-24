@@ -3346,16 +3346,16 @@ def _render_report_html(app: "CustomerApplication") -> str:
         "{{AI_DESCRIPTIONS_HEADLINE}}": f"Hvad de fire AI-systemer siger om {name} i dag",
         "{{CHATGPT_MENTIONED}}": f"{og['m']}/{og['n']}",
         "{{CHATGPT_SELECTED}}": f"{og['s']}/{og['n']}",
-        "{{CHATGPT_QUOTE}}": _quote(sr.get("openai", {}), "ChatGPT"),
+        "{{CHATGPT_QUOTE}}": _quote(og, "ChatGPT"),
         "{{CLAUDE_MENTIONED}}": f"{cl['m']}/{cl['n']}",
         "{{CLAUDE_SELECTED}}": f"{cl['s']}/{cl['n']}",
-        "{{CLAUDE_QUOTE}}": _quote(sr.get("claude", {}), "Claude"),
+        "{{CLAUDE_QUOTE}}": _quote(cl, "Claude"),
         "{{GEMINI_MENTIONED}}": f"{ge['m']}/{ge['n']}",
         "{{GEMINI_SELECTED}}": f"{ge['s']}/{ge['n']}",
-        "{{GEMINI_QUOTE}}": _quote(sr.get("gemini", {}), "Gemini"),
+        "{{GEMINI_QUOTE}}": _quote(ge, "Gemini"),
         "{{PERPLEXITY_MENTIONED}}": f"{pe['m']}/{pe['n']}",
         "{{PERPLEXITY_SELECTED}}": f"{pe['s']}/{pe['n']}",
-        "{{PERPLEXITY_QUOTE}}": _quote(sr.get("perplexity", {}), "Perplexity"),
+        "{{PERPLEXITY_QUOTE}}": _quote(pe, "Perplexity"),
         "{{AI_DESCRIPTIONS_INTERPRETATION}}": (
             f"Alle fire systemer genkender {name} som aktør inden for {sector}. "
             f"Udfordringen er konsekvent: AI-systemerne tilbyder altid ét eller flere alternativer "
