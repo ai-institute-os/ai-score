@@ -26,6 +26,7 @@ from src.api.schemas import (
     ApplicationListItem, ApplicationResponse, ApplicationStatusUpdate,
     GeneratePaymentLinkRequest, PaymentLinkResponse,
     QCResultSubmit, ManualCorrectionRequest, ScoringDataUpdate,
+    BookCallRequest,
     ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
 )
 from src.api.rate_limit import limiter
@@ -508,6 +509,105 @@ async def book_meeting(
         "applicant_name": app.kontaktperson or app.firmanavn,
         "applicant_email": app.email,
     }
+
+
+@router.post("/admin/applications/{application_id}/book-call")
+@limiter.limit("20/minute")
+async def book_call(
+    request: Request,
+    application_id: uuid.UUID,
+    body: BookCallRequest,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin_key),
+):
+    """Admin — manually book a call for an APPROVED application."""
+    from src.payments.emailer import send_email
+    from src.config import get_settings
+
+    settings = get_settings()
+    app = await _get_application_or_404(application_id, db)
+
+    if app.status != CustomerApplicationStatus.APPROVED:
+        raise HTTPException(status_code=400, detail="Application must be in APPROVED status to book a call.")
+
+    now = datetime.now(timezone.utc)
+    if body.interview_start_time.tzinfo is None:
+        start = body.interview_start_time.replace(tzinfo=timezone.utc)
+    else:
+        start = body.interview_start_time.astimezone(timezone.utc)
+
+    if start <= now:
+        raise HTTPException(status_code=422, detail="Interview start time must be in the future.")
+
+    end = start + timedelta(minutes=body.interview_duration_minutes)
+
+    # Overlap detection: find any APPROVED or CALLED apps with a scheduled interview that overlaps
+    overlap_q = select(CustomerApplication).where(
+        CustomerApplication.id != application_id,
+        CustomerApplication.status.in_([
+            CustomerApplicationStatus.APPROVED,
+            CustomerApplicationStatus.CALLED,
+        ]),
+        CustomerApplication.interview_start_time.isnot(None),
+    )
+    result = await db.execute(overlap_q)
+    existing = result.scalars().all()
+    for other in existing:
+        o_start = other.interview_start_time
+        if o_start is None:
+            continue
+        if o_start.tzinfo is None:
+            o_start = o_start.replace(tzinfo=timezone.utc)
+        o_end = o_start + timedelta(minutes=(other.interview_duration_minutes or 30))
+        if start < o_end and end > o_start:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Time slot overlaps with existing booking for '{other.firmanavn}' at {o_start.isoformat()}.",
+            )
+
+    app.interviewer_email = body.interviewer_email
+    app.interview_start_time = start
+    app.interview_duration_minutes = body.interview_duration_minutes
+    app.interview_notes = body.interview_notes
+    app.status = CustomerApplicationStatus.CALLED
+
+    db.add(CustomerApplicationStateLog(
+        application_id=app.id,
+        from_status=CustomerApplicationStatus.APPROVED,
+        to_status=CustomerApplicationStatus.CALLED,
+        changed_by="admin",
+        note=f"Call booked: {body.interview_duration_minutes} min with {body.interviewer_email}",
+    ))
+    await db.commit()
+
+    # Send notification email to admin
+    start_str = start.strftime("%Y-%m-%d %H:%M UTC")
+    html_body = f"""
+<p>A call has been booked for <strong>{app.firmanavn}</strong>.</p>
+<ul>
+  <li><strong>Applicant:</strong> {app.kontaktperson} ({app.email})</li>
+  <li><strong>Interviewer:</strong> {body.interviewer_email}</li>
+  <li><strong>Start:</strong> {start_str}</li>
+  <li><strong>Duration:</strong> {body.interview_duration_minutes} minutes</li>
+  {'<li><strong>Notes:</strong> ' + body.interview_notes + '</li>' if body.interview_notes else ''}
+</ul>
+"""
+    try:
+        await send_email(
+            to=settings.admin_review_email,
+            subject=f"Call booked: {app.firmanavn} — {start_str}",
+            html_body=html_body,
+        )
+    except Exception:
+        pass  # Don't fail the booking if email fails
+
+    log.info("call.booked", application_id=str(application_id), company=app.firmanavn, start=start.isoformat())
+    result2 = await db.execute(
+        select(CustomerApplication)
+        .options(selectinload(CustomerApplication.state_logs))
+        .where(CustomerApplication.id == application_id)
+    )
+    return result2.scalar_one()
 
 
 _TRANSCRIPT_EXTRACT_PROMPT = """You are an AI analyst reviewing a transcript from a sales/onboarding call with a potential AIScore client.

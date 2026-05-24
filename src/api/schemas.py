@@ -272,6 +272,11 @@ class ApplicationResponse(BaseModel):
     verification_failed_at: Optional[datetime] = None
     update_request_email_sent_at: Optional[datetime] = None
     resubmitted_at: Optional[datetime] = None
+    # Manual call booking
+    interviewer_email: Optional[str] = None
+    interview_start_time: Optional[datetime] = None
+    interview_duration_minutes: Optional[int] = None
+    interview_notes: Optional[str] = None
     # Call transcript (persisted after Whisper + LLM processing in Called stage)
     call_transcript: Optional[str] = None
     call_extracted_data: Optional[dict] = None
@@ -314,6 +319,13 @@ class ScoringDataUpdate(BaseModel):
     overall_score: int = Field(..., ge=0, le=100, description="Weighted aggregate AIScore (0–100)")
     queries_run: int = Field(..., ge=0, description="Total LLM queries run for this analysis")
     rank: int = Field(..., ge=1, description="Brand position in LLM responses")
+
+
+class BookCallRequest(BaseModel):
+    interviewer_email: EmailStr = Field(..., description="Interviewer's email address")
+    interview_start_time: datetime = Field(..., description="Start time of the interview (must be in the future)")
+    interview_duration_minutes: int = Field(default=30, ge=5, le=480, description="Duration in minutes")
+    interview_notes: Optional[str] = Field(default=None, max_length=2000, description="Optional notes")
 
 
 # ─────────────────────────────────────────────

@@ -714,6 +714,21 @@
 
 <div class="toast-wrap" id="toastWrap"></div>
 
+<!-- Book call confirmation modal -->
+<div id="bookCallModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:440px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;">
+      <i data-lucide="calendar-check" style="width:18px;height:18px;color:var(--text-muted);flex-shrink:0;"></i>
+      <span style="font-weight:700;font-size:0.95rem;">Confirm booking?</span>
+    </div>
+    <div id="bookCallModalBody" style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;"></div>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeBookCallModal()">Cancel</button>
+      <button class="btn btn-primary" id="btnConfirmBookCall" onclick="confirmBookCall()">Book Meeting</button>
+    </div>
+  </div>
+</div>
+
 <!-- Send update request email confirmation modal -->
 <div id="urgeConfirmModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
   <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
@@ -828,8 +843,7 @@ const WIZARD_STEPS = [
   { id: 'APPLIED',               label: 'Applied',               icon: 'mail-open'       },
   { id: 'AGENT_RESEARCH',        label: 'Verification',          icon: 'shield-check'    },
   { id: 'UNDER_REVIEW',          label: 'Under Review',          icon: 'eye'             },
-  { id: 'APPROVED',              label: 'Call Booking',          icon: 'calendar'        },
-  { id: 'CALL_BOOKING',          label: 'Call Booked',           icon: 'calendar-check'  },
+  { id: 'APPROVED',              label: 'Book a call',           icon: 'calendar'        },
   { id: 'CALLED',                label: 'Called',                icon: 'phone'           },
   { id: 'AWAITING_PAYMENT',      label: 'Awaiting Payment',      icon: 'credit-card'     },
   { id: 'PAID',                  label: 'Paid',                  icon: 'badge-check'     },
@@ -842,14 +856,14 @@ const STATUS_STEP_INDEX = {
   APPLIED:               0,
   UNDER_REVIEW:          2,
   APPROVED:              3,
-  CALLED:                5,
-  AWAITING_PAYMENT:      6,
-  PAID:                  7,
-  IN_PRODUCTION:         8,
-  QC_REVIEW:             9,
-  QC_PASSED:             10,
-  QC_FAILED:             9,
-  READY_FOR_REVIEW_CALL: 10,
+  CALLED:                4,
+  AWAITING_PAYMENT:      5,
+  PAID:                  6,
+  IN_PRODUCTION:         7,
+  QC_REVIEW:             8,
+  QC_PASSED:             9,
+  QC_FAILED:             8,
+  READY_FOR_REVIEW_CALL: 9,
 };
 
 function getWizardActiveIndex(app) {
@@ -1464,18 +1478,36 @@ function renderActionPanel(app) {
       </div>`;
 
   } else if (status === 'APPROVED') {
-    titleEl.textContent = 'Call Booking';
-    descEl.textContent = '';
+    titleEl.textContent = 'Book a call';
+    descEl.textContent = 'Schedule the intake call with the applicant.';
+    const inputStyle = 'width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);';
     container.innerHTML = `
-      <div>
-        <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.4rem;">Booking Status</label>
-        <select id="bookingStatusSelect" onchange="updateBookingState(this.value)" style="width:50%;max-width:240px;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card);color:var(--text);font-size:0.875rem;cursor:pointer;appearance:auto;">
-          <option value="not_booked">Not Booked</option>
-          <option value="call_booked">Call Booked</option>
-        </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem 1rem;margin-bottom:1rem;">
+        <div style="grid-column:1/-1;">
+          <label class="field-label">Interviewer Email <span style="color:var(--error);">*</span></label>
+          <input type="email" id="bkInterviewerEmail" placeholder="interviewer@aiscore.dk" style="${inputStyle}" oninput="updateBookCallBtn()" />
+        </div>
+        <div>
+          <label class="field-label">Interview Start Time <span style="color:var(--error);">*</span></label>
+          <input type="datetime-local" id="bkStartTime" style="${inputStyle}" oninput="updateBookCallBtn()" />
+        </div>
+        <div>
+          <label class="field-label">Duration (minutes) <span style="color:var(--error);">*</span></label>
+          <input type="number" id="bkDuration" value="30" min="5" max="480" style="${inputStyle}" oninput="updateBookCallBtn()" />
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="field-label">Notes (optional)</label>
+          <textarea id="bkNotes" placeholder="Any notes about the call…" style="min-height:60px;font-size:0.82rem;width:100%;"></textarea>
+        </div>
       </div>
-      <div id="bookingContent" style="margin-top:1rem;"></div>`;
-    updateBookingState('not_booked');
+      <div>
+        <button id="btnBookCall" class="cta-btn cta-btn-approve disabled" disabled onclick="openBookCallModal()">
+          <i data-lucide="calendar-check" class="icon-sm"></i>
+          Book Meeting
+        </button>
+        <div id="bookCallError" style="display:none;margin-top:0.5rem;font-size:0.8rem;color:var(--error);"></div>
+      </div>`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
   } else if (status === 'REJECTED') {
     titleEl.textContent = 'Application Rejected';
@@ -2355,77 +2387,93 @@ function toggleCollapse() {
   }
 }
 
-// ─── Booking state (APPROVED dropdown) ────────────
+// ─── Book call (APPROVED form) ────────────────────
 
-function updateBookingState(val) {
-  const content = document.getElementById('bookingContent');
-  const select  = document.getElementById('bookingStatusSelect');
-  if (!content) return;
+function updateBookCallBtn() {
+  const email = document.getElementById('bkInterviewerEmail')?.value?.trim() || '';
+  const start = document.getElementById('bkStartTime')?.value || '';
+  const dur   = parseInt(document.getElementById('bkDuration')?.value || '0', 10);
+  const btn   = document.getElementById('btnBookCall');
+  if (!btn) return;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const startValid = start && new Date(start) > new Date();
+  const durValid   = dur >= 5 && dur <= 480;
+  const ok = emailValid && startValid && durValid;
+  btn.disabled = !ok;
+  btn.classList.toggle('disabled', !ok);
+}
 
-  if (val === 'not_booked') {
-    content.innerHTML = `
-      <button class="cta-btn cta-btn-approve" id="btnBookMeeting" onclick="bookMeeting(this)"><i data-lucide="calendar" class="icon-sm"></i>Book Meeting</button>
-      <div id="bookMeetingMsg" style="margin-top:0.5rem;"></div>`;
-
-  } else if (val === 'call_booked') {
-    // Add "Called" option to dropdown if not present
-    if (select && !select.querySelector('option[value="called"]')) {
-      const opt = document.createElement('option');
-      opt.value = 'called'; opt.textContent = 'Called';
-      select.appendChild(opt);
-    }
-    content.innerHTML = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem 1rem;margin-bottom:1rem;">
-        <div>
-          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Event Date & Time</label>
-          <input type="datetime-local" id="bkDate" style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);" />
-        </div>
-        <div>
-          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Client Name</label>
-          <input type="text" id="bkClientName" placeholder="${esc(appData?.kontaktperson || '')}" value="${esc(appData?.kontaktperson || '')}" style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);" />
-        </div>
-        <div>
-          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Client Email</label>
-          <input type="email" id="bkClientEmail" placeholder="${esc(appData?.email || '')}" value="${esc(appData?.email || '')}" style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);" />
-        </div>
-        <div>
-          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Meeting Link (optional)</label>
-          <input type="url" id="bkLink" placeholder="https://meet.google.com/…" style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;background:var(--card);color:var(--text);" />
-        </div>
-      </div>
-      <div>
-        <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.3rem;">Notes (optional)</label>
-        <textarea id="bkNotes" placeholder="Any notes about the booking…" style="min-height:60px;font-size:0.82rem;"></textarea>
-      </div>
-      <div style="margin-top:1rem;">
-        <button class="btn btn-primary" onclick="confirmMoveToCalledStage()"><i data-lucide="check-circle" class="icon-sm"></i>Confirm Booking</button>
-      </div>`;
-
-  } else if (val === 'called') {
-    // Show inline confirmation
-    content.innerHTML = `
-      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
-        <p style="font-size:0.875rem;font-weight:600;color:var(--text);margin-bottom:0.25rem;">Confirm call completed?</p>
-        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">This will move the application to the Called stage and unlock the transcription upload.</p>
-        <div style="display:flex;gap:0.5rem;">
-          <button class="btn btn-primary" onclick="confirmMoveToCalledStage()">Yes, call is done</button>
-          <button class="btn btn-ghost" onclick="revertBookingDropdown()">Cancel</button>
-        </div>
-      </div>`;
+function openBookCallModal() {
+  const email    = document.getElementById('bkInterviewerEmail')?.value?.trim() || '';
+  const startRaw = document.getElementById('bkStartTime')?.value || '';
+  const dur      = document.getElementById('bkDuration')?.value || '30';
+  const notes    = document.getElementById('bkNotes')?.value?.trim() || '';
+  const startFmt = startRaw ? new Date(startRaw).toLocaleString('da-DK', { dateStyle:'short', timeStyle:'short' }) : '?';
+  const body = document.getElementById('bookCallModalBody');
+  if (body) {
+    body.innerHTML = `
+      <ul style="margin:0;padding-left:1.2rem;">
+        <li><strong>Applicant:</strong> ${esc(appData?.firmanavn || appId)}</li>
+        <li><strong>Interviewer:</strong> ${esc(email)}</li>
+        <li><strong>Start:</strong> ${esc(startFmt)}</li>
+        <li><strong>Duration:</strong> ${esc(dur)} minutes</li>
+        ${notes ? `<li><strong>Notes:</strong> ${esc(notes)}</li>` : ''}
+      </ul>`;
   }
-
+  const modal = document.getElementById('bookCallModal');
+  if (modal) modal.style.display = 'flex';
   if (window.lucide) lucide.createIcons();
 }
 
-function revertBookingDropdown() {
-  const select = document.getElementById('bookingStatusSelect');
-  if (select) select.value = 'call_booked';
-  updateBookingState('call_booked');
+function closeBookCallModal() {
+  const modal = document.getElementById('bookCallModal');
+  if (modal) modal.style.display = 'none';
 }
 
-async function confirmMoveToCalledStage() {
-  await doStatusChange('CALLED', '');
+async function confirmBookCall() {
+  const btn    = document.getElementById('btnConfirmBookCall');
+  const errEl  = document.getElementById('bookCallError');
+  const email  = document.getElementById('bkInterviewerEmail')?.value?.trim() || '';
+  const start  = document.getElementById('bkStartTime')?.value || '';
+  const dur    = parseInt(document.getElementById('bkDuration')?.value || '30', 10);
+  const notes  = document.getElementById('bkNotes')?.value?.trim() || '';
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Booking…'; }
+  closeBookCallModal();
+
+  const payload = {
+    interviewer_email: email,
+    interview_start_time: new Date(start).toISOString(),
+    interview_duration_minutes: dur,
+  };
+  if (notes) payload.interview_notes = notes;
+
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/book-call`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = data.detail || `HTTP ${res.status}`;
+      if (errEl) { errEl.textContent = msg; errEl.style.display = ''; }
+      toast(msg, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Book Meeting'; }
+      return;
+    }
+    toast('Call booked — moved to Called', 'success');
+    setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    const msg = 'Network error: ' + e.message;
+    if (errEl) { errEl.textContent = msg; errEl.style.display = ''; }
+    toast(msg, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Book Meeting'; }
+  }
 }
+
+// Legacy stubs for any cached references
+async function confirmMoveToCalledStage() { await doStatusChange('CALLED', ''); }
 
 // ─── Transcription ─────────────────────────────────
 
@@ -2507,52 +2555,6 @@ async function processTranscript(btn) {
   }
 }
 
-// ─── Calendly ─────────────────────────────────────
-
-async function bookMeeting(btn) {
-  if (btn) { btn.disabled = true; btn.textContent = 'Opening Calendly…'; }
-  const msgEl = document.getElementById('bookMeetingMsg');
-  if (msgEl) msgEl.innerHTML = '';
-
-  try {
-    const res = await fetch(`/api/v1/admin/applications/${appId}/book-meeting`, { method: 'POST' });
-    const data = await res.json();
-
-    if (!res.ok) {
-      // Show Calendly setup instructions
-      const d = data.detail || data;
-      if (d.error === 'calendly_not_configured') {
-        const missing = (d.missing_env_vars || []).join(', ');
-        const howTo = Object.entries(d.how_to_get || {}).map(([k, v]) =>
-          `<li style="margin-bottom:0.5rem;"><strong>${k}</strong>: ${esc(v)}</li>`
-        ).join('');
-        if (msgEl) msgEl.innerHTML = `
-          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;margin-top:0.25rem;font-size:0.8rem;">
-            <p style="font-weight:700;color:var(--text);margin-bottom:0.35rem;">Calendly not configured</p>
-            <p style="color:var(--text-muted);margin-bottom:0.65rem;">Set these Railway environment variables to enable Calendly:</p>
-            <ul style="list-style:none;padding:0;color:var(--text);line-height:1.55;">${howTo}</ul>
-          </div>`;
-      } else {
-        throw new Error(d.message || d.detail || `HTTP ${res.status}`);
-      }
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="calendar" class="icon-sm"></i> Book Meeting'; if (window.lucide) lucide.createIcons(); }
-      return;
-    }
-
-    // Success — open the Calendly booking URL in a new tab
-    window.open(data.booking_url, '_blank', 'noopener');
-    toast('Calendly scheduling link opened', 'success');
-    if (msgEl) msgEl.innerHTML = `
-      <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;">
-        Link opened in a new tab. Once the meeting is booked, mark it as Called below.
-      </div>`;
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="calendar" class="icon-sm"></i> Book Meeting'; if (window.lucide) lucide.createIcons(); }
-
-  } catch (err) {
-    toast('Failed to create meeting link: ' + err.message, 'error');
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="calendar" class="icon-sm"></i> Book Meeting'; if (window.lucide) lucide.createIcons(); }
-  }
-}
 
 // ─── Tabs ─────────────────────────────────────────
 
