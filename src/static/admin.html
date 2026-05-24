@@ -279,9 +279,9 @@
           <span class="sidebar-text" data-i18n="sidebar.under_review">Under review</span>
           <span class="sidebar-count" id="cnt-UNDER_REVIEW">—</span>
         </a>
-        <a class="sidebar-item" data-filter="CALLED" onclick="setFilter(this, 'CALLED')" data-label="sidebar.meeting_booked">
+        <a class="sidebar-item" data-filter="CALLED" onclick="setFilter(this, 'CALLED')" data-label="sidebar.called">
           <i data-lucide="calendar-days" class="icon-sm"></i>
-          <span class="sidebar-text" data-i18n="sidebar.meeting_booked">Meeting booked</span>
+          <span class="sidebar-text" data-i18n="sidebar.called">Called</span>
           <span class="sidebar-count" id="cnt-CALLED">—</span>
         </a>
       </div>
@@ -312,12 +312,7 @@
           <span class="sidebar-text" data-i18n="sidebar.qc_review">QC review</span>
           <span class="sidebar-count" id="cnt-QC_REVIEW">—</span>
         </a>
-        <a class="sidebar-item" data-filter="QC_PASSED" onclick="setFilter(this, 'QC_PASSED')" data-label="sidebar.qc_passed">
-          <i data-lucide="badge-check" class="icon-sm"></i>
-          <span class="sidebar-text" data-i18n="sidebar.qc_passed">QC passed</span>
-          <span class="sidebar-count" id="cnt-QC_PASSED">—</span>
-        </a>
-        <a class="sidebar-item" data-filter="READY_FOR_REVIEW_CALL" onclick="setFilter(this, 'READY_FOR_REVIEW_CALL')" data-label="sidebar.ready_for_review">
+<a class="sidebar-item" data-filter="READY_FOR_REVIEW_CALL" onclick="setFilter(this, 'READY_FOR_REVIEW_CALL')" data-label="sidebar.ready_for_review">
           <i data-lucide="phone" class="icon-sm"></i>
           <span class="sidebar-text" data-i18n="sidebar.ready_for_review">Review Call</span>
           <span class="sidebar-count" id="cnt-READY_FOR_REVIEW_CALL">—</span>
@@ -359,8 +354,7 @@
       <div class="filter-bar" id="filterBar">
         <button class="filter-chip active" data-status="" onclick="setFilterChip(this, '')" data-i18n="filter.all">All</button>
         <button class="filter-chip" data-status="APPLIED" onclick="setFilterChip(this, 'APPLIED')" data-i18n="filter.applied">Applied</button>
-        <button class="filter-chip" data-status="UNDER_REVIEW" onclick="setFilterChip(this, 'UNDER_REVIEW')" data-i18n="filter.review">Review</button>
-        <button class="filter-chip" data-status="APPROVED" onclick="setFilterChip(this, 'APPROVED')" data-i18n="filter.approved">Approved</button>
+        <button class="filter-chip" data-status="UNDER_REVIEW" onclick="setFilterChip(this, 'UNDER_REVIEW')" data-i18n="filter.under_review">Under Review</button>
         <button class="filter-chip" data-status="PAID" onclick="setFilterChip(this, 'PAID')" data-i18n="filter.paid">Paid</button>
         <button class="filter-chip" data-status="IN_PRODUCTION" onclick="setFilterChip(this, 'IN_PRODUCTION')" data-i18n="filter.production">Production</button>
         <button class="filter-chip" data-status="ESCALATED" onclick="setFilterChip(this, 'ESCALATED')" data-i18n="filter.escalated">Escalated</button>
