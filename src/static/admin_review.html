@@ -1522,7 +1522,7 @@ function renderActionPanel(app) {
         </div>
         <div>
           <label class="field-label">Duration (minutes) <span style="color:var(--error);">*</span></label>
-          <input type="number" id="bkDuration" value="30" min="5" max="480" style="${inputStyle}" oninput="updateBookCallBtn()" />
+          <input type="number" id="bkDuration" value="30" min="15" max="480" style="${inputStyle}" oninput="updateBookCallBtn()" />
         </div>
         <div style="grid-column:1/-1;">
           <label class="field-label">Notes (optional)</label>
@@ -2426,7 +2426,7 @@ function updateBookCallBtn() {
   if (!btn) return;
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const startValid = start && new Date(start) > new Date();
-  const durValid   = dur >= 5 && dur <= 480;
+  const durValid   = dur >= 15 && dur <= 480;
   const ok = emailValid && startValid && durValid;
   btn.disabled = !ok;
   btn.classList.toggle('disabled', !ok);
@@ -2501,9 +2501,6 @@ async function confirmBookCall() {
     if (btn) { btn.disabled = false; btn.textContent = 'Book Meeting'; }
   }
 }
-
-// Legacy stubs for any cached references
-async function confirmMoveToCalledStage() { await doStatusChange('CALLED', ''); }
 
 // ─── Transcription ─────────────────────────────────
 

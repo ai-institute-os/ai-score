@@ -324,7 +324,7 @@ class ScoringDataUpdate(BaseModel):
 class BookCallRequest(BaseModel):
     interviewer_email: EmailStr = Field(..., description="Interviewer's email address")
     interview_start_time: datetime = Field(..., description="Start time of the interview (must be in the future)")
-    interview_duration_minutes: int = Field(default=30, ge=5, le=480, description="Duration in minutes")
+    interview_duration_minutes: int = Field(default=30, ge=15, le=480, description="Duration in minutes")
     interview_notes: Optional[str] = Field(default=None, max_length=2000, description="Optional notes")
 
 
