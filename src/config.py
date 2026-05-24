@@ -42,8 +42,8 @@ class Settings(BaseSettings):
     admin_email: str = "dennis@aiscore.dk"
     admin_review_email: str = "amministrazionemfce@gmail.com"
 
-    # Base URL for admin review links in emails (set APP_BASE_URL in production, e.g. https://<railway-domain>)
-    app_base_url: str = "http://localhost:8000"
+    # Base URL for admin review links in emails (set APP_BASE_URL in production)
+    app_base_url: str = "https://os.aiscore.dk"
 
     # Calendly integration
     # calendly_api_token: Personal Access Token from https://calendly.com/integrations/api_webhooks

@@ -901,11 +901,18 @@ async def urge_applicant_update(
 
     verification_notes = ""
     if prior_verification_results:
-        failed_fields = [
-            f"<li><strong>{_esc(k)}:</strong> {_esc(v.get('note',''))}</li>"
-            for k, v in prior_verification_results.items()
-            if isinstance(v, dict) and v.get("status") in ("FAILED", "WARNING", "failed", "warning")
-        ]
+        _problem_statuses = {"error", "failed", "warning"}
+        failed_fields = []
+        for k, v in prior_verification_results.items():
+            if not isinstance(v, dict):
+                continue
+            if v.get("status", "").lower() not in _problem_statuses:
+                continue
+            note = (v.get("note") or "").strip()
+            if not note:
+                continue
+            label = k.replace("_", " ").capitalize()
+            failed_fields.append(f"<li><strong>{_esc(label)}:</strong> {_esc(note)}</li>")
         if failed_fields:
             verification_notes = (
                 "<p style='color:#374151;margin:0 0 8px;'>Our review found the following items need attention:</p>"
