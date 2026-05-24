@@ -319,7 +319,7 @@
         </a>
         <a class="sidebar-item" data-filter="READY_FOR_REVIEW_CALL" onclick="setFilter(this, 'READY_FOR_REVIEW_CALL')" data-label="sidebar.ready_for_review">
           <i data-lucide="phone" class="icon-sm"></i>
-          <span class="sidebar-text" data-i18n="sidebar.ready_for_review">Ready for review</span>
+          <span class="sidebar-text" data-i18n="sidebar.ready_for_review">Review Call</span>
           <span class="sidebar-count" id="cnt-READY_FOR_REVIEW_CALL">—</span>
         </a>
         <a class="sidebar-item" data-filter="ESCALATED" onclick="setFilter(this, 'ESCALATED')" data-label="sidebar.escalated">
@@ -364,6 +364,9 @@
         <button class="filter-chip" data-status="PAID" onclick="setFilterChip(this, 'PAID')" data-i18n="filter.paid">Paid</button>
         <button class="filter-chip" data-status="IN_PRODUCTION" onclick="setFilterChip(this, 'IN_PRODUCTION')" data-i18n="filter.production">Production</button>
         <button class="filter-chip" data-status="ESCALATED" onclick="setFilterChip(this, 'ESCALATED')" data-i18n="filter.escalated">Escalated</button>
+        <button class="filter-chip" data-status="QC_REVIEW" onclick="setFilterChip(this, 'QC_REVIEW')" data-i18n="filter.qc_review">QC Review</button>
+        <button class="filter-chip" data-status="READY_FOR_REVIEW_CALL" onclick="setFilterChip(this, 'READY_FOR_REVIEW_CALL')" data-i18n="filter.review_call">Review Call</button>
+        <button class="filter-chip" data-status="COMPLETED" onclick="setFilterChip(this, 'COMPLETED')" data-i18n="filter.completed">Completed</button>
       </div>
 
       <div class="toolbar-right">
@@ -394,6 +397,7 @@
             <th data-i18n="th.website">Website</th>
             <th data-i18n="th.status">Status</th>
             <th data-i18n="th.applied_date">Application date</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -602,8 +606,7 @@ function renderTable() {
     const appDate = a.submitted_at || a.created_at;
     const reviewUrl = `/admin/applications/${esc(a.id)}/review`;
     return `
-    <tr class="row-link" onclick="window.location.href='${reviewUrl}'" role="link" tabindex="0"
-        onkeydown="if(event.key==='Enter')window.location.href='${reviewUrl}'">
+    <tr>
       <td>
         <div class="td-company">${esc(a.firmanavn)}</div>
       </td>
@@ -611,13 +614,17 @@ function renderTable() {
       <td>${esc(a.email)}</td>
       <td>${esc(a.telefon || '—')}</td>
       <td>
-        <a class="td-link" href="${esc(a.website)}" target="_blank" rel="noopener"
-           onclick="event.stopPropagation()">
+        <a class="td-link" href="${esc(a.website)}" target="_blank" rel="noopener">
           ${esc(a.website.replace(/^https?:\/\//,'').replace(/\/$/,''))}
         </a>
       </td>
       <td>${statusChip(a.status)}</td>
       <td>${fmtDate(appDate)}</td>
+      <td>
+        <a class="view-icon-btn" href="${reviewUrl}" title="View">
+          <i data-lucide="eye" class="icon-sm"></i>
+        </a>
+      </td>
     </tr>
   `;}).join('');
 

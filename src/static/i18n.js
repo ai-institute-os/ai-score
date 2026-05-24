@@ -20,7 +20,7 @@
       'sidebar.in_production': 'In production',
       'sidebar.qc_review': 'QC review',
       'sidebar.qc_passed': 'QC passed',
-      'sidebar.ready_for_review': 'Ready for review',
+      'sidebar.ready_for_review': 'Review Call',
       'sidebar.escalated': 'Escalated',
       'sidebar.completed': 'Completed',
       'sidebar.collapse': 'Collapse sidebar',
@@ -35,6 +35,9 @@
       'filter.paid': 'Paid',
       'filter.production': 'Production',
       'filter.escalated': 'Escalated',
+      'filter.qc_review': 'QC Review',
+      'filter.review_call': 'Review Call',
+      'filter.completed': 'Completed',
 
       // Table headers – leads
       'th.company': 'Company',
@@ -185,7 +188,7 @@
       'sidebar.in_production': 'I produktion',
       'sidebar.qc_review': 'QC review',
       'sidebar.qc_passed': 'QC godkendt',
-      'sidebar.ready_for_review': 'Klar til review',
+      'sidebar.ready_for_review': 'Review Call',
       'sidebar.escalated': 'Eskaleret',
       'sidebar.completed': 'Afsluttet',
       'sidebar.collapse': 'Kollaps sidebar',
@@ -200,6 +203,9 @@
       'filter.paid': 'Betalt',
       'filter.production': 'Produktion',
       'filter.escalated': 'Eskaleret',
+      'filter.qc_review': 'QC Review',
+      'filter.review_call': 'Review Call',
+      'filter.completed': 'Afsluttet',
 
       // Table headers – leads
       'th.company': 'Virksomhed',
