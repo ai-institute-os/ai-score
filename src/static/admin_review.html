@@ -732,6 +732,43 @@
   </div>
 </div>
 
+<!-- Approve confirmation modal -->
+<div id="approveModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;">
+      <i data-lucide="check-circle" style="width:18px;height:18px;color:#16a34a;flex-shrink:0;"></i>
+      <span style="font-weight:700;font-size:0.95rem;">Approve this application?</span>
+    </div>
+    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+      The applicant will receive an email informing them that their application has been approved
+      and that an interview will be organised.
+    </p>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="document.getElementById('approveModal').style.display='none'">Cancel</button>
+      <button class="btn" style="background:#16a34a;color:#fff;" id="btnConfirmApprove" onclick="confirmApprove()">Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject confirmation modal -->
+<div id="rejectModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:440px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;">
+      <i data-lucide="x-circle" style="width:18px;height:18px;color:var(--error);flex-shrink:0;"></i>
+      <span style="font-weight:700;font-size:0.95rem;">Reject this application?</span>
+    </div>
+    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.6;">
+      The applicant will receive an email informing them that their application has been rejected.
+    </p>
+    <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Rejection reason (optional)</label>
+    <textarea id="rejectModalNote" placeholder="Enter reason for rejection…" style="width:100%;min-height:80px;box-sizing:border-box;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:0.5rem 0.75rem;font-size:0.875rem;resize:vertical;"></textarea>
+    <div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="document.getElementById('rejectModal').style.display='none'">Cancel</button>
+      <button class="btn btn-danger" id="btnConfirmReject" onclick="confirmReject()">Reject</button>
+    </div>
+  </div>
+</div>
+
 <!-- Expire payment link confirmation modal -->
 <div id="expireModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;">
   <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
@@ -964,7 +1001,7 @@ function renderApp(app) {
   }
 
   const rejNote = getLatestNote(app);
-  if (rejNote) {
+  if (rejNote && (app.status === 'REJECTED' || app.status === 'CANCELLED')) {
     showEl('fRejectionReasonWrap');
     setText('fRejectionReason', rejNote);
   }
@@ -1408,34 +1445,22 @@ function renderActionPanel(app) {
     container.innerHTML = verificationWarning + `
       <div class="cta-group">
         <div class="cta-row">
-          <button class="cta-btn cta-btn-approve" onclick="quickApprove()">
+          <button class="cta-btn cta-btn-approve" onclick="openApproveModal()">
             <i data-lucide="check" class="icon-sm"></i>
             Approve
           </button>
-          <button class="cta-btn cta-btn-reject" onclick="openRejectDialog()">
+          <button class="cta-btn cta-btn-reject" onclick="openRejectModal()">
             <i data-lucide="x" class="icon-sm"></i>
             Reject
           </button>
         </div>
+        ${!hasQuestions ? `
         <div class="cta-row">
-          <button class="cta-btn cta-btn-secondary" onclick="retryResearch(this)">
-            <i data-lucide="refresh-cw" class="icon-sm"></i>
-            Run / Retry Agent Research
-          </button>
-          ${!hasQuestions ? `
           <button class="cta-btn cta-btn-secondary${genQCls}" ${genQDisabled} onclick="retryResearch(this)">
             <i data-lucide="message-square-text" class="icon-sm"></i>
             Generate Interview Questions
-          </button>` : ''}
-        </div>
-      </div>
-      <div id="rejectDialog" style="display:none;margin-top:1rem;background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
-        <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Rejection reason (optional)</label>
-        <textarea id="rejectNote" placeholder="Enter reason for rejection…" style="min-height:80px;"></textarea>
-        <div style="margin-top:0.75rem;display:flex;gap:0.5rem;">
-          <button class="btn btn-danger" onclick="confirmReject()">Confirm Rejection</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('rejectDialog').style.display='none'">Cancel</button>
-        </div>
+          </button>
+        </div>` : ''}
       </div>`;
 
   } else if (status === 'APPROVED') {
@@ -1616,10 +1641,51 @@ function openRejectDialog() {
   if (d) d.style.display = 'block';
 }
 
-async function quickApprove() { await doStatusChange('APPROVED', ''); }
+function openApproveModal() {
+  document.getElementById('approveModal').style.display = 'flex';
+}
+function openRejectModal() {
+  document.getElementById('rejectModal').style.display = 'flex';
+}
+// Legacy inline dialog opener — kept for any other callers
+function openRejectDialog() { openRejectModal(); }
+async function quickApprove() { openApproveModal(); }
+
+async function confirmApprove() {
+  const btn = document.getElementById('btnConfirmApprove');
+  if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/approve`, { method: 'POST' });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
+    const updated = await res.json();
+    document.getElementById('approveModal').style.display = 'none';
+    toast('Application approved — notification email sent', 'success');
+    renderApp(updated);
+  } catch (err) {
+    toast('Failed: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Approve'; }
+  }
+}
+
 async function confirmReject() {
-  const note = document.getElementById('rejectNote')?.value?.trim() || '';
-  await doStatusChange('REJECTED', note);
+  const note = document.getElementById('rejectModalNote')?.value?.trim() || '';
+  const btn = document.getElementById('btnConfirmReject');
+  if (btn) { btn.disabled = true; btn.textContent = 'Rejecting…'; }
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rejection_reason: note || null }),
+    });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
+    const updated = await res.json();
+    document.getElementById('rejectModal').style.display = 'none';
+    toast('Application rejected — notification email sent', 'success');
+    renderApp(updated);
+  } catch (err) {
+    toast('Failed: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Reject'; }
+  }
 }
 async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }

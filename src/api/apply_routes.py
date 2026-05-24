@@ -181,6 +181,72 @@ async def _send_admin_review_email(app: CustomerApplication, app_base_url: str, 
         log.error("application.review_email_failed", application_id=str(app.id), error=str(exc))
 
 
+async def _send_approval_email(app: CustomerApplication, admin_review_email: str) -> None:
+    from src.payments.emailer import send_email
+    import html as _html
+
+    def _esc(v: object) -> str:
+        return _html.escape(str(v)) if v is not None else ""
+
+    html_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111">
+  <h2 style="color:#111;margin-bottom:8px;">Your AIScore application has been approved!</h2>
+  <p style="color:#374151;">Hi {_esc(app.kontaktperson)},</p>
+  <p style="color:#374151;">
+    We are pleased to inform you that your application for <strong>{_esc(app.firmanavn)}</strong>
+    has been approved.
+  </p>
+  <p style="color:#374151;">
+    We will organize an interview to collect more information about your business.
+    You will hear from us shortly with the details.
+  </p>
+  <p style="color:#6b7280;font-size:0.875rem;">The AIScore Team</p>
+</body>
+</html>"""
+
+    try:
+        await send_email(
+            to=admin_review_email,
+            subject="Your AIScore application has been approved",
+            html_body=html_body,
+        )
+    except Exception as exc:
+        log.error("application.approval_email_failed", application_id=str(app.id), error=str(exc))
+
+
+async def _send_rejection_email(app: CustomerApplication, rejection_reason: str, admin_review_email: str) -> None:
+    from src.payments.emailer import send_email
+    import html as _html
+
+    def _esc(v: object) -> str:
+        return _html.escape(str(v)) if v is not None else ""
+
+    html_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111">
+  <h2 style="color:#111;margin-bottom:8px;">Update on your AIScore application</h2>
+  <p style="color:#374151;">Hi {_esc(app.kontaktperson)},</p>
+  <p style="color:#374151;">
+    Your application for <strong>{_esc(app.firmanavn)}</strong> has been rejected by the administrator.
+    If you want to know in detail, please reach out.
+  </p>
+  <p style="color:#6b7280;font-size:0.875rem;">The AIScore Team</p>
+</body>
+</html>"""
+
+    try:
+        await send_email(
+            to=admin_review_email,
+            subject="Update on your AIScore application",
+            html_body=html_body,
+        )
+    except Exception as exc:
+        log.error("application.rejection_email_failed", application_id=str(app.id), error=str(exc))
+
+
 @router.post("/applications", response_model=ApplicationResponse, status_code=201)
 @limiter.limit("5/minute")
 async def submit_application_public(
@@ -615,9 +681,11 @@ async def verify_application(
 async def approve_application(
     request: Request,
     application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     """Admin — approve an application in UNDER_REVIEW → APPROVED."""
+    from src.config import get_settings
     app = await _get_application_or_404(application_id, db)
 
     if app.status != CustomerApplicationStatus.UNDER_REVIEW:
@@ -641,6 +709,9 @@ async def approve_application(
     ))
     await db.commit()
 
+    settings = get_settings()
+    background_tasks.add_task(_send_approval_email, app, settings.admin_review_email)
+
     result = await db.execute(
         select(CustomerApplication)
         .options(selectinload(CustomerApplication.state_logs))
@@ -657,10 +728,12 @@ async def approve_application(
 async def reject_application(
     request: Request,
     application_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     body: ApplicationRejectRequest = ApplicationRejectRequest(),
     db: AsyncSession = Depends(get_db),
 ):
     """Admin — reject an application (APPLIED or UNDER_REVIEW → REJECTED)."""
+    from src.config import get_settings
     app = await _get_application_or_404(application_id, db)
 
     allowed_from = {CustomerApplicationStatus.APPLIED, CustomerApplicationStatus.UNDER_REVIEW}
@@ -685,6 +758,9 @@ async def reject_application(
         note=body.rejection_reason or "Application rejected",
     ))
     await db.commit()
+
+    settings = get_settings()
+    background_tasks.add_task(_send_rejection_email, app, body.rejection_reason or "", settings.admin_review_email)
 
     result = await db.execute(
         select(CustomerApplication)
