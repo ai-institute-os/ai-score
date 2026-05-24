@@ -823,6 +823,48 @@
   </div>
 </div>
 
+<!-- Move to QC Review confirmation modal -->
+<div id="moveToQcModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;">
+      <i data-lucide="shield-check" style="width:20px;height:20px;color:#22c55e;"></i>
+      <span style="font-weight:700;font-size:1.05rem;">Flyt til QC Review</span>
+    </div>
+    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+      Bekræft at PDF-rapporten er gennemgået og klar til QC-kontrol.
+    </p>
+    <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;margin-bottom:1.5rem;padding:0.85rem 1rem;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);">
+      <input type="checkbox" id="cbMoveToQcConfirm" onchange="onMoveToQcCheckboxChange()" style="margin-top:0.15rem;width:16px;height:16px;flex-shrink:0;accent-color:#22c55e;">
+      <span style="font-size:0.875rem;color:var(--text);font-weight:500;">Rapporten er gennemgået og klar til QC</span>
+    </label>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeMoveToQcModal()">Annuller</button>
+      <button class="btn btn-success" id="btnConfirmMoveToQc" onclick="confirmMoveToQcReview()" disabled style="opacity:0.45;cursor:not-allowed;">Bekræft &amp; Flyt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Move to Review Call confirmation modal -->
+<div id="moveToReviewCallModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;">
+      <i data-lucide="video" style="width:20px;height:20px;color:#22c55e;"></i>
+      <span style="font-weight:700;font-size:1.05rem;">Flyt til Review Call</span>
+    </div>
+    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+      Bekræft at rapporten er godkendt og klar til review-møde med kunden.
+    </p>
+    <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;margin-bottom:1.5rem;padding:0.85rem 1rem;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);">
+      <input type="checkbox" id="cbMoveToReviewCallConfirm" onchange="onMoveToReviewCallCheckboxChange()" style="margin-top:0.15rem;width:16px;height:16px;flex-shrink:0;accent-color:#22c55e;">
+      <span style="font-size:0.875rem;color:var(--text);font-weight:500;">Rapport er godkendt og klar til Review Call</span>
+    </label>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeMoveToReviewCallModal()">Annuller</button>
+      <button class="btn btn-success" id="btnConfirmMoveToReviewCall" onclick="confirmMoveToReviewCall()" disabled style="opacity:0.45;cursor:not-allowed;">Bekræft &amp; Flyt</button>
+    </div>
+  </div>
+</div>
+
 <script src="/static/assets/icons.js"></script>
 <script>
 let appId = null;
@@ -1180,7 +1222,7 @@ function renderStageContent(app) {
         </div>
       </div>` : '';
 
-    const showInterviewQuestions = status !== 'APPLIED' && status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION' && status !== 'REJECTED' && status !== 'CANCELLED';
+    const showInterviewQuestions = status !== 'APPLIED' && status !== 'CALLED' && status !== 'AWAITING_PAYMENT' && status !== 'PAID' && status !== 'IN_PRODUCTION' && status !== 'QC_REVIEW' && status !== 'READY_FOR_REVIEW_CALL' && status !== 'COMPLETED' && status !== 'REJECTED' && status !== 'CANCELLED';
     const showInterviewSummary = status === 'IN_PRODUCTION';
     sc.innerHTML = transcriptionCard + (showInterviewQuestions ? `
       <div class="review-card" id="interviewQuestionsCard">
@@ -1730,12 +1772,8 @@ function renderActionPanel(app) {
                 <i data-lucide="download" style="width:14px;height:14px;margin-right:0.35rem;"></i>
                 Download PDF Rapport
               </button>
-              <div id="qcMoveSection" style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);flex-wrap:wrap;">
-                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer;color:var(--text);">
-                  <input type="checkbox" id="chkQcConfirm" onchange="document.getElementById('btnMoveToQc').disabled=!this.checked" style="width:16px;height:16px;cursor:pointer;">
-                  Rapport er gennemgået og klar til QC
-                </label>
-                <button class="btn btn-success" id="btnMoveToQc" onclick="moveToQcReview()" disabled
+              <div id="qcMoveSection" style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
+                <button class="btn btn-success" onclick="openMoveToQcModal()"
                    style="font-size:0.85rem;padding:0.5rem 1.1rem;">
                   <i data-lucide="arrow-right-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i>
                   Flyt til QC Review
@@ -1773,11 +1811,7 @@ function renderActionPanel(app) {
         </button>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:1.25rem;">
-        <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;cursor:pointer;color:var(--text);margin-bottom:1rem;">
-          <input type="checkbox" id="chkQcReviewConfirm" onchange="document.getElementById('btnMoveToReviewCall').disabled=!this.checked" style="width:16px;height:16px;cursor:pointer;">
-          Rapport er godkendt og klar til Review Call
-        </label>
-        <button class="btn btn-success" id="btnMoveToReviewCall" onclick="moveToReviewCall()" disabled
+        <button class="btn btn-success" onclick="openMoveToReviewCallModal()"
            style="font-size:0.85rem;padding:0.5rem 1.1rem;">
           <i data-lucide="video" style="width:14px;height:14px;margin-right:0.35rem;"></i>
           Flyt til Review Call
@@ -2115,20 +2149,58 @@ function _pollScoringStatus() {
   }, 5000);
 }
 
-async function moveToQcReview() {
-  const btn = document.getElementById('btnMoveToQc');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Flytter…'; if (window.lucide) lucide.createIcons(); }
+function openMoveToQcModal() {
+  const cb = document.getElementById('cbMoveToQcConfirm');
+  const btn = document.getElementById('btnConfirmMoveToQc');
+  if (cb) cb.checked = false;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.45'; btn.style.cursor = 'not-allowed'; }
+  const m = document.getElementById('moveToQcModal');
+  if (m) { m.style.display = 'flex'; if (window.lucide) lucide.createIcons(); }
+}
+
+function closeMoveToQcModal() {
+  const m = document.getElementById('moveToQcModal');
+  if (m) m.style.display = 'none';
+}
+
+function onMoveToQcCheckboxChange() {
+  const checked = document.getElementById('cbMoveToQcConfirm')?.checked;
+  const btn = document.getElementById('btnConfirmMoveToQc');
+  if (btn) { btn.disabled = !checked; btn.style.opacity = checked ? '1' : '0.45'; btn.style.cursor = checked ? 'pointer' : 'not-allowed'; }
+}
+
+async function confirmMoveToQcReview() {
+  closeMoveToQcModal();
   await doStatusChange('QC_REVIEW', 'Admin moved application to QC Review after confirming report.');
+}
+
+function openMoveToReviewCallModal() {
+  const cb = document.getElementById('cbMoveToReviewCallConfirm');
+  const btn = document.getElementById('btnConfirmMoveToReviewCall');
+  if (cb) cb.checked = false;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.45'; btn.style.cursor = 'not-allowed'; }
+  const m = document.getElementById('moveToReviewCallModal');
+  if (m) { m.style.display = 'flex'; if (window.lucide) lucide.createIcons(); }
+}
+
+function closeMoveToReviewCallModal() {
+  const m = document.getElementById('moveToReviewCallModal');
+  if (m) m.style.display = 'none';
+}
+
+function onMoveToReviewCallCheckboxChange() {
+  const checked = document.getElementById('cbMoveToReviewCallConfirm')?.checked;
+  const btn = document.getElementById('btnConfirmMoveToReviewCall');
+  if (btn) { btn.disabled = !checked; btn.style.opacity = checked ? '1' : '0.45'; btn.style.cursor = checked ? 'pointer' : 'not-allowed'; }
+}
+
+async function confirmMoveToReviewCall() {
+  closeMoveToReviewCallModal();
+  await doStatusChange('READY_FOR_REVIEW_CALL', 'Admin approved QC and moved application to Review Call stage.');
 }
 
 function openReportInNewTab() {
   window.open(`/api/v1/admin/applications/${appId}/report/pdf`, '_blank');
-}
-
-async function moveToReviewCall() {
-  const btn = document.getElementById('btnMoveToReviewCall');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Flytter…'; if (window.lucide) lucide.createIcons(); }
-  await doStatusChange('READY_FOR_REVIEW_CALL', 'Admin approved QC and moved application to Review Call stage.');
 }
 
 async function sendReviewCallInvitation() {
