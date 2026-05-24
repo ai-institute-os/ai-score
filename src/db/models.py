@@ -52,7 +52,8 @@ VALID_TRANSITIONS: dict[CustomerApplicationStatus, set[CustomerApplicationStatus
     CustomerApplicationStatus.APPROVED: {CustomerApplicationStatus.CALLED},
     # CALLED → AWAITING_PAYMENT (normal flow) or APPROVED (Calendly cancellation)
     CustomerApplicationStatus.CALLED: {CustomerApplicationStatus.AWAITING_PAYMENT, CustomerApplicationStatus.APPROVED},
-    CustomerApplicationStatus.AWAITING_PAYMENT: {CustomerApplicationStatus.PAID},
+    # AWAITING_PAYMENT → PAID (Stripe webhook) or IN_PRODUCTION (admin manual confirmation)
+    CustomerApplicationStatus.AWAITING_PAYMENT: {CustomerApplicationStatus.PAID, CustomerApplicationStatus.IN_PRODUCTION},
     CustomerApplicationStatus.PAID: {CustomerApplicationStatus.IN_PRODUCTION},
     CustomerApplicationStatus.IN_PRODUCTION: {CustomerApplicationStatus.QC_REVIEW},
     CustomerApplicationStatus.QC_REVIEW: {CustomerApplicationStatus.QC_PASSED, CustomerApplicationStatus.QC_FAILED},

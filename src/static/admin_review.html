@@ -767,17 +767,22 @@
 
 <!-- Confirm payment + move to next stage modal -->
 <div id="confirmPaymentModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
-    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;">
-      <i data-lucide="arrow-right-circle" style="width:18px;height:18px;color:var(--primary);"></i>
-      <span style="font-weight:700;font-size:1rem;">Move to next stage</span>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;max-width:520px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;">
+      <i data-lucide="arrow-right-circle" style="width:20px;height:20px;color:#16a34a;"></i>
+      <span style="font-weight:700;font-size:1.05rem;">Move to next stage</span>
     </div>
-    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;">
-      I confirm the applicant paid for the report.
+    <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6;">
+      You are about to move this application to the <strong>PDF Report</strong> stage. This confirms that the applicant has paid for the report and production will begin immediately.
     </p>
+    <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;margin-bottom:1.5rem;padding:0.85rem 1rem;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);">
+      <input type="checkbox" id="cbPaymentConfirm" onchange="onPaymentCheckboxChange()" style="margin-top:0.15rem;width:16px;height:16px;flex-shrink:0;accent-color:#16a34a;">
+      <span style="font-size:0.875rem;color:var(--text);font-weight:500;">I confirm the applicant paid for the report</span>
+    </label>
     <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
-      <button class="btn btn-ghost" onclick="document.getElementById('confirmPaymentModal').style.display='none'">Cancel</button>
-      <button class="btn btn-approve" id="btnConfirmPaymentMove" onclick="doConfirmPaymentMove()">Confirm &amp; Move</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('confirmPaymentModal').style.display='none';document.getElementById('cbPaymentConfirm').checked=false;onPaymentCheckboxChange();">Cancel</button>
+      <button class="btn" id="btnConfirmPaymentMove" onclick="doConfirmPaymentMove()" disabled
+        style="background:#16a34a;color:#fff;opacity:0.45;cursor:not-allowed;">Confirm &amp; Move</button>
     </div>
   </div>
 </div>
@@ -1642,7 +1647,7 @@ function renderActionPanel(app) {
           <i data-lucide="credit-card" style="width:14px;height:14px;margin-right:0.35rem;"></i>
           ${existingUrl ? 'Regenerate Payment Link' : 'Generate Payment Link'}
         </button>
-        <button class="btn btn-approve" onclick="openConfirmPaymentModal()" style="display:flex;align-items:center;gap:0.35rem;">
+        <button class="btn" onclick="openConfirmPaymentModal()" style="background:#16a34a;color:#fff;display:flex;align-items:center;gap:0.35rem;">
           <i data-lucide="arrow-right-circle" style="width:14px;height:14px;"></i>
           Move to next stage
         </button>
@@ -1813,7 +1818,19 @@ async function markAsCalled() { await doStatusChange('CALLED', ''); }
 async function changeStatus(newStatus, note = '') { await doStatusChange(newStatus, note); }
 async function generateReport() { await doStatusChange('IN_PRODUCTION', ''); }
 function openConfirmPaymentModal() {
+  const cb = document.getElementById('cbPaymentConfirm');
+  if (cb) cb.checked = false;
+  onPaymentCheckboxChange();
   document.getElementById('confirmPaymentModal').style.display = 'flex';
+}
+function onPaymentCheckboxChange() {
+  const cb = document.getElementById('cbPaymentConfirm');
+  const btn = document.getElementById('btnConfirmPaymentMove');
+  if (!btn) return;
+  const checked = cb && cb.checked;
+  btn.disabled = !checked;
+  btn.style.opacity = checked ? '1' : '0.45';
+  btn.style.cursor = checked ? 'pointer' : 'not-allowed';
 }
 async function doConfirmPaymentMove() {
   const btn = document.getElementById('btnConfirmPaymentMove');
@@ -1821,8 +1838,11 @@ async function doConfirmPaymentMove() {
   try {
     await doStatusChange('IN_PRODUCTION', 'Admin confirmed payment received — moving to PDF report stage.');
     document.getElementById('confirmPaymentModal').style.display = 'none';
+    const cb = document.getElementById('cbPaymentConfirm');
+    if (cb) cb.checked = false;
+    onPaymentCheckboxChange();
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Move'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm & Move'; onPaymentCheckboxChange(); }
   }
 }
 
