@@ -2905,6 +2905,29 @@ async def set_scoring_data(
 # Admin: Production scoring pipeline
 # ─────────────────────────────────────────────
 
+async def _generate_questions_then_score(application_id: uuid.UUID) -> None:
+    """Background task: generate report_questions if missing, then run scoring pipeline."""
+    from src.db.connection import get_session_factory
+
+    await _generate_and_store_report_questions(application_id)
+
+    # Check if generation succeeded before scoring
+    async with get_session_factory()() as session:
+        result = await session.execute(
+            select(CustomerApplication).where(CustomerApplication.id == application_id)
+        )
+        app = result.scalar_one_or_none()
+        if not app or not app.report_questions:
+            log.error("generate_questions_then_score.no_questions_after_generate", application_id=str(application_id))
+            if app:
+                app.scoring_status = "error"
+                app.scoring_results = {"error": "Rapport-spørgsmål generering fejlede — scoring afbrudt."}
+                await session.commit()
+            return
+
+    await _run_scoring_pipeline(application_id)
+
+
 async def _run_scoring_pipeline(application_id: uuid.UUID) -> None:
     """Background task: run report_questions against all 4 LLM providers and store results."""
     from src.config import get_settings
@@ -3060,13 +3083,20 @@ async def trigger_generate_report(
             "message": "Scoring pipeline kører allerede.",
         }
 
-    if not app.report_questions:
-        raise HTTPException(
-            status_code=422,
-            detail="Ingen report_questions fundet. Generer dem først via /report-questions/generate.",
-        )
-
     app.scoring_status = "running"
+
+    if not app.report_questions:
+        # Questions not generated yet — generate them first, then score
+        app.report_questions_status = "generating"
+        app.report_questions = None
+        await db.commit()
+        background_tasks.add_task(_generate_questions_then_score, application_id)
+        return {
+            "application_id": str(application_id),
+            "scoring_status": "running",
+            "message": "Genererer rapport-spørgsmål og starter derefter scoring pipeline.",
+        }
+
     await db.commit()
 
     background_tasks.add_task(_run_scoring_pipeline, application_id)
