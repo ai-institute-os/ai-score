@@ -312,6 +312,12 @@ async def report_status_page(order_id: str):
     return FileResponse(str(_templates_dir / "report_status.html"))
 
 
+@app.get("/payment/checkout", include_in_schema=False)
+async def payment_checkout_page(token: str = ""):
+    """Custom Stripe Elements checkout page — served when customer follows payment link."""
+    return FileResponse(str(_static_dir / "checkout.html"))
+
+
 @app.get("/payment/success", include_in_schema=False)
 async def payment_success_page(order_id: str = ""):
     """Post-payment confirmation page — shown after successful Stripe checkout."""

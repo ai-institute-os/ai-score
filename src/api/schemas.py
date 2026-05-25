@@ -306,9 +306,17 @@ class GeneratePaymentLinkRequest(BaseModel):
 class PaymentLinkResponse(BaseModel):
     application_id: uuid.UUID
     payment_url: str
-    stripe_session_id: str
+    stripe_payment_intent_id: str
     amount_dkk: int
     email_sent: bool
+
+
+class PaymentInitResponse(BaseModel):
+    client_secret: str
+    product_name: str
+    amount_dkk: int
+    customer_email: str
+    order_id: str
 
 
 class QCResultSubmit(BaseModel):

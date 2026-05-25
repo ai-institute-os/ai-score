@@ -184,6 +184,7 @@ class CustomerApplication(Base):
     stripe_session_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     payment_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    payment_token: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
     payment_failure_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     payment_failed_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     # QC loop tracking: counts failures in the current cycle; resets after manual correction

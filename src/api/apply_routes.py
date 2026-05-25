@@ -24,7 +24,7 @@ from src.db.models import (
 from src.api.schemas import (
     ApplicationCreate, ApplicationCreatePublic, ApplicationRejectRequest,
     ApplicationListItem, ApplicationResponse, ApplicationStatusUpdate,
-    GeneratePaymentLinkRequest, PaymentLinkResponse,
+    GeneratePaymentLinkRequest, PaymentLinkResponse, PaymentInitResponse,
     QCResultSubmit, ManualCorrectionRequest, ScoringDataUpdate,
     BookCallRequest,
     ForgotPasswordRequest, ResetPasswordRequest, PasswordResetResponse,
@@ -1616,11 +1616,13 @@ async def generate_payment_link(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Admin — generate a Stripe checkout link for a customer and (optionally) email it to them.
+    Admin — generate a Stripe Payment Intent + custom checkout link for a customer.
     Transitions the application to AWAITING_PAYMENT.
     """
-    from src.payments import create_checkout_session, send_payment_link_email
+    from src.payments import create_payment_intent, send_payment_link_email
+    from src.config import get_settings
 
+    settings = get_settings()
     app = await _get_application_or_404(application_id, db)
 
     allowed_from = {
@@ -1637,16 +1639,25 @@ async def generate_payment_link(
             ),
         )
 
-    session = await create_checkout_session(
+    intent = await create_payment_intent(
         customer_email=app.email,
         customer_name=app.kontaktperson,
         amount_dkk=body.amount_dkk,
         application_id=application_id,
     )
 
+    # Secure token: customer presents this to /api/v1/payment/init to get client_secret
+    payment_token = secrets.token_urlsafe(32)
+    checkout_url = (
+        settings.app_base_url.rstrip("/")
+        + f"/payment/checkout?token={payment_token}"
+    )
+
     prev_status = app.status
-    app.stripe_session_id = session.id
-    app.payment_url = session.url
+    app.stripe_payment_intent_id = intent.id
+    app.payment_token = payment_token
+    app.payment_url = checkout_url
+    app.stripe_session_id = None
     app.status = CustomerApplicationStatus.AWAITING_PAYMENT
     app.updated_at = datetime.now(timezone.utc)
     await _add_state_log(
@@ -1654,7 +1665,7 @@ async def generate_payment_link(
         from_status=prev_status,
         to_status=CustomerApplicationStatus.AWAITING_PAYMENT,
         changed_by="system",
-        note=f"Payment link generated — {body.amount_dkk} DKK — session {session.id}",
+        note=f"Payment link generated — {body.amount_dkk} DKK — intent {intent.id}",
     )
     await db.commit()
 
@@ -1665,7 +1676,7 @@ async def generate_payment_link(
                 customer_email=app.email,
                 customer_name=app.kontaktperson,
                 company_name=app.firmanavn,
-                payment_url=session.url,
+                payment_url=checkout_url,
                 amount_dkk=body.amount_dkk,
             )
             email_sent = True
@@ -1674,8 +1685,8 @@ async def generate_payment_link(
 
     return PaymentLinkResponse(
         application_id=application_id,
-        payment_url=session.url,
-        stripe_session_id=session.id,
+        payment_url=checkout_url,
+        stripe_payment_intent_id=intent.id,
         amount_dkk=body.amount_dkk,
         email_sent=email_sent,
     )
@@ -1693,9 +1704,60 @@ async def expire_payment_link(
     app = await _get_application_or_404(application_id, db)
     app.stripe_session_id = None
     app.payment_url = None
+    app.payment_token = None
     app.updated_at = datetime.now(timezone.utc)
     await db.commit()
     return {"expired": True, "application_id": str(application_id)}
+
+
+@router.get(
+    "/payment/init",
+    response_model=PaymentInitResponse,
+    summary="Get Payment Intent client_secret for the custom checkout page",
+)
+@limiter.limit("30/minute")
+async def payment_init(
+    request: Request,
+    token: str = Query(..., description="Secure payment token from the checkout URL"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Public endpoint for the custom checkout page.
+    Looks up the application by payment_token, retrieves the Stripe Payment Intent,
+    and returns the client_secret so the frontend can render Stripe Elements.
+    """
+    from src.payments import retrieve_payment_intent
+
+    result = await db.execute(
+        select(CustomerApplication).where(CustomerApplication.payment_token == token)
+    )
+    app = result.scalar_one_or_none()
+
+    if not app:
+        raise HTTPException(status_code=404, detail="Payment session not found")
+
+    if app.status != CustomerApplicationStatus.AWAITING_PAYMENT:
+        raise HTTPException(status_code=410, detail="Payment session is no longer active")
+
+    if not app.stripe_payment_intent_id:
+        raise HTTPException(status_code=500, detail="Payment intent not initialised")
+
+    try:
+        intent = await retrieve_payment_intent(app.stripe_payment_intent_id)
+    except Exception as exc:
+        log.error("payment_init.stripe_retrieve_failed", error=str(exc), application_id=str(app.id))
+        raise HTTPException(status_code=502, detail="Could not retrieve payment details")
+
+    # Extract amount_dkk from intent (stored in øre)
+    amount_dkk = (intent.get("amount") or 0) // 100
+
+    return PaymentInitResponse(
+        client_secret=intent["client_secret"],
+        product_name="AIScore Rapport",
+        amount_dkk=amount_dkk,
+        customer_email=app.email,
+        order_id=str(app.id),
+    )
 
 
 # ─────────────────────────────────────────────
@@ -2171,6 +2233,82 @@ async def stripe_webhook(request: Request, background_tasks: BackgroundTasks, db
             log.warning(
                 "stripe_webhook.invoice.subscription_not_found",
                 subscription_id=subscription_id,
+            )
+
+    # ── payment_intent.succeeded (custom checkout page — AIScore one-time) ───
+    elif event_type == "payment_intent.succeeded":
+        pi = event["data"]["object"]
+        pi_id = pi.get("id")
+        order_id_str = (pi.get("metadata") or {}).get("order_id")
+
+        if not order_id_str:
+            log.warning("stripe_webhook.payment_intent.succeeded.missing_order_id", pi_id=pi_id)
+            return {"received": True}
+
+        try:
+            application_id = uuid.UUID(order_id_str)
+        except ValueError:
+            log.warning("stripe_webhook.payment_intent.succeeded.invalid_order_id", order_id=order_id_str)
+            return {"received": True}
+
+        result = await db.execute(
+            select(CustomerApplication)
+            .options(selectinload(CustomerApplication.state_logs))
+            .where(CustomerApplication.id == application_id)
+        )
+        app = result.scalar_one_or_none()
+        if not app:
+            log.warning("stripe_webhook.payment_intent.succeeded.app_not_found", application_id=order_id_str)
+            return {"received": True}
+
+        if app.status == CustomerApplicationStatus.AWAITING_PAYMENT:
+            from src.payments.emailer import (
+                send_payment_confirmation_email,
+                send_admin_payment_notification_email,
+            )
+            prev_status = app.status
+            now = datetime.now(timezone.utc)
+
+            app.status = CustomerApplicationStatus.PAID
+            app.stripe_payment_intent_id = pi_id
+            app.payment_token = None  # invalidate after successful payment
+            app.updated_at = now
+            await _add_state_log(
+                db, app,
+                from_status=prev_status,
+                to_status=CustomerApplicationStatus.PAID,
+                changed_by="stripe",
+                note=f"Payment confirmed — intent {pi_id}",
+            )
+            await db.commit()
+            log.info("stripe_webhook.payment_intent.succeeded", application_id=order_id_str)
+
+            amount_dkk = ((pi.get("amount") or 0) // 100) or None
+            try:
+                await send_payment_confirmation_email(
+                    customer_email=app.email,
+                    customer_name=app.kontaktperson,
+                    company_name=app.firmanavn,
+                    amount_dkk=amount_dkk,
+                    payment_intent_id=pi_id,
+                )
+            except Exception as exc:
+                log.error("stripe_webhook.payment_intent.succeeded.email_failed", error=str(exc))
+            try:
+                await send_admin_payment_notification_email(
+                    company_name=app.firmanavn,
+                    kontaktperson=app.kontaktperson,
+                    customer_email=app.email,
+                    amount_dkk=amount_dkk,
+                    payment_intent_id=pi_id,
+                )
+            except Exception as exc:
+                log.error("stripe_webhook.payment_intent.succeeded.admin_notify_failed", error=str(exc))
+        else:
+            log.info(
+                "stripe_webhook.payment_intent.succeeded.ignored",
+                application_id=order_id_str,
+                status=app.status.value,
             )
 
     # ── payment_intent.payment_failed (one-time AIScore payment) ───────────
