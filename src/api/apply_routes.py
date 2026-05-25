@@ -1614,6 +1614,7 @@ async def generate_payment_link(
     application_id: uuid.UUID,
     body: GeneratePaymentLinkRequest,
     db: AsyncSession = Depends(get_db),
+    _: str = Depends(require_admin_key),
 ):
     """
     Admin — generate a Stripe Payment Intent + custom checkout link for a customer.
