@@ -330,12 +330,6 @@ async def payment_cancel_page(order_id: str = ""):
     return FileResponse(str(_static_dir / "payment_cancel.html"))
 
 
-@app.get("/payment/checkout", include_in_schema=False)
-async def payment_checkout_page():
-    """Custom checkout page with Stripe Payment Element."""
-    return FileResponse(str(_static_dir / "checkout.html"))
-
-
 @app.get("/terms-of-service", include_in_schema=False)
 async def terms_of_service_page():
     return FileResponse(str(_static_dir / "terms-of-service.html"))

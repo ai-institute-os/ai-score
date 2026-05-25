@@ -1711,6 +1711,14 @@ async def expire_payment_link(
     return {"expired": True, "application_id": str(application_id)}
 
 
+@router.get("/payment/config", include_in_schema=False)
+async def payment_config():
+    """Return Stripe publishable key for the custom checkout page (public, no auth required)."""
+    from src.config import get_settings
+    settings = get_settings()
+    return {"publishable_key": settings.stripe_publishable_key}
+
+
 @router.get(
     "/payment/init",
     response_model=PaymentInitResponse,
@@ -1757,6 +1765,7 @@ async def payment_init(
         product_name="AIScore Rapport",
         amount_dkk=amount_dkk,
         customer_email=app.email,
+        customer_name=app.kontaktperson,
         order_id=str(app.id),
     )
 

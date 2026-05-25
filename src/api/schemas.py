@@ -316,6 +316,7 @@ class PaymentInitResponse(BaseModel):
     product_name: str
     amount_dkk: int
     customer_email: str
+    customer_name: str
     order_id: str
 
 
