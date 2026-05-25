@@ -1422,6 +1422,7 @@ async function downloadQuestionsPDF() {
   try {
     const res = await fetch(`/api/v1/admin/applications/${appId}/interview-questions/pdf`);
     if (!res.ok) {
+      if (res.status === 429) throw new Error('For mange anmodninger — prøv igen om et øjeblik');
       const d = await res.json().catch(() => ({}));
       throw new Error(d.detail || `HTTP ${res.status}`);
     }
@@ -2059,7 +2060,7 @@ async function urgeApplicantUpdate() {
 }
 
 
-function downloadPdfReport() {
+async function downloadPdfReport() {
   const btn = document.getElementById('btnDownloadPdf');
   const origHTML = btn ? btn.innerHTML : '';
   if (btn) {
@@ -2067,24 +2068,32 @@ function downloadPdfReport() {
     btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;margin-right:0.35rem;animation:spin 1s linear infinite;"></i> Genererer PDF…';
     if (window.lucide) lucide.createIcons();
   }
-  // Direct URL navigation — no fetch, no blob URL, no async.
-  // Browser sends session cookie automatically (same-origin).
-  // Server responds with Content-Disposition: attachment so browser saves the file.
-  const a = document.createElement('a');
-  a.href = `/api/v1/admin/applications/${appId}/report/pdf`;
-  a.download = 'AIScore-rapport.pdf';
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // Restore button after timeout long enough for PDF generation (typically 5-30s)
-  setTimeout(() => {
+  try {
+    const res = await fetch(`/api/v1/admin/applications/${appId}/report/pdf`);
+    if (!res.ok) {
+      if (res.status === 429) throw new Error('For mange anmodninger — prøv igen om et øjeblik');
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'AIScore-rapport.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('PDF downloadet', 'success');
+  } catch (err) {
+    toast('Fejl: ' + err.message, 'error');
+  } finally {
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = origHTML;
       if (window.lucide) lucide.createIcons();
     }
-  }, 35000);
+  }
 }
 
 async function triggerGenerateReport() {

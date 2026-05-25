@@ -198,6 +198,7 @@
     try {
       const resp = await fetch(`/admin/preview-reports/download/${design}`);
       if (!resp.ok) {
+        if (resp.status === 429) throw new Error('For mange anmodninger — prøv igen om et øjeblik');
         const body = await resp.json().catch(() => ({}));
         throw new Error(body.detail || `HTTP ${resp.status}`);
       }
