@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Betaling — AIScore</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:       #f97316;
+      --primary-h:     #ea6c0c;
+      --font-sans:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-heading:  'Manrope', 'Inter', -apple-system, sans-serif;
+      --bg:            #f4f4f5;
+      --border:        #e5e7eb;
+      --text:          #111827;
+      --text-muted:    #6b7280;
+      --radius:        12px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    .checkout-header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+    }
+
+    /* ── Layout ── */
+    .checkout-wrap {
+      max-width: 960px;
+      margin: 2.5rem auto;
+      padding: 0 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 720px) {
+      .checkout-wrap {
+        grid-template-columns: 1fr;
+        margin: 1.5rem auto;
+      }
+      .panel-summary { order: -1; }
+    }
+
+    /* ── Panels ── */
+    .panel {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+    }
+
+    /* ── Payment panel ── */
+    .panel-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.25rem;
+      color: var(--text);
+    }
+
+    .panel-subtitle {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    #payment-element {
+      margin-bottom: 1.25rem;
+    }
+
+    .btn-pay {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-pay:hover:not(:disabled) { background: var(--primary-h); }
+    .btn-pay:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    .secure-note {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.875rem;
+    }
+
+    .tos-note {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      line-height: 1.5;
+    }
+
+    .tos-note a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .tos-note a:hover { text-decoration: underline; }
+
+    #error-msg {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.825rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Summary panel ── */
+    .summary-heading {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      color: var(--text);
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+
+    .summary-row:last-child { border-bottom: none; }
+
+    .summary-row .label { color: var(--text-muted); }
+    .summary-row .value { font-weight: 600; text-align: right; }
+
+    .summary-total {
+      font-size: 1rem;
+      padding-top: 0.875rem;
+    }
+
+    .summary-total .label { color: var(--text); font-weight: 600; }
+    .summary-total .value { font-size: 1.15rem; color: var(--text); }
+
+    /* ── Loading skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+      height: 1rem;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .loading-overlay {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    /* Spinner inside button */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header class="checkout-header">
+    <a href="/" class="logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+        </svg>
+      </div>
+      <span class="logo-text">AIScore</span>
+    </a>
+  </header>
+
+  <div class="checkout-wrap">
+    <!-- Left: payment form -->
+    <div class="panel panel-payment">
+      <h1 class="panel-title">AI Score</h1>
+      <p class="panel-subtitle">Instant pay:</p>
+
+      <div id="error-msg"></div>
+      <div id="payment-element"></div>
+
+      <button class="btn-pay" id="submit-btn" disabled>
+        Gennemfør betaling
+      </button>
+
+      <p class="secure-note">🔒 Krypteret og sikker betaling</p>
+      <p class="tos-note">
+        Ved at gennemføre accepterer du vores
+        <a href="/terms-of-service">Terms of Service</a>
+        og bekræfter at du har læst vores
+        <a href="/privacy-policy">Privacy Policy</a>.
+      </p>
+    </div>
+
+    <!-- Right: summary -->
+    <div class="panel panel-summary">
+      <h2 class="summary-heading">Summary</h2>
+      <div id="summary-content">
+        <div class="loading-overlay">
+          <div class="skeleton" style="width:80%;height:0.875rem;"></div>
+          <div class="skeleton" style="width:50%;height:0.875rem;margin-top:0.25rem;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token') || '';
+
+      const errorEl = document.getElementById('error-msg');
+      const submitBtn = document.getElementById('submit-btn');
+      const summaryEl = document.getElementById('summary-content');
+
+      function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+      }
+
+      function formatDKK(amount) {
+        return new Intl.NumberFormat('da-DK', {
+          style: 'currency',
+          currency: 'DKK',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(amount);
+      }
+
+      // 1. Fetch Stripe publishable key
+      let publishableKey;
+      try {
+        const cfgRes = await fetch('/api/v1/payment/config');
+        if (!cfgRes.ok) throw new Error('Config ikke tilgængelig');
+        const cfg = await cfgRes.json();
+        publishableKey = cfg.publishable_key;
+      } catch (err) {
+        showError('Betalingssiden er midlertidigt utilgængelig. Prøv igen senere.');
+        return;
+      }
+
+      // 2. Fetch payment init data
+      let clientSecret, productName, amountDkk, customerName;
+      try {
+        if (!token) throw new Error('Ugyldigt betalingslink (manglende token).');
+        const initRes = await fetch(`/api/v1/payment/init?token=${encodeURIComponent(token)}`);
+        if (!initRes.ok) {
+          const body = await initRes.json().catch(() => ({}));
+          throw new Error(body.detail || 'Betalingslink er ugyldigt eller udløbet.');
+        }
+        const data = await initRes.json();
+        clientSecret = data.client_secret;
+        productName  = data.product_name  || 'AIScore Rapport';
+        amountDkk    = data.amount_dkk;
+        customerName = data.customer_name || '';
+      } catch (err) {
+        showError(err.message);
+        return;
+      }
+
+      // 3. Render summary
+      const displayName = customerName ? `${productName} — ${customerName}` : productName;
+      const priceStr    = amountDkk != null ? formatDKK(amountDkk) : '—';
+      summaryEl.innerHTML = `
+        <div class="summary-row">
+          <span class="label">${escHtml(displayName)}</span>
+          <span class="value">${escHtml(priceStr)}</span>
+        </div>
+        <div class="summary-row summary-total">
+          <span class="label">Total</span>
+          <span class="value">${escHtml(priceStr)}</span>
+        </div>
+      `;
+
+      // 4. Initialize Stripe + mount Payment Element
+      const stripe = Stripe(publishableKey);
+      const elements = stripe.elements({ clientSecret });
+      const paymentEl = elements.create('payment');
+      paymentEl.mount('#payment-element');
+
+      paymentEl.on('ready', () => {
+        submitBtn.disabled = false;
+      });
+
+      // 5. Handle submit
+      const form = document.getElementById('submit-btn');
+      submitBtn.addEventListener('click', async () => {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span>';
+        errorEl.style.display = 'none';
+
+        const { error } = await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: window.location.origin + '/payment/success',
+          },
+        });
+
+        if (error) {
+          showError(error.message || 'Betalingen mislykkedes. Prøv igen.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Gennemfør betaling';
+        }
+      });
+
+      function escHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+    })();
+  </script>
+</body>
+</html>

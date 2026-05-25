@@ -322,3 +322,19 @@ async def payment_success_page(order_id: str = ""):
 async def payment_cancel_page(order_id: str = ""):
     """Shown when customer cancels Stripe checkout."""
     return FileResponse(str(_static_dir / "payment_cancel.html"))
+
+
+@app.get("/payment/checkout", include_in_schema=False)
+async def payment_checkout_page():
+    """Custom checkout page with Stripe Payment Element."""
+    return FileResponse(str(_static_dir / "checkout.html"))
+
+
+@app.get("/terms-of-service", include_in_schema=False)
+async def terms_of_service_page():
+    return FileResponse(str(_static_dir / "terms-of-service.html"))
+
+
+@app.get("/privacy-policy", include_in_schema=False)
+async def privacy_policy_page():
+    return FileResponse(str(_static_dir / "privacy-policy.html"))
