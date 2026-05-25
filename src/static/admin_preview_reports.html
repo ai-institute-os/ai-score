@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIScore Admin — Preview Reports</title>
+  <link rel="stylesheet" href="/static/shared.css" />
+  <script src="/static/i18n.js"></script>
+  <style>
+    body { min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+    .design-cards {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .design-card {
+      flex: 1;
+      min-width: 280px;
+      max-width: 420px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .design-card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .design-card p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .design-card .tech-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-family: monospace;
+      background: var(--surface-alt, #f1f5f9);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+    }
+
+    .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff4;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn-download {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-download.loading .spinner { display: block; }
+    .btn-download.loading .btn-label { opacity: 0.8; }
+
+    .status-msg {
+      font-size: 0.8rem;
+      min-height: 1.2em;
+    }
+
+    .status-msg.error { color: var(--danger, #dc2626); }
+    .status-msg.ok    { color: var(--success, #16a34a); }
+  </style>
+</head>
+<body>
+
+<!-- ── Top navigation ──────────────────────────── -->
+<nav class="topnav">
+  <a class="topnav-logo" href="/admin">
+    <i data-lucide="bar-chart-2" class="icon-sm"></i>
+    AIScore
+  </a>
+  <span class="topnav-sep">/</span>
+  <span class="topnav-title">Preview Reports</span>
+  <div class="topnav-right">
+    <span class="topnav-badge">Admin</span>
+  </div>
+</nav>
+
+<!-- ── Layout ──────────────────────────────────── -->
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-body">
+      <div class="sidebar-label">Navigation</div>
+      <div class="sidebar-section">
+        <a class="sidebar-item" href="/admin">
+          <i data-lucide="layout-list" class="icon-sm"></i>
+          <span>Leads &amp; Pipeline</span>
+        </a>
+        <a class="sidebar-item" href="/admin/orders">
+          <i data-lucide="receipt" class="icon-sm"></i>
+          <span>Paid orders</span>
+        </a>
+        <a class="sidebar-item active" href="/admin/preview-reports">
+          <i data-lucide="file-text" class="icon-sm"></i>
+          <span>Preview Reports</span>
+        </a>
+      </div>
+    </div>
+    <div class="sidebar-footer">AIScore Admin</div>
+  </aside>
+
+  <!-- Main -->
+  <main class="admin-main">
+    <div class="page-header">
+      <div>
+        <h1>Preview Reports</h1>
+        <p>Download dummy-data PDFs to verify layout and design for both rendering pipelines.</p>
+      </div>
+    </div>
+
+    <div class="design-cards">
+
+      <!-- Design 1: fpdf2 -->
+      <div class="design-card">
+        <div>
+          <h2>Design 1 — fpdf2</h2>
+          <p>Direct Python PDF generation using fpdf2. Hard-coded dummy data (mydailychoice.com) with full 6-page report layout.</p>
+          <br>
+          <span class="tech-badge">scripts/generate_pdf_mydailychoice.py → build_pdf()</span>
+        </div>
+        <div>
+          <button class="btn btn-primary btn-download" id="btn-fpdf2" onclick="download('fpdf2')">
+            <i data-lucide="download" class="icon-sm"></i>
+            <span class="btn-label">Download Design 1 (fpdf2)</span>
+            <span class="spinner" id="spin-fpdf2"></span>
+          </button>
+          <div class="status-msg" id="msg-fpdf2"></div>
+        </div>
+      </div>
+
+      <!-- Design 2: HTML→PDF -->
+      <div class="design-card">
+        <div>
+          <h2>Design 2 — HTML → PDF</h2>
+          <p>HTML template rendered via Puppeteer (headless Chrome). Uses the same pipeline as production reports, filled with realistic dummy data.</p>
+          <br>
+          <span class="tech-badge">src/templates/aiscore-report.html → pdf_renderer.py</span>
+        </div>
+        <div>
+          <button class="btn btn-primary btn-download" id="btn-html" onclick="download('html')">
+            <i data-lucide="download" class="icon-sm"></i>
+            <span class="btn-label">Download Design 2 (HTML→PDF)</span>
+            <span class="spinner" id="spin-html"></span>
+          </button>
+          <div class="status-msg" id="msg-html"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>
+  lucide.createIcons();
+
+  async function download(design) {
+    const btn = document.getElementById(`btn-${design}`);
+    const spin = document.getElementById(`spin-${design}`);
+    const msg = document.getElementById(`msg-${design}`);
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+    spin.style.display = 'block';
+    msg.textContent = 'Generating PDF…';
+    msg.className = 'status-msg';
+
+    try {
+      const resp = await fetch(`/admin/preview-reports/download/${design}`);
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}));
+        throw new Error(body.detail || `HTTP ${resp.status}`);
+      }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = design === 'fpdf2'
+        ? 'aiscore-design1-fpdf2-demo.pdf'
+        : 'aiscore-design2-html-demo.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      msg.textContent = 'Downloaded.';
+      msg.className = 'status-msg ok';
+    } catch (err) {
+      msg.textContent = `Error: ${err.message}`;
+      msg.className = 'status-msg error';
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+      spin.style.display = 'none';
+    }
+  }
+</script>
+</body>
+</html>

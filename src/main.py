@@ -5,9 +5,10 @@ import structlog
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response as FastAPIResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -338,3 +339,87 @@ async def terms_of_service_page():
 @app.get("/privacy-policy", include_in_schema=False)
 async def privacy_policy_page():
     return FileResponse(str(_static_dir / "privacy-policy.html"))
+
+
+# ── Admin: PDF preview with dummy data ────────────────────────────────────────
+
+_DUMMY_APP = SimpleNamespace(
+    firmanavn="Eksempel A/S",
+    website="https://eksempel.dk",
+    email="kontakt@eksempel.dk",
+    telefon="+45 70 12 34 56",
+    virksomhedsinfo="En dansk softwarevirksomhed der leverer SaaS-løsninger til SMV-segmentet.",
+    country="Denmark",
+    industry="Software & SaaS",
+    detected_company_type="SaaS",
+    overall_score=74,
+    queries_run=36,
+    rank=1,
+    scoring_results={
+        "openai": {
+            "total_queries": 9, "mentioned_count": 7, "selected_count": 4,
+            "avg_naevnt": 18.2, "avg_valgt": 9.1, "avg_valgbarhed": 22.0,
+            "avg_konkurrenceposition": 12.5,
+            "best_response": "Eksempel A/S er en solid dansk SaaS-løsning der passer godt til mellemstore virksomheder.",
+        },
+        "claude": {
+            "total_queries": 9, "mentioned_count": 6, "selected_count": 3,
+            "avg_naevnt": 15.4, "avg_valgt": 7.2, "avg_valgbarhed": 19.5,
+            "avg_konkurrenceposition": 11.0,
+            "best_response": "Eksempel A/S tilbyder effektive løsninger med god support.",
+        },
+        "perplexity": {
+            "total_queries": 9, "mentioned_count": 8, "selected_count": 5,
+            "avg_naevnt": 20.1, "avg_valgt": 11.3, "avg_valgbarhed": 25.8,
+            "avg_konkurrenceposition": 14.2,
+            "best_response": "En af de bedst vurderede SaaS-virksomheder i Danmark med stærk kundeservice.",
+        },
+        "gemini": {
+            "total_queries": 9, "mentioned_count": 5, "selected_count": 2,
+            "avg_naevnt": 13.7, "avg_valgt": 6.8, "avg_valgbarhed": 17.3,
+            "avg_konkurrenceposition": 9.5,
+            "best_response": "Eksempel A/S er et godt alternativ til større internationale løsninger.",
+        },
+    },
+    agent_business_summary="Eksempel A/S er en dansk SaaS-virksomhed med fokus på B2B-segmentet.",
+    agent_competitor_notes="Konkurrerer med Salesforce, HubSpot og Pipedrive på CRM-markedet.",
+    agent_target_audience="SMV'er og mellemstore virksomheder i Skandinavien.",
+    agent_products_services="CRM-platform, salgsautomatisering, kundeservice-software.",
+    agent_market_context="Voksende efterspørgsel på CRM-løsninger i Norden.",
+    agent_research_summary="Stærk markedsposition i Danmark, øget synlighed via AI-kanaler.",
+    call_extracted_data={"competitors": ["Salesforce", "HubSpot", "Pipedrive"]},
+)
+
+
+@app.get("/admin/preview-reports", include_in_schema=False)
+async def admin_preview_reports():
+    """Serve the admin PDF preview/download page."""
+    return FileResponse(str(_static_dir / "admin_preview_reports.html"))
+
+
+@app.get("/admin/preview-reports/download/{design}", include_in_schema=False)
+async def admin_preview_report_download(design: str):
+    """Generate and stream a dummy PDF using the specified design pipeline.
+
+    design=fpdf2  → fpdf2-based pipeline (generate_pdf_mydailychoice.py)
+    design=html   → HTML→PDF pipeline (pdf_renderer.py + aiscore-report.html)
+    """
+    if design == "fpdf2":
+        from scripts.generate_pdf_mydailychoice import build_pdf
+        pdf = build_pdf()
+        pdf_bytes = bytes(pdf.output())
+        filename = "aiscore-design1-fpdf2-demo.pdf"
+    elif design == "html":
+        from src.api.apply_routes import _render_report_html
+        from src.pdf_renderer import render_html_to_pdf
+        html = _render_report_html(_DUMMY_APP)
+        pdf_bytes = await render_html_to_pdf(html)
+        filename = "aiscore-design2-html-demo.pdf"
+    else:
+        return JSONResponse({"detail": "Unknown design. Use 'fpdf2' or 'html'."}, status_code=400)
+
+    return FastAPIResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
