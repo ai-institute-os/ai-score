@@ -180,9 +180,9 @@
   </main>
 </div>
 
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="/static/assets/icons.js"></script>
 <script>
-  lucide.createIcons();
+  if (window.lucide) lucide.createIcons();
 
   async function download(design) {
     const btn = document.getElementById(`btn-${design}`);
