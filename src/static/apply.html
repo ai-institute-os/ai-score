@@ -970,25 +970,43 @@
         application_goal:     document.getElementById('application_goal').value.trim(),
       };
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       try {
-        const res = await fetch('/api/v1/applications', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        let res;
+        try {
+          res = await fetch('/api/v1/applications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          });
+        } catch (fetchErr) {
+          if (fetchErr.name === 'AbortError') {
+            throw new Error('The request timed out. Please check your connection and try again.');
+          }
+          throw new Error('Could not reach the server. Please check your internet connection and try again.');
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        if (res.status === 429) {
+          throw new Error('Too many requests — please wait a moment before trying again.');
+        }
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.detail || `Server error (${res.status})`);
+          const detail = Array.isArray(data.detail)
+            ? data.detail.map(e => e.msg || String(e)).join(', ')
+            : data.detail;
+          throw new Error(detail || `Something went wrong on our end (${res.status}). Please try again.`);
         }
 
         const data = await res.json();
         showSuccessModal(data.id);
       } catch (err) {
-        const msg = err.message && !err.message.includes('Server error')
-          ? err.message
-          : 'We could not submit your application right now. Please try again in a moment.';
-        banner.innerHTML = msg;
+        banner.innerHTML = err.message || 'We could not submit your application right now. Please try again in a moment.';
         banner.style.display = 'block';
         btn.disabled = false;
         submitting = false;
