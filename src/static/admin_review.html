@@ -2402,8 +2402,13 @@ async function generatePaymentLink() {
     await loadApp();
   } catch (err) {
     toast('Failed: ' + err.message, 'error');
-    btn.disabled = false; btn.innerHTML = '<i data-lucide="credit-card" style="width:14px;height:14px;margin-right:0.35rem;"></i>Generate Payment Link';
-    if (window.lucide) lucide.createIcons();
+    // Reload fresh data so the UI reflects the actual current status (it may have changed
+    // in the background, causing the status mismatch that triggered this error).
+    loadApp().catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="credit-card" style="width:14px;height:14px;margin-right:0.35rem;"></i>Generate Payment Link';
+      if (window.lucide) lucide.createIcons();
+    });
   }
 }
 
