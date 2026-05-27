@@ -511,7 +511,7 @@ async def book_meeting(
     }
 
 
-@router.post("/admin/applications/{application_id}/book-call")
+@router.post("/admin/applications/{application_id}/book-call", response_model=ApplicationResponse)
 @limiter.limit("20/minute")
 async def book_call(
     request: Request,
