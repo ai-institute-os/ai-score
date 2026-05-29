@@ -865,6 +865,31 @@
   </div>
 </div>
 
+<!-- Backward move confirmation modal -->
+<div id="backwardMoveModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;max-width:460px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
+      <i data-lucide="arrow-left-circle" style="width:20px;height:20px;color:#d97706;flex-shrink:0;"></i>
+      <span style="font-weight:700;font-size:1rem;" id="backwardMoveTitle">Move Back</span>
+    </div>
+    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;" id="backwardMoveDesc"></p>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius-sm);padding:0.65rem 0.9rem;margin-bottom:1.25rem;font-size:0.82rem;color:#92400e;">
+      <i data-lucide="alert-triangle" style="width:13px;height:13px;margin-right:0.3rem;vertical-align:middle;"></i>
+      This is a manual backward move. Progress made at the current stage will need to be redone.
+    </div>
+    <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">Note (optional)</label>
+    <textarea id="backwardMoveNote" placeholder="Reason for moving back…" style="width:100%;min-height:72px;box-sizing:border-box;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:0.5rem 0.75rem;font-size:0.875rem;resize:vertical;"></textarea>
+    <div style="margin-top:1.1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeBackwardMoveModal()">Cancel</button>
+      <button class="btn" id="btnConfirmBackwardMove" onclick="confirmBackwardMove()"
+        style="background:#d97706;color:#fff;">
+        <i data-lucide="arrow-left-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+        Move Back
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="/static/assets/icons.js"></script>
 <script>
 let appId = null;
@@ -896,6 +921,13 @@ const VALID_TRANSITIONS = {
   READY_FOR_REVIEW_CALL: ['COMPLETED'],
   ESCALATED: ['RETRY'],
 };
+
+// Backward (reverting) transitions allowed by admin — subset of VALID_TRANSITIONS on the backend
+const BACKWARD_TRANSITIONS = new Set([
+  'QC_REVIEW->IN_PRODUCTION',
+  'QC_PASSED->QC_REVIEW',
+  'READY_FOR_REVIEW_CALL->QC_REVIEW',
+]);
 
 // ─── Wizard ───────────────────────────────────────
 
@@ -1811,6 +1843,13 @@ function renderActionPanel(app) {
           <i data-lucide="video" style="width:14px;height:14px;margin-right:0.35rem;"></i>
           Flyt til Review Call
         </button>
+      </div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost" onclick="openBackwardMoveModal('IN_PRODUCTION')"
+           style="font-size:0.82rem;padding:0.4rem 0.9rem;color:var(--text-muted);">
+          <i data-lucide="arrow-left-circle" style="width:13px;height:13px;margin-right:0.3rem;"></i>
+          Tilbage til PDF Report
+        </button>
       </div>`;
 
   } else if (status === 'READY_FOR_REVIEW_CALL') {
@@ -1873,7 +1912,14 @@ function renderActionPanel(app) {
           <i data-lucide="check-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i>
           Review Call Finished
         </button>
-      </div>` : ''}`;
+      </div>` : ''}
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost" onclick="openBackwardMoveModal('QC_REVIEW')"
+           style="font-size:0.82rem;padding:0.4rem 0.9rem;color:var(--text-muted);">
+          <i data-lucide="arrow-left-circle" style="width:13px;height:13px;margin-right:0.3rem;"></i>
+          Tilbage til QC Review
+        </button>
+      </div>`;
 
   } else if (status === 'COMPLETED') {
     titleEl.textContent = 'Completed';
@@ -2365,6 +2411,43 @@ async function doStatusChange(newStatus, note) {
     renderApp(updated);
   } catch (err) {
     toast('Failed: ' + err.message, 'error');
+  }
+}
+
+let _backwardMoveTarget = null;
+
+function openBackwardMoveModal(targetStatus) {
+  const fromLabel = STATUS_LABELS[appData?.status] || appData?.status || '?';
+  const toLabel = STATUS_LABELS[targetStatus] || targetStatus;
+  document.getElementById('backwardMoveTitle').textContent = `Move Back: ${fromLabel} → ${toLabel}`;
+  document.getElementById('backwardMoveDesc').textContent =
+    `You are about to revert this application from "${fromLabel}" back to "${toLabel}".`;
+  document.getElementById('backwardMoveNote').value = '';
+  _backwardMoveTarget = targetStatus;
+  const modal = document.getElementById('backwardMoveModal');
+  modal.style.display = 'flex';
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeBackwardMoveModal() {
+  document.getElementById('backwardMoveModal').style.display = 'none';
+  _backwardMoveTarget = null;
+}
+
+async function confirmBackwardMove() {
+  if (!_backwardMoveTarget) return;
+  const note = document.getElementById('backwardMoveNote').value.trim();
+  const btn = document.getElementById('btnConfirmBackwardMove');
+  if (btn) { btn.disabled = true; btn.textContent = 'Moving…'; }
+  try {
+    await doStatusChange(_backwardMoveTarget, note);
+    closeBackwardMoveModal();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="arrow-left-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i>Move Back';
+      if (window.lucide) lucide.createIcons();
+    }
   }
 }
 

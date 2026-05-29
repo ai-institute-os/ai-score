@@ -18,6 +18,7 @@ from sqlalchemy.orm import selectinload
 from src.db import get_db
 from src.db.models import (
     CustomerApplication, CustomerApplicationStateLog, CustomerApplicationStatus, VALID_TRANSITIONS,
+    BACKWARD_TRANSITIONS,
     AISelectSubscription, SubscriptionTier, SubscriptionStatus,
     PasswordResetToken,
 )
@@ -898,26 +899,33 @@ async def update_application_status(
         )
 
     prev_status = app.status
+    is_backward = (prev_status, new_status) in BACKWARD_TRANSITIONS
+
     app.status = new_status
     app.updated_at = datetime.now(timezone.utc)
 
-    log = CustomerApplicationStateLog(
+    note_text = body.note or ""
+    if is_backward:
+        prefix = "[Manual backward move]"
+        note_text = f"{prefix} {note_text}".strip() if note_text else prefix
+
+    state_log = CustomerApplicationStateLog(
         application_id=app.id,
         from_status=prev_status,
         to_status=new_status,
         changed_by="admin",
-        note=body.note,
+        note=note_text or None,
     )
-    db.add(log)
+    db.add(state_log)
     await db.commit()
 
-    if new_status == CustomerApplicationStatus.IN_PRODUCTION:
+    if new_status == CustomerApplicationStatus.IN_PRODUCTION and not is_backward:
         app.report_questions_status = "generating"
         await db.commit()
         background_tasks.add_task(_generate_and_store_report_questions, application_id)
         log.info("admin.pipeline_triggered", application_id=str(application_id))
 
-    if new_status == CustomerApplicationStatus.READY_FOR_REVIEW_CALL:
+    if new_status == CustomerApplicationStatus.READY_FOR_REVIEW_CALL and not is_backward:
         from src.payments.emailer import send_aiselect_crosssell_email
         from src.config import get_settings as _gs
         _settings = _gs()

@@ -58,18 +58,25 @@ VALID_TRANSITIONS: dict[CustomerApplicationStatus, set[CustomerApplicationStatus
     CustomerApplicationStatus.PAID: {CustomerApplicationStatus.IN_PRODUCTION},
     CustomerApplicationStatus.IN_PRODUCTION: {CustomerApplicationStatus.QC_REVIEW},
     # QC_REVIEW: admin can pass to QC_PASSED, fail, or move directly to review call
-    CustomerApplicationStatus.QC_REVIEW: {CustomerApplicationStatus.QC_PASSED, CustomerApplicationStatus.QC_FAILED, CustomerApplicationStatus.READY_FOR_REVIEW_CALL},
-    CustomerApplicationStatus.QC_PASSED: {CustomerApplicationStatus.READY_FOR_REVIEW_CALL},
+    CustomerApplicationStatus.QC_REVIEW: {CustomerApplicationStatus.QC_PASSED, CustomerApplicationStatus.QC_FAILED, CustomerApplicationStatus.READY_FOR_REVIEW_CALL, CustomerApplicationStatus.IN_PRODUCTION},
+    CustomerApplicationStatus.QC_PASSED: {CustomerApplicationStatus.READY_FOR_REVIEW_CALL, CustomerApplicationStatus.QC_REVIEW},
     # QC_FAILED: auto-retry (< 3 failures) goes back to IN_PRODUCTION;
     # after 3 failures, system escalates (ESCALATED). Managed by qc_result endpoint.
     CustomerApplicationStatus.QC_FAILED: {CustomerApplicationStatus.IN_PRODUCTION, CustomerApplicationStatus.ESCALATED},
     # ESCALATED: Dennis makes manual correction → RETRY (back into IN_PRODUCTION cycle)
     CustomerApplicationStatus.ESCALATED: {CustomerApplicationStatus.RETRY},
     CustomerApplicationStatus.RETRY: {CustomerApplicationStatus.IN_PRODUCTION},
-    CustomerApplicationStatus.READY_FOR_REVIEW_CALL: {CustomerApplicationStatus.COMPLETED},
+    CustomerApplicationStatus.READY_FOR_REVIEW_CALL: {CustomerApplicationStatus.COMPLETED, CustomerApplicationStatus.QC_REVIEW},
     CustomerApplicationStatus.COMPLETED: set(),
     CustomerApplicationStatus.CANCELLED: set(),
     CustomerApplicationStatus.REJECTED: set(),
+}
+
+# Pairs that represent admin-initiated backward (reverting) moves
+BACKWARD_TRANSITIONS: set[tuple[CustomerApplicationStatus, CustomerApplicationStatus]] = {
+    (CustomerApplicationStatus.QC_REVIEW, CustomerApplicationStatus.IN_PRODUCTION),
+    (CustomerApplicationStatus.QC_PASSED, CustomerApplicationStatus.QC_REVIEW),
+    (CustomerApplicationStatus.READY_FOR_REVIEW_CALL, CustomerApplicationStatus.QC_REVIEW),
 }
 
 
