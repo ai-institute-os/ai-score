@@ -898,26 +898,28 @@
   }
 
   .check-block--success {
-    background: var(--chosen);
-    border-radius: 6px;
-    padding: 12px 15px;
+    background: linear-gradient(135deg, #0b8a7e, var(--chosen));
+    border-radius: 8px;
+    padding: 14px 16px;
+    box-shadow: 0 3px 14px rgba(13,148,136,0.25);
   }
   .check-block--success .check-block-title {
     color: var(--white);
     font-size: 10.5pt;
   }
   .check-block--success .check-list li {
-    color: var(--white);
+    color: rgba(255,255,255,.9);
   }
   .check-block--success .check-list li::before {
     color: rgba(255,255,255,.5);
   }
 
   .check-block--warn {
-    background: var(--accent-light);
+    background: #fff8f4;
+    border: 1px solid rgba(255, 107, 53, 0.2);
     border-left: 5px solid var(--accent);
-    border-radius: 6px;
-    padding: 12px 15px;
+    border-radius: 0 8px 8px 0;
+    padding: 13px 16px;
   }
   .check-block--warn .check-block-title.warn {
     color: var(--accent);
@@ -979,6 +981,11 @@
     line-height: 1.65;
     font-style: italic;
   }
+
+  .ai-desc-card.adc-chatgpt   { border-top: 3px solid var(--chatgpt); }
+  .ai-desc-card.adc-claude    { border-top: 3px solid var(--claude); }
+  .ai-desc-card.adc-perplexity{ border-top: 3px solid var(--perplexity); }
+  .ai-desc-card.adc-gemini    { border-top: 3px solid var(--gemini); }
 
   /* ═══════════════════════════════════
      CATEGORY ROLE TABLE
@@ -1170,15 +1177,17 @@
   .matrix-table tbody td { padding: 9px 12px; vertical-align: middle; }
 
   .matrix-table tfoot tr {
-    background: #f0fdf4;
+    background: var(--bg);
     color: var(--text);
+    border-top: 2px solid var(--border);
   }
 
   .matrix-table tfoot td {
-    padding: 9px 12px;
-    font-weight: 700;
+    padding: 10px 12px;
+    font-weight: 800;
     font-size: 9pt;
     border: none;
+    color: var(--navy);
   }
 
   .rate-badge {
@@ -1358,14 +1367,16 @@
 
   .score-context-text {
     flex: 1;
-    font-size: 9pt;
+    font-size: 9.5pt;
     color: var(--text-mid);
-    line-height: 1.6;
+    line-height: 1.65;
     align-self: stretch;
-    background: var(--bg);
-    border-radius: 6px;
-    padding: 16px 18px;
-    border-left: 3px solid var(--border);
+    background: var(--white);
+    border-radius: 8px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent-2);
+    box-shadow: 0 2px 10px rgba(13,31,78,0.05);
   }
 
   .score-big-num {
@@ -2231,7 +2242,7 @@
   <h2 class="sec-title">{{AI_DESCRIPTIONS_HEADLINE}}</h2>
   <p class="sec-intro">Nedenstående er repræsentative direkte beskrivelser fra de fire testede AI-systemer. De er ikke redigerede — de afspejler, hvad modellerne aktuelt producerer som svar på relevante forespørgsler.</p>
 
-  <div class="ai-desc-card no-break">
+  <div class="ai-desc-card adc-chatgpt no-break">
     <div class="ai-desc-header">
       <div class="ai-desc-header-left">
         <div class="system-icon sys-chatgpt" style="width:24px;height:24px;font-size:9.5pt;">C</div>
@@ -2248,7 +2259,7 @@
     <div class="ai-desc-body">"{{CHATGPT_QUOTE}}"</div>
   </div>
 
-  <div class="ai-desc-card no-break">
+  <div class="ai-desc-card adc-claude no-break">
     <div class="ai-desc-header">
       <div class="ai-desc-header-left">
         <div class="system-icon sys-claude" style="width:24px;height:24px;font-size:9.5pt;">A</div>
@@ -2265,7 +2276,7 @@
     <div class="ai-desc-body">"{{CLAUDE_QUOTE}}"</div>
   </div>
 
-  <div class="ai-desc-card no-break">
+  <div class="ai-desc-card adc-gemini no-break">
     <div class="ai-desc-header">
       <div class="ai-desc-header-left">
         <div class="system-icon sys-gemini" style="width:24px;height:24px;font-size:9.5pt;">G</div>
@@ -2282,7 +2293,7 @@
     <div class="ai-desc-body">"{{GEMINI_QUOTE}}"</div>
   </div>
 
-  <div class="ai-desc-card no-break">
+  <div class="ai-desc-card adc-perplexity no-break">
     <div class="ai-desc-header">
       <div class="ai-desc-header-left">
         <div class="system-icon sys-perplexity" style="width:24px;height:24px;font-size:9.5pt;">P</div>
