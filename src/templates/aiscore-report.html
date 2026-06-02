@@ -623,15 +623,16 @@
     background: linear-gradient(145deg, var(--navy) 0%, var(--navy-mid) 100%);
     color: var(--white);
     border-radius: 0;
-    padding: 20px 24px;
-    min-width: 130px;
+    padding: 20px 28px;
+    min-width: 175px;
     text-align: center;
     flex-shrink: 0;
+    align-self: stretch;
     box-shadow: 0 5px 22px rgba(13,31,78,0.28);
   }
 
   .exec-score-num {
-    font-size: 46pt;
+    font-size: 58pt;
     font-weight: 900;
     line-height: 1;
     letter-spacing: -.03em;
@@ -692,23 +693,20 @@
   .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 2px;
     margin-bottom: 18px;
   }
 
   .kpi-card {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px 14px;
+    border: none;
+    border-radius: 0;
+    padding: 14px 12px;
     text-align: center;
-    background: var(--white);
-    box-shadow: 0 2px 8px rgba(13,31,78,0.06);
+    background: #f1f5f9;
   }
 
   .kpi-card.kpi-highlight {
     background: linear-gradient(145deg, var(--navy) 0%, var(--navy-mid) 100%);
-    border-color: var(--navy);
-    box-shadow: 0 4px 20px rgba(13,31,78,0.25);
   }
 
   .kpi-card.kpi-highlight .kpi-num {
@@ -721,7 +719,7 @@
   }
 
   .kpi-num {
-    font-size: 26pt;
+    font-size: 20pt;
     font-weight: 900;
     line-height: 1;
     color: var(--navy);
@@ -2107,6 +2105,11 @@
       <div class="kpi-sub">Alle systemer testet</div>
       <div class="kpi-label">LLM-systemer</div>
     </div>
+  </div>
+
+  <div style="margin-top:16px;">
+    <p style="font-size:9.5pt; line-height:1.6; color:var(--navy); margin:0 0 10px;">{{EXEC_BODY_1}}</p>
+    <p style="font-size:9.5pt; line-height:1.6; color:var(--navy); margin:0;">{{EXEC_BODY_2}}</p>
   </div>
 
   <div class="pg-footer">

@@ -3548,6 +3548,15 @@ def _render_report_html(app: "CustomerApplication") -> str:
         "{{STRONGEST_DIMENSION}}": f"Entity Authority — AI-systemerne genkender {name} som etableret aktør",
         "{{KEY_LIMITATION}}": "Decision Relevance — fremstår som alternativ, sjældent som primær anbefaling",
         "{{STRATEGIC_TENSION}}": f"Bred synlighed ({mention_rate}) vs. lav konvertering til valg ({selection_rate})",
+        "{{EXEC_BODY_1}}": (
+            f"{name} er placeret i den øverste del af kategorien med en AIScore™ på {overall}/100. "
+            f"Brandet nævnes i næsten {mention_rate} af prompts på tværs af alle testede AI-systemer — et stærkt udgangspunkt."
+        ),
+        "{{EXEC_BODY_2}}": (
+            f"Kerneudfordringen er konvertering: at blive nævnt er ikke det samme som at blive valgt. "
+            f"{name} efterlader mere end halvdelen af sine synlighedsmomenter uden aktiv anbefaling. "
+            f"De øjeblikke ender hos andre brands."
+        ),
         # Section 02
         "{{METHODOLOGY_TEXT}}": (
             f"<span class='sec-intro-line'>Analysen er baseret på {queries} strukturerede testprompts fordelt ligeligt over "
