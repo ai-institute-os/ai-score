@@ -3680,6 +3680,15 @@ def _render_report_html(app: "CustomerApplication") -> str:
             f"mangler autoritetssignaler (presseomtale, backlinks, schema-markup) "
             f"som Gemini vægter højt i sine anbefalinger."
         ),
+        "{{MODEL_SUMMARY}}": (
+            f"På tværs af alle fire modeller tegner der sig et konsistent mønster: {name} er til stede "
+            f"i AI-systemernes kategorier, men opnår endnu ikke en stærk primærposition. "
+            f"ChatGPT og Claude prioriterer struktureret, faktatæt indhold — her har {name} et klart potentiale. "
+            f"Perplexity drives af web-crawling og belønner FAQ- og feature-sider direkte. "
+            f"Gemini vægter autoritetssignaler som presseomtale og backlinks. "
+            f"En koordineret indholdsstrategi, der adresserer alle fire models præferencer simultant, "
+            f"vil være den mest effektive vej til at forbedre den samlede AIScore™."
+        ),
         # Section 07 matrix
         "{{MATRIX_HEADLINE}}": f"Synlighedsmatrix — {name} på tværs af alle fire AI-systemer",
         "{{CHATGPT_MENTION_PCT}}": str(og["mp"]),

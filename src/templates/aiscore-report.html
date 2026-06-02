@@ -1039,18 +1039,17 @@
 
   .model-card {
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(13,31,78,0.07);
+    background: #f1f5f9;
   }
 
   .model-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 11px 14px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    padding: 11px 14px 6px;
+    background: transparent;
   }
 
   .model-card-header-left {
@@ -1082,9 +1081,8 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    background: var(--white);
+    padding: 6px 14px 10px;
+    background: transparent;
   }
 
   .model-bar-row {
@@ -1125,15 +1123,15 @@
     text-align: right;
   }
 
-  .model-card.mc-chatgpt   { border-bottom: 5px solid var(--chatgpt); border-top: 3px solid var(--chatgpt); }
-  .model-card.mc-claude    { border-bottom: 5px solid var(--claude); border-top: 3px solid var(--claude); }
-  .model-card.mc-perplexity{ border-bottom: 5px solid var(--perplexity); border-top: 3px solid var(--perplexity); }
-  .model-card.mc-gemini    { border-bottom: 5px solid var(--gemini); border-top: 3px solid var(--gemini); }
+  .model-card.mc-chatgpt,
+  .model-card.mc-claude,
+  .model-card.mc-perplexity,
+  .model-card.mc-gemini { border-top: none; border-bottom: none; }
 
-  .model-card-verdict.vc-chatgpt   { color: var(--chatgpt); }
-  .model-card-verdict.vc-claude    { color: var(--claude); }
-  .model-card-verdict.vc-perplexity{ color: var(--perplexity); }
-  .model-card-verdict.vc-gemini    { color: var(--gemini); }
+  .model-card-verdict.vc-chatgpt,
+  .model-card-verdict.vc-claude,
+  .model-card-verdict.vc-perplexity,
+  .model-card-verdict.vc-gemini { color: var(--accent); }
 
   .model-card-body {
     padding: 10px 14px;
@@ -2361,7 +2359,7 @@
     <div class="ai-desc-body">"{{PERPLEXITY_QUOTE}}"</div>
   </div>
 
-  <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+  <div style="margin-top:14px;">
     <div style="font-size:9.5pt; font-weight:700; color:var(--navy); margin-bottom:6px;">Fortolkning</div>
     <p style="font-size:9.5pt; line-height:1.6; color:var(--text); margin:0;">{{AI_DESCRIPTIONS_INTERPRETATION}}</p>
   </div>
@@ -2557,6 +2555,11 @@
       </div>
       <div class="model-card-body">{{GEMINI_ANALYSIS}}</div>
     </div>
+  </div>
+
+  <div style="margin-top:18px;">
+    <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--accent); margin-bottom:8px;">Samlet mønster</div>
+    <p style="font-size:9.5pt; line-height:1.65; color:var(--text); margin:0;">{{MODEL_SUMMARY}}</p>
   </div>
 
   <div class="pg-footer">
