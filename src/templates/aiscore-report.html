@@ -993,6 +993,7 @@
     border-collapse: collapse;
     font-size: 9.5pt;
     margin-bottom: 16px;
+    border: 1px solid var(--border);
   }
 
   .role-table thead tr {
@@ -1009,11 +1010,7 @@
     text-transform: uppercase;
   }
 
-  .role-table thead th:first-child { border-radius: 4px 0 0 0; }
-  .role-table thead th:last-child  { border-radius: 0 4px 0 0; }
-
   .role-table tbody tr { border-bottom: 1px solid var(--border); }
-  .role-table tbody tr:nth-child(even) { background: var(--bg); }
   .role-table tbody td { padding: 10px 12px; vertical-align: middle; }
 
   .role-table tr.highlight-row td { background: rgba(255, 107, 53, 0.06); font-weight: 600; }
@@ -2364,8 +2361,9 @@
     <div class="ai-desc-body">"{{PERPLEXITY_QUOTE}}"</div>
   </div>
 
-  <div class="callout callout-navy" style="margin-top:4px;">
-    <strong>Fortolkning:</strong> {{AI_DESCRIPTIONS_INTERPRETATION}}
+  <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+    <div style="font-size:9.5pt; font-weight:700; color:var(--navy); margin-bottom:6px;">Fortolkning</div>
+    <p style="font-size:9.5pt; line-height:1.6; color:var(--text); margin:0;">{{AI_DESCRIPTIONS_INTERPRETATION}}</p>
   </div>
 
   <div class="pg-footer">
@@ -2402,8 +2400,9 @@
     </tbody>
   </table>
 
-  <div class="callout callout-key">
-    <strong>Nøgleobservation:</strong> {{AI_LANDSCAPE_KEY_OBS}}
+  <div style="margin-top:16px;">
+    <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--accent); margin-bottom:10px;">{{COMPANY_NAME}}s rolle i AI-kategoriseringen</div>
+    <p style="font-size:9.5pt; line-height:1.65; color:var(--text); margin:0;">{{AI_LANDSCAPE_KEY_OBS}}</p>
   </div>
 
   <div class="pg-footer">

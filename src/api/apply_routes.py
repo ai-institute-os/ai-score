@@ -3630,9 +3630,13 @@ def _render_report_html(app: "CustomerApplication") -> str:
         ),
         "{{CATEGORY_ROLE_ROWS}}": _competitor_rows(),
         "{{AI_LANDSCAPE_KEY_OBS}}": (
-            f"{primary_competitor.capitalize()} dominerer AI-anbefalinger i kategorien. "
-            f"{name}s styrke er fokus og nichekendskab — men det er ikke synliggjort "
-            f"i AI-citérbart indhold."
+            f"{name}s position i kategorien er meningsfuld og delvist anerkendt af AI-systemerne. "
+            f"Den er endnu ikke fuldt ejet — ingen prompt producerer konsistent {name} som det eneste relevante svar. "
+            f"{primary_competitor.capitalize()} og andre etablerede aktører konkurrerer om de samme positioner. "
+            f"Problemet er ikke, at {name} mister til dem direkte — problemet er, at AI-systemernes kategorisering "
+            f"er skarpere end {name}s nuværende kommunikation antyder. "
+            f"Det giver et klart og adresserbart handlingsrum: mere struktureret, AI-citérbart indhold "
+            f"vil flytte positionen markant."
         ),
         # Section 06 model analysis
         "{{MODEL_ANALYSIS_HEADLINE}}": f"Systemspecifikke fund — fire modeller, fire perspektiver på {name}",
