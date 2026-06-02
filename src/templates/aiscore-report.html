@@ -622,7 +622,7 @@
     justify-content: center;
     background: linear-gradient(145deg, var(--navy) 0%, var(--navy-mid) 100%);
     color: var(--white);
-    border-radius: 10px;
+    border-radius: 0;
     padding: 20px 24px;
     min-width: 130px;
     text-align: center;
@@ -659,24 +659,25 @@
   }
 
   .exec-meta-item {
-    padding: 4px 0;
+    background: #f1f5f9;
+    border-radius: 4px;
+    padding: 7px 10px;
   }
 
   .exec-strategic-block {
-    background: var(--white);
-    border: 1px solid var(--border);
+    background: #f1f5f9;
     border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    padding: 20px 14px;
+    border-radius: 4px;
+    padding: 12px 14px;
     margin-bottom: 18px;
   }
 
   .exec-meta-label {
     font-size: 7.5pt;
     font-weight: 700;
-    letter-spacing: .1em;
+    letter-spacing: .05em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--navy);
     margin-bottom: 4px;
   }
 
@@ -2014,7 +2015,7 @@
   </div>
 
   <!-- 2×2 data grid: DATAGRUNDLAG -->
-  <div class="no-break" style="margin-top:16px; margin-bottom:0;">
+  <div class="no-break" style="margin-top:16px; margin-bottom:0; background:#f1f5f9; border-radius:4px; padding:14px 16px;">
     <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:12px;">Datagrundlag</div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
       <div style="padding:4px 0;">
@@ -2096,12 +2097,12 @@
       <div class="kpi-sub">{{SELECTION_COUNT}} prompts</div>
       <div class="kpi-label">Udvælgelsesfrekvens</div>
     </div>
-    <div class="kpi-card kpi-highlight">
+    <div class="kpi-card">
       <div class="kpi-num">{{SELECTION_GAP}}pp</div>
       <div class="kpi-sub">Analysens nøgletal</div>
       <div class="kpi-label">Kløft omtale → valg</div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kpi-highlight">
       <div class="kpi-num">4/4</div>
       <div class="kpi-sub">Alle systemer testet</div>
       <div class="kpi-label">LLM-systemer</div>
