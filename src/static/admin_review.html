@@ -403,6 +403,22 @@
     .wizard-step.research-active .wizard-step-label { color: #b45309; font-weight: 700; }
     .wizard-step.rejected .wizard-step-label { color: var(--error); font-weight: 700; }
 
+    .wizard-step.backward-target { cursor: pointer; }
+    .wizard-step.backward-target:hover .wizard-step-label { color: #d97706; }
+    .wizard-step.backward-target:hover .wizard-icon {
+      background: #d97706;
+      border-color: #d97706;
+      box-shadow: 0 0 0 3px rgba(217,119,6,0.15);
+    }
+    .wizard-step.backward-target .wizard-step-label::after {
+      content: ' ↩';
+      font-size: 0.65rem;
+      color: #d97706;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .wizard-step.backward-target:hover .wizard-step-label::after { opacity: 1; }
+
     /* ── Interview Questions card ── */
     .iq-list {
       list-style: none;
@@ -929,6 +945,14 @@ const BACKWARD_TRANSITIONS = new Set([
   'READY_FOR_REVIEW_CALL->QC_REVIEW',
 ]);
 
+// Map: current status → { wizardStepId: backwardTargetStatus }
+// Used to make completed wizard steps clickable for backward navigation
+const WIZARD_STEP_BACKWARD = {
+  QC_REVIEW:             { PDF_REPORT: 'IN_PRODUCTION' },
+  QC_PASSED:             { QC_REVIEW: 'QC_REVIEW' },
+  READY_FOR_REVIEW_CALL: { QC_REVIEW: 'QC_REVIEW' },
+};
+
 // ─── Wizard ───────────────────────────────────────
 
 const WIZARD_STEPS = [
@@ -976,6 +1000,7 @@ function renderProgressWizard(app) {
   const isRejected = app.status === 'REJECTED' || app.status === 'CANCELLED';
   const { idx: currentIdx, researchActive } = getWizardActiveIndex(app);
 
+  const backwardMap = WIZARD_STEP_BACKWARD[app.status] || {};
   let html = '';
   WIZARD_STEPS.forEach((step, i) => {
     let state = 'future';
@@ -991,6 +1016,13 @@ function renderProgressWizard(app) {
       state = 'active';
     }
 
+    const backwardTarget = backwardMap[step.id];
+    const isBackwardTarget = state === 'completed' && !!backwardTarget;
+    const clickAttrs = isBackwardTarget
+      ? ` onclick="openBackwardMoveModal('${backwardTarget}')" title="Flyt tilbage til ${esc(STATUS_LABELS[backwardTarget] || backwardTarget)}"`
+      : '';
+    const extraClass = isBackwardTarget ? ' backward-target' : '';
+
     const iconContent = state === 'completed'
       ? `<i data-lucide="check" style="width:9px;height:9px;stroke-width:3;color:#fff;"></i>`
       : state === 'rejected'
@@ -1000,7 +1032,7 @@ function renderProgressWizard(app) {
           : '';
 
     html += `
-      <div class="wizard-step ${state}">
+      <div class="wizard-step ${state}${extraClass}"${clickAttrs}>
         <div class="wizard-connector"></div>
         <div class="wizard-step-inner">
           <div class="wizard-icon">${iconContent}</div>
@@ -1849,6 +1881,25 @@ function renderActionPanel(app) {
            style="font-size:0.82rem;padding:0.4rem 0.9rem;color:var(--text-muted);">
           <i data-lucide="arrow-left-circle" style="width:13px;height:13px;margin-right:0.3rem;"></i>
           Tilbage til PDF Report
+        </button>
+      </div>`;
+
+  } else if (status === 'QC_PASSED') {
+    titleEl.textContent = 'QC Passed';
+    descEl.textContent = 'Rapporten har bestået kvalitetskontrollen. Gå videre til Review Call eller send tilbage til QC.';
+    container.innerHTML = `
+      <div style="border-bottom:1px solid var(--border);padding-bottom:1.25rem;margin-bottom:1.25rem;">
+        <button class="btn btn-success" onclick="openMoveToReviewCallModal()"
+           style="font-size:0.85rem;padding:0.5rem 1.1rem;">
+          <i data-lucide="video" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+          Flyt til Review Call
+        </button>
+      </div>
+      <div>
+        <button class="btn btn-ghost" onclick="openBackwardMoveModal('QC_REVIEW')"
+           style="font-size:0.82rem;padding:0.4rem 0.9rem;color:var(--text-muted);">
+          <i data-lucide="arrow-left-circle" style="width:13px;height:13px;margin-right:0.3rem;"></i>
+          Tilbage til QC Review
         </button>
       </div>`;
 
