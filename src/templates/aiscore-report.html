@@ -829,7 +829,7 @@
   .prompt-cat-num {
     font-size: 11pt;
     font-weight: 900;
-    color: var(--accent);
+    color: var(--navy);
     min-width: 24px;
     line-height: 1;
     padding-top: 2px;
@@ -893,7 +893,7 @@
 
   .check-block--success {
     background: #f1f5f9;
-    border-left: 3px solid var(--navy);
+    border-left: 5px solid var(--navy);
     border-radius: 0 4px 4px 0;
     padding: 14px 16px;
   }
@@ -909,10 +909,9 @@
   }
 
   .check-block--warn {
-    background: #fff8f4;
-    border: 1px solid rgba(255, 107, 53, 0.2);
+    background: #f1f5f9;
     border-left: 5px solid var(--accent);
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 4px 4px 0;
     padding: 13px 16px;
   }
   .check-block--warn .check-block-title.warn {
@@ -929,57 +928,62 @@
      AI DESCRIPTION CARDS
   ═══════════════════════════════════ */
   .ai-desc-card {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 10px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 4px;
+    margin-bottom: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(13,31,78,0.06);
   }
 
   .ai-desc-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 9px 14px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    padding: 10px 14px 4px;
+    background: transparent;
+    border-bottom: none;
   }
 
   .ai-desc-header-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+  }
+
+  /* Hide the circular icon badge — name/vendor identify each AI */
+  .ai-desc-card .system-icon {
+    display: none;
   }
 
   .ai-desc-name {
     font-size: 10pt;
     font-weight: 700;
-    color: var(--text);
+    color: var(--navy);
   }
 
   .ai-desc-vendor {
-    font-size: 8pt;
-    color: var(--text-light);
+    font-size: 8.5pt;
+    color: var(--text-mid);
   }
 
   .ai-desc-stats {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
   }
 
   .ai-desc-body {
-    padding: 12px 14px;
+    padding: 2px 14px 12px;
     font-size: 9.5pt;
     color: var(--text-mid);
     line-height: 1.65;
     font-style: italic;
   }
 
-  .ai-desc-card.adc-chatgpt   { border-top: 3px solid var(--chatgpt); }
-  .ai-desc-card.adc-claude    { border-top: 3px solid var(--claude); }
-  .ai-desc-card.adc-perplexity{ border-top: 3px solid var(--perplexity); }
-  .ai-desc-card.adc-gemini    { border-top: 3px solid var(--gemini); }
+  .ai-desc-card.adc-chatgpt,
+  .ai-desc-card.adc-claude,
+  .ai-desc-card.adc-perplexity,
+  .ai-desc-card.adc-gemini { border-top: none; }
 
   /* ═══════════════════════════════════
      CATEGORY ROLE TABLE
