@@ -1755,14 +1755,18 @@
   <!-- Cover background SVG decorations.
        ViewBox 0 0 242 325 = cover bleed (A4 + 16mm bleed).
        Page corners: top-right=(226,16), bottom-left=(16,313).
-       Top-right: ring arc = outer circle #313B9C (r=63) with inner cutout #131C8A (r=32).
+
+       Top-right horn arc: both outer (r=63) and inner (r=50) arcs share the same
+       two endpoints on the page boundary — (163,16) on top edge and (226,79) on right edge.
+       Outer arc CCW quarter-circle; inner arc CW tighter curve through same points.
+       This makes the shape taper to a point at both ends like a horn.
+
        Bottom-left: solid quarter-disc #252C86 (r=52). -->
   <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
        viewBox="0 0 242 325" preserveAspectRatio="none">
-    <!-- Top-right ring arc: outer band -->
-    <circle cx="226" cy="16" r="63" fill="#313B9C"/>
-    <!-- Top-right ring arc: inner cutout (same color as cover bg) -->
-    <circle cx="226" cy="16" r="32" fill="#131C8A"/>
+    <!-- Top-right horn: M to shared start → outer arc → inner arc back → Z -->
+    <path d="M 163,16 A 63,63 0 0,0 226,79 A 50,50 0 0,1 163,16 Z"
+          fill="#313B9C"/>
     <!-- Bottom-left solid quarter-disc -->
     <circle cx="16" cy="313" r="52" fill="#252C86"/>
   </svg>
