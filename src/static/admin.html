@@ -32,6 +32,20 @@
     }
     .status-option:hover { border-color: var(--primary); color: var(--primary); }
     .status-option.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .status-option.backward { border-color: var(--warning); color: var(--warning); }
+    .status-option.backward:hover { border-color: var(--warning); background: rgba(245,158,11,0.08); color: var(--warning); }
+    .status-option.backward.selected { border-color: var(--warning); background: rgba(245,158,11,0.12); color: var(--warning); }
+    .backward-confirm-banner {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      background: rgba(245,158,11,0.1); border: 1px solid var(--warning);
+      border-radius: 8px; padding: 0.75rem 1rem; margin-top: 1rem;
+      font-size: 0.82rem; color: var(--text);
+    }
+    .backward-confirm-banner .bw-icon { color: var(--warning); flex-shrink: 0; margin-top: 1px; }
+    .backward-confirm-banner p { margin: 0 0 0.5rem; line-height: 1.45; }
+    .backward-confirm-banner .bw-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .btn-warn { background: var(--warning); color: #fff; border: none; border-radius: 6px; padding: 0.3rem 0.85rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans); }
+    .btn-warn:hover { opacity: 0.88; }
 
     /* ── KPI delta pill ── */
     .kpi-delta {
@@ -471,13 +485,22 @@ const VALID_TRANSITIONS = {
   UNDER_REVIEW: ['APPROVED', 'REJECTED'],
   APPROVED: ['CALLED'],
   CALLED: ['AWAITING_PAYMENT', 'APPROVED'],
-  AWAITING_PAYMENT: ['PAID'],
+  AWAITING_PAYMENT: ['PAID', 'IN_PRODUCTION'],
   PAID: ['IN_PRODUCTION'],
   IN_PRODUCTION: ['QC_REVIEW'],
-  QC_REVIEW: ['QC_PASSED', 'QC_FAILED'],
-  QC_PASSED: ['READY_FOR_REVIEW_CALL'],
+  QC_REVIEW: ['QC_PASSED', 'QC_FAILED', 'READY_FOR_REVIEW_CALL', 'IN_PRODUCTION'],
+  QC_PASSED: ['READY_FOR_REVIEW_CALL', 'QC_REVIEW'],
   ESCALATED: ['RETRY'],
+  RETRY: ['IN_PRODUCTION'],
+  READY_FOR_REVIEW_CALL: ['COMPLETED', 'QC_REVIEW'],
 };
+
+// Pairs where admin is reverting to an earlier state — require extra confirmation
+const BACKWARD_TRANSITIONS = new Set([
+  'QC_REVIEW:IN_PRODUCTION',
+  'QC_PASSED:QC_REVIEW',
+  'READY_FOR_REVIEW_CALL:QC_REVIEW',
+]);
 
 // ─── Data loading ─────────────────────────────────
 async function loadData() {
@@ -918,9 +941,10 @@ function openStatus(app) {
 
   const optHtml = nextStatuses.length
     ? `<div class="status-select">
-        ${nextStatuses.map(s => `
-          <button class="status-option" data-status="${s}" onclick="selectStatus(this)">${statusLabel(s)}</button>
-        `).join('')}
+        ${nextStatuses.map(s => {
+          const isBackward = BACKWARD_TRANSITIONS.has(`${app.status}:${s}`);
+          return `<button class="status-option${isBackward ? ' backward' : ''}" data-status="${s}" data-from="${app.status}" onclick="selectStatus(this)">${statusLabel(s)}</button>`;
+        }).join('')}
       </div>`
     : `<p style="color:var(--text-muted);font-size:0.875rem;padding:0.75rem 0;">
         ${_t('modal.no_transitions', { status: statusLabel(app.status) })}
@@ -931,6 +955,7 @@ function openStatus(app) {
       ${_t('modal.select_status')}
     </p>
     ${optHtml}
+    <div id="backwardBanner"></div>
     <div style="margin-top:1.25rem;">
       <label style="display:block;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.35rem;">${_t('modal.note_label')}</label>
       <textarea id="statusNote" placeholder="${_t('modal.note_placeholder')}"></textarea>
@@ -946,8 +971,27 @@ function openStatus(app) {
 }
 
 function selectStatus(el) {
+  const _t = window.i18n ? window.i18n.t.bind(window.i18n) : (k) => k;
   document.querySelectorAll('.status-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
+
+  const newStatus = el.dataset.status;
+  const fromStatus = el.dataset.from;
+  const isBackward = BACKWARD_TRANSITIONS.has(`${fromStatus}:${newStatus}`);
+  const banner = document.getElementById('backwardBanner');
+
+  if (isBackward && banner) {
+    banner.innerHTML = `
+      <div class="backward-confirm-banner">
+        <span class="bw-icon">⚠</span>
+        <div>
+          <p>${_t('modal.backward_warning', { from: statusLabel(fromStatus), to: statusLabel(newStatus) })}</p>
+        </div>
+      </div>`;
+  } else if (banner) {
+    banner.innerHTML = '';
+  }
+
   document.getElementById('confirmStatusBtn').disabled = false;
 }
 

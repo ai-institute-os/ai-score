@@ -90,6 +90,7 @@
       'modal.select_status': 'Select the desired next status for this application:',
       'modal.note_label': 'Note (optional)',
       'modal.note_placeholder': 'Internal note for the status change…',
+      'modal.backward_warning': 'This will revert the application from <strong>{from}</strong> back to <strong>{to}</strong>. This is a backward state change — please add a note explaining why.',
 
       // Detail modal field labels
       'detail.company': 'Company',
@@ -256,6 +257,7 @@
       'modal.select_status': 'Vælg den ønskede næste status for denne ansøgning:',
       'modal.note_label': 'Note (valgfri)',
       'modal.note_placeholder': 'Intern note til statusskiftet…',
+      'modal.backward_warning': 'Dette vil sætte ansøgningen tilbage fra <strong>{from}</strong> til <strong>{to}</strong>. Dette er et tilbagevendende statsskift — tilføj venligst en note der forklarer hvorfor.',
 
       // Detail modal field labels
       'detail.company': 'Virksomhed',
