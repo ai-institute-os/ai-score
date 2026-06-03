@@ -1670,23 +1670,26 @@
     overflow: hidden;
   }
 
+  /* Large filled disc — left edge, vertically centred */
   .back-cover::before {
     content: '';
     position: absolute;
-    top: -80px; right: -100px;
-    width: 350px; height: 350px;
-    background: transparent;
-    border: 40px solid rgba(255,255,255,0.06);
+    left: -70mm; top: 50%;
+    transform: translateY(-50%);
+    width: 160mm; height: 160mm;
+    background: #252C86;
+    border: none;
     border-radius: 50%;
   }
 
+  /* Small filled disc — top-right corner */
   .back-cover::after {
     content: '';
     position: absolute;
-    bottom: -60px; left: -80px;
-    width: 260px; height: 260px;
-    background: transparent;
-    border: 28px solid rgba(255,255,255,0.04);
+    top: -20mm; right: -20mm;
+    width: 70mm; height: 70mm;
+    background: #313B9C;
+    border: none;
     border-radius: 50%;
   }
 
@@ -1695,49 +1698,51 @@
     z-index: 1;
   }
 
+  /* Large serif logo — same style as cover brand */
   .back-cover-badge {
-    font-size: 7.5pt;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 22pt;
     font-weight: 700;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    background: var(--accent);
-    color: var(--white);
-    padding: 4px 12px;
-    border-radius: 3px;
-    display: inline-block;
-    margin-bottom: 14px;
+    letter-spacing: -.02em;
+    color: #ffffff;
+    display: block;
+    margin-bottom: 10px;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    text-transform: none;
   }
 
   .back-cover-title {
-    font-size: 20pt;
-    font-weight: 800;
-    color: var(--white);
-    margin-bottom: 8px;
-    letter-spacing: -.015em;
+    font-size: 13pt;
+    font-weight: 600;
+    color: rgba(255,255,255,.85);
+    margin-bottom: 16px;
+    letter-spacing: -.01em;
   }
 
   .back-cover-sub {
-    font-size: 10pt;
-    color: rgba(255,255,255,.45);
-    margin-bottom: 28px;
+    font-size: 9.5pt;
+    color: rgba(255,255,255,.5);
+    margin-bottom: 10px;
     line-height: 1.5;
   }
 
   .back-cover-divider {
-    width: 64px; height: 2px;
+    width: 48px; height: 2px;
     background: var(--accent);
     border-radius: 0;
-    margin: 0 auto 24px;
+    margin: 0 auto 20px;
   }
 
   .back-cover-meta {
-    font-size: 9pt;
+    font-size: 8.5pt;
     color: rgba(255,255,255,.35);
     line-height: 1.8;
   }
 
   .back-cover-confidential {
-    margin-top: 20px;
+    margin-top: 16px;
     font-size: 8pt;
     color: rgba(255,255,255,.2);
     font-weight: 600;
@@ -2998,8 +3003,8 @@
   <div class="back-cover-inner">
     <div class="back-cover-badge">AIScore™</div>
     <div class="back-cover-title">Strategisk diagnose af AI-anbefalinger</div>
-    <div class="back-cover-sub">Rapporten er udarbejdet af AI Institute ApS</div>
     <div class="back-cover-divider"></div>
+    <div class="back-cover-sub">Rapporten er udarbejdet af AI Institute ApS</div>
     <div class="back-cover-meta">
       research@aiscore.dk &nbsp;·&nbsp; aiscore.dk &nbsp;·&nbsp; CVR 46392507
     </div>
