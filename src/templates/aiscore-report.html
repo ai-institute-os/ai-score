@@ -1152,7 +1152,7 @@
   .matrix-table tbody td { padding: 9px 12px; vertical-align: middle; }
 
   .matrix-table tfoot tr {
-    background: rgba(255,107,53,0.08);
+    background: var(--bg);
     color: var(--text);
     border-top: 2px solid var(--accent);
   }
@@ -1433,7 +1433,7 @@
   .dim-bar-fill {
     height: 100%;
     border-radius: 0;
-    background: var(--accent);
+    background: var(--navy);
   }
 
   .dim-score-num {
@@ -1620,7 +1620,7 @@
      CALLOUT BOXES
   ═══════════════════════════════════ */
   .callout {
-    border-radius: 6px;
+    border-radius: 0;
     padding: 11px 15px;
     font-size: 9.5pt;
     line-height: 1.6;
@@ -1653,7 +1653,6 @@
     color: var(--text);
     border-left: none;
     padding: 14px 18px;
-    border-radius: 4px;
   }
 
   .callout-navy strong {
@@ -2787,7 +2786,7 @@
   <h2 class="sec-title">AIScore™ {{OVERALL_SCORE}}/100 dækker over fem dimensioner — styrker og svagheder, der tilsammen afspejler {{COMPANY_NAME}}s samlede AI-position</h2>
 
   <div class="no-break">
-    <div class="score-layout" style="margin-bottom:14px; align-items:stretch;">
+    <div class="score-layout" style="margin-bottom:14px; align-items:flex-start;">
       <div class="score-big-block">
         <div class="score-big-num">{{OVERALL_SCORE}}</div>
         <div class="score-big-denom">/100</div>
