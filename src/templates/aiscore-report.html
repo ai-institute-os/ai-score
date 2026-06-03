@@ -98,29 +98,14 @@
     overflow: hidden;
   }
 
-  /* Corner circle decorations — center at page corner (cover extends 16mm/12mm outside page) */
-  .cover::before {
-    content: '';
-    position: absolute;
-    top: -74mm;
-    right: -74mm;
-    width: 180mm;
-    height: 180mm;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.09);
-    z-index: 0;
-  }
+  .cover::before, .cover::after { content: none; }
 
-  .cover::after {
-    content: '';
+  .cover-bg-svg {
     position: absolute;
-    bottom: -78mm;
-    left: -74mm;
-    width: 180mm;
-    height: 180mm;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.09);
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     z-index: 0;
+    overflow: visible;
   }
 
 
@@ -1766,6 +1751,15 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="page break-after">
 <div class="cover">
+
+  <!-- Cover background: two circle discs at page corners, in SVG viewBox coords where
+       cover = 242×325 (A4 + 16mm bleed all sides except 12mm bottom).
+       Page top-right corner = (226, 16). Page bottom-left corner = (16, 313). -->
+  <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
+       viewBox="0 0 242 325" preserveAspectRatio="none">
+    <circle cx="226" cy="16" r="80" fill="rgba(255,255,255,0.09)"/>
+    <circle cx="16"  cy="313" r="80" fill="rgba(255,255,255,0.09)"/>
+  </svg>
 
 <div class="cover-top">
     <div class="cover-brand">
