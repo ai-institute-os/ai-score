@@ -98,28 +98,28 @@
     overflow: hidden;
   }
 
-  /* Corner circle decorations — top-right and bottom-left */
+  /* Corner circle decorations — centered exactly at corners, quarter-arc visible */
   .cover::before {
     content: '';
     position: absolute;
-    top: -55mm;
-    right: -55mm;
-    width: 155mm;
-    height: 155mm;
+    top: -110mm;
+    right: -110mm;
+    width: 220mm;
+    height: 220mm;
     border-radius: 50%;
-    background: rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.08);
     z-index: 0;
   }
 
   .cover::after {
     content: '';
     position: absolute;
-    bottom: -55mm;
-    left: -55mm;
-    width: 155mm;
-    height: 155mm;
+    bottom: -110mm;
+    left: -110mm;
+    width: 220mm;
+    height: 220mm;
     border-radius: 50%;
-    background: rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.08);
     z-index: 0;
   }
 
