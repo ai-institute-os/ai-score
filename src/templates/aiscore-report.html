@@ -1756,15 +1756,16 @@
        ViewBox 0 0 242 325 = cover bleed (A4 + 16mm bleed).
        Page corners: top-right=(226,16), bottom-left=(16,313).
 
-       Top-right sickle: outer arc (rx=37,ry=55) CCW from (189,0) to (242,80);
-       right-edge segment up to (242,40); inner arc (rx=37,ry=40) CW back to (189,0).
-       Outer = old inner arc promoted; inner ends at half the height (y=40 vs y=80).
+       Top-right sickle: outer arc (r=150) CCW from (189,0) to (242,80);
+       right-edge segment up to (242,40); inner arc (r=150) CW back to (189,0).
+       Large radius (150 >> min ~48) keeps both arcs nearly straight with only a slight
+       inward bow, matching the design annotation.
 
        Bottom-left: solid quarter-disc #252C86 (r=52). -->
   <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
        viewBox="0 0 242 325" preserveAspectRatio="none">
     <!-- Top-right sickle: outer arc → right-edge segment → inner arc → Z -->
-    <path d="M 189,0 A 37,55 0 0,0 242,80 L 242,40 A 37,40 0 0,1 189,0 Z"
+    <path d="M 189,0 A 150,150 0 0,0 242,80 L 242,40 A 150,150 0 0,1 189,0 Z"
           fill="#313B9C"/>
     <!-- Bottom-left solid quarter-disc -->
     <circle cx="16" cy="313" r="52" fill="#252C86"/>
