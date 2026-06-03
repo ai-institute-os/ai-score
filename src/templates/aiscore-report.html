@@ -1761,10 +1761,9 @@
        r=75 is midway between too-curved (37) and too-straight (150):
        ~16% bow on outer arc, ~11% on inner — smooth visible curve.
 
-       Bottom-left: quarter-disc #252C86 (cx=16, cy=306, r=48).
-       Starting point (top arc at x=0): y≈261 = 325−64, where 64 = 40×1.6
-       (40 was the previous distance from page bottom; user asked for 1.6× higher).
-       Footer intersection at y=304: x≈64. -->
+       Bottom-left: quarter-disc #252C86 (cx=16, cy=324, r=65).
+       r raised 48→65 (35% less curvature) to match annotation.
+       Starting point (x=0) stays at y≈261; footer intersection shifts slightly to x≈78. -->
   <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
        viewBox="0 0 242 325" preserveAspectRatio="none" overflow="hidden">
     <defs>
@@ -1775,8 +1774,8 @@
     <!-- Top-right sickle: outer arc → right-edge segment → inner arc → Z -->
     <path d="M 189,0 A 75,75 0 0,0 242,80 L 242,40 A 75,75 0 0,1 189,0 Z"
           fill="#313B9C"/>
-    <!-- Bottom-left quarter-disc — cy=306, r=48: start y≈261, footer x≈64 -->
-    <circle cx="16" cy="306" r="48" fill="#252C86" clip-path="url(#bl-clip)"/>
+    <!-- Bottom-left quarter-disc — cy=324, r=65: start y≈261, footer x≈78 -->
+    <circle cx="16" cy="324" r="65" fill="#252C86" clip-path="url(#bl-clip)"/>
   </svg>
 
 <div class="cover-top">
