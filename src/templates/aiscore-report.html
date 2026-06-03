@@ -1670,28 +1670,7 @@
     overflow: hidden;
   }
 
-  /* Large filled disc — left edge, vertically centred */
-  .back-cover::before {
-    content: '';
-    position: absolute;
-    left: -70mm; top: 50%;
-    transform: translateY(-50%);
-    width: 160mm; height: 160mm;
-    background: #252C86;
-    border: none;
-    border-radius: 50%;
-  }
-
-  /* Small filled disc — top-right corner */
-  .back-cover::after {
-    content: '';
-    position: absolute;
-    top: -20mm; right: -20mm;
-    width: 70mm; height: 70mm;
-    background: #313B9C;
-    border: none;
-    border-radius: 50%;
-  }
+  .back-cover::before, .back-cover::after { content: none; }
 
   .back-cover-inner {
     position: relative;
@@ -3000,6 +2979,17 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="page page-break">
 <div class="back-cover">
+  <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
+       viewBox="0 0 242 325" preserveAspectRatio="none" overflow="hidden">
+    <defs>
+      <clipPath id="bc-bl-clip">
+        <rect x="0" y="0" width="242" height="304"/>
+      </clipPath>
+    </defs>
+    <path d="M 189,0 A 75,75 0 0,0 242,80 L 242,40 A 75,75 0 0,1 189,0 Z"
+          fill="#313B9C"/>
+    <circle cx="0" cy="324" r="63" fill="#252C86" clip-path="url(#bc-bl-clip)"/>
+  </svg>
   <div class="back-cover-inner">
     <div class="back-cover-badge">AIScore™</div>
     <div class="back-cover-title">Strategisk diagnose af AI-anbefalinger</div>
