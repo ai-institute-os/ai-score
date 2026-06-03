@@ -1152,9 +1152,9 @@
   .matrix-table tbody td { padding: 9px 12px; vertical-align: middle; }
 
   .matrix-table tfoot tr {
-    background: var(--bg);
+    background: rgba(255,107,53,0.08);
     color: var(--text);
-    border-top: 2px solid var(--border);
+    border-top: 2px solid var(--accent);
   }
 
   .matrix-table tfoot td {
@@ -1269,8 +1269,8 @@
   }
 
   .gap-card-left {
-    width: 108px;
-    min-width: 108px;
+    width: 150px;
+    min-width: 150px;
     background: var(--navy);
     padding: 16px 14px 14px;
     display: flex;
@@ -1331,28 +1331,29 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: linear-gradient(145deg, var(--navy) 0%, var(--navy-mid) 100%);
+    background: var(--navy);
     color: var(--white);
-    border-radius: 10px;
-    padding: 22px 26px;
-    min-width: 170px;
+    border-radius: 0;
+    padding: 20px 22px;
+    min-width: 130px;
     text-align: center;
     flex-shrink: 0;
-    box-shadow: 0 6px 28px rgba(13,31,78,0.30);
+    justify-content: center;
   }
 
-  .score-context-text {
+  .score-dims-col {
     flex: 1;
-    font-size: 9.5pt;
-    color: var(--text-mid);
-    line-height: 1.65;
-    align-self: stretch;
-    background: var(--white);
-    border-radius: 8px;
-    padding: 18px 20px;
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--accent-2);
-    box-shadow: 0 2px 10px rgba(13,31,78,0.05);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .score-dims-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
   }
 
   .score-big-num {
@@ -1412,7 +1413,7 @@
 
   .dim-desc {
     font-size: 8.5pt;
-    color: var(--text);
+    color: var(--accent);
   }
 
   .dim-score-wrap {
@@ -2673,7 +2674,7 @@
     </div>
     <div class="gap-legend">
       <div class="gap-legend-item"><div class="gap-legend-dot" style="background:var(--mentioned)"></div>Nævnt</div>
-      <div class="gap-legend-item"><div class="gap-legend-dot" style="background:var(--chosen)"></div>Valgt som primær</div>
+      <div class="gap-legend-item"><div class="gap-legend-dot" style="background:var(--accent)"></div>Valgt som primær</div>
     </div>
   </div>
 
@@ -2786,70 +2787,71 @@
   <h2 class="sec-title">AIScore™ {{OVERALL_SCORE}}/100 dækker over fem dimensioner — styrker og svagheder, der tilsammen afspejler {{COMPANY_NAME}}s samlede AI-position</h2>
 
   <div class="no-break">
-    <div class="score-layout" style="margin-bottom:14px;">
+    <div class="score-layout" style="margin-bottom:14px; align-items:stretch;">
       <div class="score-big-block">
         <div class="score-big-num">{{OVERALL_SCORE}}</div>
         <div class="score-big-denom">/100</div>
         <div class="score-big-label">AIScore™</div>
       </div>
-      <div class="score-context-text">{{SCORE_CONTEXT_NOTE}}</div>
-    </div>
-
-    <div class="dimensions-list" style="margin-bottom:18px;">
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Entity &amp; Authority</div>
-          <div class="dim-desc">{{DIM_ENTITY_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{ENTITY_AUTHORITY_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{ENTITY_AUTHORITY_SCORE}}/100</div>
-        </div>
-      </div>
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Category Relevance</div>
-          <div class="dim-desc">{{DIM_CATEGORY_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{CATEGORY_RELEVANCE_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{CATEGORY_RELEVANCE_SCORE}}/100</div>
-        </div>
-      </div>
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Competitive Positioning</div>
-          <div class="dim-desc">{{DIM_COMPETITIVE_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{COMPETITIVE_POSITIONING_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{COMPETITIVE_POSITIONING_SCORE}}/100</div>
-        </div>
-      </div>
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Context Consistency</div>
-          <div class="dim-desc">{{DIM_CONTEXT_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{CONTEXT_CONSISTENCY_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{CONTEXT_CONSISTENCY_SCORE}}/100</div>
-        </div>
-      </div>
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Decision Relevance</div>
-          <div class="dim-desc">{{DIM_DECISION_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{DECISION_RELEVANCE_SCORE}}%; background:var(--accent)"></div></div>
-          <div class="dim-score-num">{{DECISION_RELEVANCE_SCORE}}/100</div>
+      <div class="score-dims-col">
+        <div class="score-dims-label">Fem dimensioner</div>
+        <div class="dimensions-list" style="margin-bottom:0;">
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Entity &amp; Authority</div>
+              <div class="dim-desc">{{DIM_ENTITY_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{ENTITY_AUTHORITY_SCORE}}%"></div></div>
+              <div class="dim-score-num">{{ENTITY_AUTHORITY_SCORE}}/100</div>
+            </div>
+          </div>
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Category Relevance</div>
+              <div class="dim-desc">{{DIM_CATEGORY_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{CATEGORY_RELEVANCE_SCORE}}%"></div></div>
+              <div class="dim-score-num">{{CATEGORY_RELEVANCE_SCORE}}/100</div>
+            </div>
+          </div>
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Competitive Positioning</div>
+              <div class="dim-desc">{{DIM_COMPETITIVE_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{COMPETITIVE_POSITIONING_SCORE}}%"></div></div>
+              <div class="dim-score-num">{{COMPETITIVE_POSITIONING_SCORE}}/100</div>
+            </div>
+          </div>
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Context Consistency</div>
+              <div class="dim-desc">{{DIM_CONTEXT_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{CONTEXT_CONSISTENCY_SCORE}}%"></div></div>
+              <div class="dim-score-num">{{CONTEXT_CONSISTENCY_SCORE}}/100</div>
+            </div>
+          </div>
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Decision Relevance</div>
+              <div class="dim-desc">{{DIM_DECISION_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{DECISION_RELEVANCE_SCORE}}%"></div></div>
+              <div class="dim-score-num">{{DECISION_RELEVANCE_SCORE}}/100</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="callout callout-navy">
+  <div class="callout callout-key">
     <strong>Ubalancen er vigtigere end gennemsnittet.</strong> Decision Relevance ({{DECISION_RELEVANCE_SCORE}}/100) er den dimension, der koster mest. Synlighed er etableret — men den konverterer endnu ikke til valg i den grad, der er mulig.
   </div>
 
