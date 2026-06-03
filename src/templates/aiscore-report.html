@@ -112,6 +112,16 @@
     pointer-events: none;
   }
 
+  .cover-corner-arcs-bl {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 48mm;
+    height: 48mm;
+    z-index: 0;
+    pointer-events: none;
+  }
+
   .cover-top {
     display: flex;
     justify-content: space-between;
@@ -1778,6 +1788,21 @@
 ══════════════════════════════════════════════════════════ -->
 <div class="page break-after">
 <div class="cover">
+
+  <!-- Top-right decorative corner arcs -->
+  <svg class="cover-corner-arcs" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15,0 A85,85 0 0,1 100,85" stroke="rgba(255,107,53,0.18)" stroke-width="1.2" fill="none"/>
+    <path d="M40,0 A60,60 0 0,1 100,60" stroke="rgba(255,107,53,0.35)" stroke-width="1.4" fill="none"/>
+    <path d="M65,0 A35,35 0 0,1 100,35" stroke="rgba(255,107,53,0.65)" stroke-width="1.8" fill="none"/>
+  </svg>
+
+  <!-- Bottom-left decorative corner arcs -->
+  <svg class="cover-corner-arcs-bl" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,15 A85,85 0 0,0 85,100" stroke="rgba(255,107,53,0.18)" stroke-width="1.2" fill="none"/>
+    <path d="M0,40 A60,60 0 0,0 60,100" stroke="rgba(255,107,53,0.35)" stroke-width="1.4" fill="none"/>
+    <path d="M0,65 A35,35 0 0,0 35,100" stroke="rgba(255,107,53,0.65)" stroke-width="1.8" fill="none"/>
+  </svg>
+
   <div class="cover-top">
     <div class="cover-brand">
       AIScore
