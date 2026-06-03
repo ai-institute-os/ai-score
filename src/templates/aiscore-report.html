@@ -1756,16 +1756,16 @@
        ViewBox 0 0 242 325 = cover bleed (A4 + 16mm bleed).
        Page corners: top-right=(226,16), bottom-left=(16,313).
 
-       Top-right horn arc: both outer (r=63) and inner (r=50) arcs share the same
-       two endpoints on the page boundary — (163,16) on top edge and (226,79) on right edge.
-       Outer arc CCW quarter-circle; inner arc CW tighter curve through same points.
-       This makes the shape taper to a point at both ends like a horn.
+       Top-right horn arc: both outer (rx=53,ry=80) and inner (rx=37,ry=55) arcs share the same
+       two endpoints on the page boundary — (189,0) on top edge and (242,80) on right edge.
+       Outer arc CCW; inner arc CW tighter curve through same points.
+       Horizontal radii are 2/3 of original (53 vs 80, 37 vs 55); start point shifted right to x=189.
 
        Bottom-left: solid quarter-disc #252C86 (r=52). -->
   <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
        viewBox="0 0 242 325" preserveAspectRatio="none">
     <!-- Top-right horn: M to shared start → outer arc → inner arc back → Z -->
-    <path d="M 162,0 A 80,80 0 0,0 242,80 A 55,55 0 0,1 162,0 Z"
+    <path d="M 189,0 A 53,80 0 0,0 242,80 A 37,55 0 0,1 189,0 Z"
           fill="#313B9C"/>
     <!-- Bottom-left solid quarter-disc -->
     <circle cx="16" cy="313" r="52" fill="#252C86"/>
