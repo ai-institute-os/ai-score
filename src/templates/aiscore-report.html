@@ -105,7 +105,7 @@
     top: 0; left: 0;
     width: 100%; height: 100%;
     z-index: 0;
-    overflow: visible;
+    overflow: hidden;
   }
 
 
@@ -1763,12 +1763,12 @@
 
        Bottom-left: solid quarter-disc #252C86 (r=52). -->
   <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
-       viewBox="0 0 242 325" preserveAspectRatio="none">
+       viewBox="0 0 242 325" preserveAspectRatio="none" overflow="hidden">
     <!-- Top-right sickle: outer arc → right-edge segment → inner arc → Z -->
     <path d="M 189,0 A 75,75 0 0,0 242,80 L 242,40 A 75,75 0 0,1 189,0 Z"
           fill="#313B9C"/>
-    <!-- Bottom-left solid quarter-disc -->
-    <circle cx="16" cy="313" r="52" fill="#252C86"/>
+    <!-- Bottom-left solid quarter-disc — cy moved up so top arc appears higher; clipped by overflow:hidden -->
+    <circle cx="16" cy="280" r="52" fill="#252C86"/>
   </svg>
 
 <div class="cover-top">
