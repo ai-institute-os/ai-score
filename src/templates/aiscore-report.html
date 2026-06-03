@@ -98,28 +98,28 @@
     overflow: hidden;
   }
 
-  /* Corner circle decorations — centered exactly at corners, quarter-arc visible */
+  /* Corner circle decorations — center at page corner (cover extends 16mm/12mm outside page) */
   .cover::before {
     content: '';
     position: absolute;
-    top: -110mm;
-    right: -110mm;
-    width: 220mm;
-    height: 220mm;
+    top: -74mm;
+    right: -74mm;
+    width: 180mm;
+    height: 180mm;
     border-radius: 50%;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.09);
     z-index: 0;
   }
 
   .cover::after {
     content: '';
     position: absolute;
-    bottom: -110mm;
-    left: -110mm;
-    width: 220mm;
-    height: 220mm;
+    bottom: -78mm;
+    left: -74mm;
+    width: 180mm;
+    height: 180mm;
     border-radius: 50%;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.09);
     z-index: 0;
   }
 
