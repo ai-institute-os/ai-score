@@ -1488,31 +1488,20 @@
   .why-card {
     border: none;
     border-radius: 0;
-    padding: 0;
-    background: none;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-  }
-
-  .why-card::before {
-    content: '•';
-    color: var(--accent);
-    flex-shrink: 0;
-    font-size: 11pt;
-    line-height: 1.4;
+    padding: 10px 12px;
+    background: var(--bg);
   }
 
   .why-card-title {
     font-size: 9pt;
     font-weight: 700;
-    color: var(--accent);
-    margin-bottom: 2px;
+    color: var(--text);
+    margin-bottom: 3px;
   }
 
   .why-card-desc {
     font-size: 9pt;
-    color: var(--text-mid);
+    color: var(--accent);
     line-height: 1.5;
   }
 
@@ -1525,7 +1514,7 @@
 
   .pos-card {
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 0;
     overflow: hidden;
   }
 
