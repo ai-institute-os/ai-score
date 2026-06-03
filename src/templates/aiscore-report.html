@@ -1789,16 +1789,19 @@
 <div class="page break-after">
 <div class="cover">
 
-  <!-- Top-right decorative corner: two concentric filled circles clipped to corner, SVG viewport acts as clip -->
-  <svg class="cover-corner-arcs" viewBox="0 0 100 100" overflow="hidden" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="100" cy="0" r="100" fill="rgba(255,255,255,0.08)"/>
-    <circle cx="100" cy="0" r="65"  fill="rgba(255,255,255,0.08)"/>
+  <!-- Top-right corner horn: annular sector (r=65–100) centered at corner (100,0).
+       evenodd punches out the inner sector, leaving only the curved ring band — the horn shape. -->
+  <svg class="cover-corner-arcs" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" fill="rgba(255,255,255,0.14)"
+          d="M0,0 A100,100 0 0,0 100,100 L100,0 Z
+             M35,0 A65,65 0 0,0 100,65 L100,0 Z"/>
   </svg>
 
-  <!-- Bottom-left decorative corner: two concentric filled circles clipped to corner -->
-  <svg class="cover-corner-arcs-bl" viewBox="0 0 100 100" overflow="hidden" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="0" cy="100" r="100" fill="rgba(255,255,255,0.08)"/>
-    <circle cx="0" cy="100" r="65"  fill="rgba(255,255,255,0.08)"/>
+  <!-- Bottom-left corner horn: annular sector (r=65–100) centered at corner (0,100). -->
+  <svg class="cover-corner-arcs-bl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" fill="rgba(255,255,255,0.14)"
+          d="M100,100 A100,100 0 0,0 0,0 L0,100 Z
+             M65,100 A65,65 0 0,0 0,35 L0,100 Z"/>
   </svg>
 
   <div class="cover-top">
