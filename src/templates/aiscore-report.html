@@ -1109,7 +1109,7 @@
   .model-card.mc-chatgpt,
   .model-card.mc-claude,
   .model-card.mc-perplexity,
-  .model-card.mc-gemini { border-top: none; border-bottom: none; }
+  .model-card.mc-gemini { border: none; }
 
   .model-card-verdict.vc-chatgpt,
   .model-card-verdict.vc-claude,
@@ -1148,8 +1148,7 @@
     border: none;
   }
 
-  .matrix-table tbody tr { border-bottom: 1px solid var(--border); }
-  .matrix-table tbody tr:nth-child(even) { background: var(--bg); }
+  .matrix-table tbody tr { border-bottom: 1px solid var(--border); background: var(--white); }
   .matrix-table tbody td { padding: 9px 12px; vertical-align: middle; }
 
   .matrix-table tfoot tr {
@@ -1219,11 +1218,11 @@
 
   .gap-bar {
     height: 16px;
-    border-radius: 5px;
+    border-radius: 0;
   }
 
-  .gap-bar.mention { background: linear-gradient(90deg, var(--navy), var(--navy-mid)); }
-  .gap-bar.select  { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .gap-bar.mention { background: var(--navy); }
+  .gap-bar.select  { background: var(--accent); }
 
   .gap-bar-pct {
     font-size: 8pt;
@@ -1258,63 +1257,64 @@
   .gap-card-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 18px;
   }
 
   .gap-card {
-    border: 1px solid var(--border);
-    border-left: 5px solid var(--accent);
-    border-radius: 0 8px 8px 0;
-    overflow: visible;
-    padding: 14px 18px 14px 16px;
-    position: relative;
-    background: var(--white);
-    box-shadow: 0 2px 10px rgba(13,31,78,0.06);
+    display: flex;
+    min-height: 88px;
+    border: none;
+    overflow: hidden;
   }
 
-  .gap-card-header {
+  .gap-card-left {
+    width: 108px;
+    min-width: 108px;
+    background: var(--navy);
+    padding: 16px 14px 14px;
     display: flex;
-    align-items: center;
-    gap: 0;
-    padding: 0;
-    background: none;
-    border-bottom: none;
-    margin-bottom: 8px;
+    flex-direction: column;
+    justify-content: flex-end;
   }
 
   .gap-card-num {
-    position: absolute;
-    top: 8px;
-    right: 14px;
-    font-size: 48pt;
+    font-size: 34pt;
     font-weight: 900;
     line-height: 1;
-    color: rgba(255, 107, 53, 0.07);
-    min-width: unset;
-  }
-
-  .gap-card-title {
-    font-size: 11pt;
-    font-weight: 700;
     color: var(--accent);
   }
 
+  .gap-card-title {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.35;
+    margin-top: 6px;
+  }
+
+  .gap-card-right {
+    flex: 1;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-left: none;
+    padding: 14px 18px;
+  }
+
   .gap-card-body {
-    padding: 0;
-    font-size: 9.5pt;
-    color: var(--text-mid);
+    font-size: 9pt;
+    color: var(--text);
     line-height: 1.65;
     margin-bottom: 8px;
   }
 
   .gap-card-callout {
-    background: none;
-    border-top: 1px dashed var(--border);
-    padding-top: 7px;
-    font-size: 9.5pt;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    font-size: 9pt;
     color: var(--navy);
     font-weight: 700;
+    line-height: 1.5;
   }
 
   /* ═══════════════════════════════════
@@ -2733,30 +2733,36 @@
 
   <div class="gap-card-list">
     <div class="gap-card no-break">
-      <div class="gap-card-header">
+      <div class="gap-card-left">
         <div class="gap-card-num">01</div>
         <div class="gap-card-title">{{GAP_1_TITLE}}</div>
       </div>
-      <div class="gap-card-body">{{GAP_1_BODY}}</div>
-      <div class="gap-card-callout">{{GAP_1_CALLOUT}}</div>
+      <div class="gap-card-right">
+        <div class="gap-card-body">{{GAP_1_BODY}}</div>
+        <div class="gap-card-callout">{{GAP_1_CALLOUT}}</div>
+      </div>
     </div>
 
     <div class="gap-card no-break">
-      <div class="gap-card-header">
+      <div class="gap-card-left">
         <div class="gap-card-num">02</div>
         <div class="gap-card-title">{{GAP_2_TITLE}}</div>
       </div>
-      <div class="gap-card-body">{{GAP_2_BODY}}</div>
-      <div class="gap-card-callout">{{GAP_2_CALLOUT}}</div>
+      <div class="gap-card-right">
+        <div class="gap-card-body">{{GAP_2_BODY}}</div>
+        <div class="gap-card-callout">{{GAP_2_CALLOUT}}</div>
+      </div>
     </div>
 
     <div class="gap-card no-break">
-      <div class="gap-card-header">
+      <div class="gap-card-left">
         <div class="gap-card-num">03</div>
         <div class="gap-card-title">{{GAP_3_TITLE}}</div>
       </div>
-      <div class="gap-card-body">{{GAP_3_BODY}}</div>
-      <div class="gap-card-callout">{{GAP_3_CALLOUT}}</div>
+      <div class="gap-card-right">
+        <div class="gap-card-body">{{GAP_3_BODY}}</div>
+        <div class="gap-card-callout">{{GAP_3_CALLOUT}}</div>
+      </div>
     </div>
   </div>
 
