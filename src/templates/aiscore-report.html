@@ -102,27 +102,6 @@
      guaranteed perfect concentricity with no cross-element rounding. */
   .cover::before, .cover::after { content: none; }
 
-  .cover-corner-arcs {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 52mm;
-    height: 52mm;
-    z-index: 0;
-    pointer-events: none;
-    overflow: visible;
-  }
-
-  .cover-corner-arcs-bl {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 52mm;
-    height: 52mm;
-    z-index: 0;
-    pointer-events: none;
-    overflow: visible;
-  }
 
   .cover-top {
     display: flex;
@@ -1791,21 +1770,7 @@
 <div class="page break-after">
 <div class="cover">
 
-  <!-- Top-right corner horn: wedge anchored at the corner (100,0).
-       Wide base along the top and right page edges, concave inner arc (r=65)
-       sweeps CW from the right edge to the top edge — rhino horn shape. -->
-  <svg class="cover-corner-arcs" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path fill="rgba(255,255,255,0.18)"
-          d="M35,0 L100,0 L100,65 A65,65 0 0,1 35,0 Z"/>
-  </svg>
-
-  <!-- Bottom-left corner horn: symmetric wedge anchored at corner (0,100). -->
-  <svg class="cover-corner-arcs-bl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path fill="rgba(255,255,255,0.18)"
-          d="M65,100 L0,100 L0,35 A65,65 0 0,1 65,100 Z"/>
-  </svg>
-
-  <div class="cover-top">
+<div class="cover-top">
     <div class="cover-brand">
       AIScore
       <span>by AI Institute ApS</span>
