@@ -1752,13 +1752,20 @@
 <div class="page break-after">
 <div class="cover">
 
-  <!-- Cover background: two circle discs at page corners, in SVG viewBox coords where
-       cover = 242×325 (A4 + 16mm bleed all sides except 12mm bottom).
-       Page top-right corner = (226, 16). Page bottom-left corner = (16, 313). -->
+  <!-- Cover background: annular arc bands at page corners.
+       ViewBox = 242×325 (A4 210×297 + 16mm bleed on all sides except 12mm bottom).
+       Page corners in viewBox: top-right=(226,16), bottom-left=(16,313).
+       Each shape is a quarter-ring (outer arc R=78, inner arc r=52, band=26 units).
+       Top-right path: start at (226, 94) → outer CCW arc to (148,16) → line to (174,16) → inner CW arc to (226,68) → Z
+       Bottom-left path: start at (94,313) → outer CW arc to (16,235) → line to (16,261) → inner CCW arc to (68,313) → Z -->
   <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
        viewBox="0 0 242 325" preserveAspectRatio="none">
-    <circle cx="226" cy="16" r="80" fill="rgba(255,255,255,0.09)"/>
-    <circle cx="16"  cy="313" r="80" fill="rgba(255,255,255,0.09)"/>
+    <!-- Top-right annular arc: center(226,16), R=78, r=52 -->
+    <path d="M 226,94 A 78,78 0 0,0 148,16 L 174,16 A 52,52 0 0,1 226,68 Z"
+          fill="rgba(255,255,255,0.10)"/>
+    <!-- Bottom-left annular arc: center(16,313), R=78, r=52 -->
+    <path d="M 94,313 A 78,78 0 0,1 16,235 L 16,261 A 52,52 0 0,0 68,313 Z"
+          fill="rgba(255,255,255,0.10)"/>
   </svg>
 
 <div class="cover-top">
