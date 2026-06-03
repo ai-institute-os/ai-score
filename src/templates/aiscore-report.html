@@ -1131,6 +1131,7 @@
     border-collapse: collapse;
     font-size: 9.5pt;
     margin-bottom: 18px;
+    border: 1px solid var(--border);
   }
 
   .matrix-table thead tr {
@@ -1154,7 +1155,6 @@
   .matrix-table tfoot tr {
     background: var(--bg);
     color: var(--text);
-    border-top: 2px solid var(--accent);
   }
 
   .matrix-table tfoot td {
@@ -1335,7 +1335,7 @@
     color: var(--white);
     border-radius: 0;
     padding: 20px 22px;
-    min-width: 130px;
+    min-width: 170px;
     text-align: center;
     flex-shrink: 0;
     justify-content: center;
@@ -1397,9 +1397,8 @@
     flex-direction: column;
     gap: 6px;
     padding: 10px 12px;
-    background: var(--white);
+    background: var(--bg);
     border-radius: 0;
-    border: 1px solid var(--border);
   }
 
   .dim-body { flex: none; }
@@ -1452,11 +1451,9 @@
   .strategy-highlight {
     background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
     color: var(--white);
-    border-radius: 10px;
+    border-radius: 0;
     padding: 22px 24px;
     margin-bottom: 18px;
-    border-left: 5px solid var(--accent-2);
-    box-shadow: 0 6px 24px rgba(13,31,78,0.28);
   }
 
   .strategy-highlight-label {
@@ -1536,14 +1533,13 @@
     padding: 8px 14px;
     font-size: 8pt;
     font-weight: 700;
+    background: var(--navy);
+    color: var(--white);
     letter-spacing: .1em;
     text-transform: uppercase;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    color: var(--text-light);
   }
 
-  .pos-card-header.target { background: var(--navy); color: var(--white); border-color: var(--navy); }
+  .pos-card-header.target { background: var(--navy); color: var(--white); }
 
   .pos-card-body {
     padding: 12px 14px;
