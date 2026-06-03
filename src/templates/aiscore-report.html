@@ -1753,21 +1753,15 @@
 <div class="cover">
 
   <!-- Cover background SVG decorations.
-       ViewBox 0 0 242 325 = cover bleed area (A4 210×297 + 16mm bleed).
-       Page corners in viewBox: top-right=(226,16), bottom-left=(16,313).
-
-       Upper-right: thin horn arc = outer circle #313B9C (r=58) minus inner cutout #131C8A (r=41).
-         r=58 → extends 58 units left (27.6% of 210) and 58 units down (19.5% of 297) — within spec.
-         Band width = 58-41 = 17 units.
-
-       Bottom-left: single circle #252C86 (r=44), visible arc = 44 units into page (14.8% of 297). -->
+       ViewBox 0 0 242 325 = cover bleed (A4 + 16mm bleed).
+       Page corners: top-right=(226,16), bottom-left=(16,313).
+       Solid filled quarter-discs clipped by overflow:hidden. -->
   <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
        viewBox="0 0 242 325" preserveAspectRatio="none">
-    <!-- Upper-right horn arc: outer #313B9C then inner cutout #131C8A at same center -->
-    <circle cx="226" cy="16" r="58" fill="#313B9C"/>
-    <circle cx="226" cy="16" r="41" fill="#131C8A"/>
-    <!-- Bottom-left arc: single circle #252C86 -->
-    <circle cx="16" cy="313" r="44" fill="#252C86"/>
+    <!-- Top-right solid quarter-disc: ~30% of page width visible -->
+    <circle cx="226" cy="16" r="63" fill="#313B9C"/>
+    <!-- Bottom-left solid quarter-disc: ~25% of page width visible -->
+    <circle cx="16" cy="313" r="52" fill="#252C86"/>
   </svg>
 
 <div class="cover-top">
