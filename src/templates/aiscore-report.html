@@ -106,8 +106,8 @@
     position: absolute;
     top: 0;
     right: 0;
-    width: 30mm;
-    height: 38mm;
+    width: 50mm;
+    height: 52mm;
     z-index: 0;
     pointer-events: none;
   }
@@ -116,8 +116,8 @@
     position: absolute;
     bottom: 0;
     left: 0;
-    width: 30mm;
-    height: 38mm;
+    width: 50mm;
+    height: 52mm;
     z-index: 0;
     pointer-events: none;
   }
@@ -1789,19 +1789,19 @@
 <div class="page break-after">
 <div class="cover">
 
-  <!-- Top-right corner horn: annular sector (r=65–100) centered at corner (100,0).
-       evenodd punches out the inner sector, leaving only the curved ring band — the horn shape. -->
+  <!-- Top-right corner crescent: annular sector (r=62–100) centered at corner (100,0).
+       evenodd punches out the inner sector, leaving a thick curved crescent band. -->
   <svg class="cover-corner-arcs" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path fill-rule="evenodd" fill="rgba(255,255,255,0.14)"
+    <path fill-rule="evenodd" fill="rgba(255,255,255,0.20)"
           d="M0,0 A100,100 0 0,0 100,100 L100,0 Z
-             M25,0 A75,75 0 0,0 100,75 L100,0 Z"/>
+             M38,0 A62,62 0 0,0 100,62 L100,0 Z"/>
   </svg>
 
-  <!-- Bottom-left corner horn: annular sector (r=75–100) centered at corner (0,100). -->
+  <!-- Bottom-left corner crescent: annular sector (r=62–100) centered at corner (0,100). -->
   <svg class="cover-corner-arcs-bl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path fill-rule="evenodd" fill="rgba(255,255,255,0.14)"
+    <path fill-rule="evenodd" fill="rgba(255,255,255,0.20)"
           d="M100,100 A100,100 0 0,0 0,0 L0,100 Z
-             M75,100 A75,75 0 0,0 0,25 L0,100 Z"/>
+             M62,100 A62,62 0 0,0 0,38 L0,100 Z"/>
   </svg>
 
   <div class="cover-top">
