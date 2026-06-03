@@ -87,7 +87,7 @@
      COVER PAGE
   ═══════════════════════════════════ */
   .cover {
-    background: var(--navy);
+    background: #131C8A;
     color: var(--white);
     display: flex;
     flex-direction: column;
@@ -1752,15 +1752,22 @@
 <div class="page break-after">
 <div class="cover">
 
-  <!-- Cover background: solid quarter-disc circles at page corners.
-       ViewBox = 242×325 (A4 + 16mm bleed; page corners: top-right=(226,16), bottom-left=(16,313)).
-       Clipped by .cover { overflow: hidden }. -->
+  <!-- Cover background SVG decorations.
+       ViewBox 0 0 242 325 = cover bleed area (A4 210×297 + 16mm bleed).
+       Page corners in viewBox: top-right=(226,16), bottom-left=(16,313).
+
+       Upper-right: thin horn arc = outer circle #313B9C (r=58) minus inner cutout #131C8A (r=41).
+         r=58 → extends 58 units left (27.6% of 210) and 58 units down (19.5% of 297) — within spec.
+         Band width = 58-41 = 17 units.
+
+       Bottom-left: single circle #252C86 (r=44), visible arc = 44 units into page (14.8% of 297). -->
   <svg class="cover-bg-svg" xmlns="http://www.w3.org/2000/svg"
        viewBox="0 0 242 325" preserveAspectRatio="none">
-    <!-- Top-right quarter-disc: center at page top-right corner, r=68 -->
-    <circle cx="226" cy="16" r="68" fill="rgba(255,255,255,0.07)"/>
-    <!-- Bottom-left quarter-disc: center at page bottom-left corner, r=52 -->
-    <circle cx="16" cy="313" r="52" fill="rgba(255,255,255,0.07)"/>
+    <!-- Upper-right horn arc: outer #313B9C then inner cutout #131C8A at same center -->
+    <circle cx="226" cy="16" r="58" fill="#313B9C"/>
+    <circle cx="226" cy="16" r="41" fill="#131C8A"/>
+    <!-- Bottom-left arc: single circle #252C86 -->
+    <circle cx="16" cy="313" r="44" fill="#252C86"/>
   </svg>
 
 <div class="cover-top">
