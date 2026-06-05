@@ -111,31 +111,38 @@ app = SimpleNamespace(
         ),
         "{{CHATGPT_VERDICT}}": "Svagest system",
         "{{CHATGPT_ANALYSIS}}": (
-            "ChatGPT demonstrerer en systematisk global bias &#8212; internationale brands "
-            "(CND, OPI, The GelBottle) prioriteres i professionelle og sammenligningsprompts, "
-            "selv når danskhed er en eksplicit parameter. Nailsters framing er neutral-positiv, "
-            "men ikke dominant. I 7 ud af 9 testede prompts gik anbefalingen et andet sted."
+            "ChatGPT demonstrerer en systematisk global bias: internationale brands prioriteres "
+            "i professionelle og sammenligningsprompts, selv n&#229;r danskhed er en eksplicit "
+            "parameter i foresp&#248;rgslen. Nailsters framing er neutral-positiv, men ikke dominant. "
+            "ChatGPT er det system, hvor Nailsters position er svagest og mest ustabil."
         ),
         "{{CLAUDE_VERDICT}}": "Mest nuanceret framing",
         "{{CLAUDE_ANALYSIS}}": (
-            "Claude demonstrerer en stærkere forståelse for lokal kontekst end ChatGPT og "
-            "forbinder konsistent Nailster med hjemme-professionel kvalitet i dansk sammenhæng. "
-            "I professionelle salonprompts vælger Claude internationale standardbrands "
-            "&#8212; Nailster er fraværende i den kontekst."
+            "Claude demonstrerer st&#230;rkere forst&#229;else for lokal kontekst end ChatGPT. "
+            "I hjemme- og begynderprompts v&#230;lges Nailster konsistent. "
+            "I professionelle salonprompts falder Nailster ud &#8212; Claude er pr&#230;cis "
+            "i sin vurdering af, hvad professionelle faktisk bruger."
         ),
         "{{PERPLEXITY_VERDICT}}": "Barometer for synlighed",
         "{{PERPLEXITY_ANALYSIS}}": (
-            "Perplexity henter primært information fra online-kilder og nævner Nailster "
-            "konsistent &#8212; men vælger ikke brandet i professionelle og sammenligningsprompts. "
-            "Nailster er synligt i de kilder Perplexity indekserer. Det konverterer ikke til valg "
-            "i de prompts der afgør, hvad kunden køber."
+            "Perplexity henter prim&#230;rt information fra online-kilder og n&#230;vner Nailster "
+            "konsistent &#8212; men v&#230;lger ikke brandet i professionelle sammenligninger. "
+            "Perplexity er et godt barometer for online-synlighed: Nailster er synligt, "
+            "men positionen er ikke st&#230;rk nok til at drive aktiv udv&#230;lgelse i alle kontekster."
         ),
-        "{{GEMINI_VERDICT}}": "Stærkeste system",
+        "{{GEMINI_VERDICT}}": "St&#230;rkeste system",
         "{{GEMINI_ANALYSIS}}": (
-            "Gemini demonstrerer det bredeste kendskab til det danske marked og positionerer "
-            "Nailster som det naturlige valg for hjemme-manicure i dansk kontekst. Gemini er "
-            "Nailsters stærkeste system &#8212; men skaber dermed også risiko for en misvisende "
-            "forestilling om samlet AI-stabilitet."
+            "St&#230;rkeste Nailster-position. Gemini demonstrerer det bredeste kendskab til "
+            "det danske marked og positionerer Nailster som det naturlige valg for hjemme-manicure "
+            "i dansk kontekst. Gemini er Nailsters st&#230;rkeste system &#8212; og er dermed "
+            "ogs&#229; det system, der kan skabe en overdreven forestilling om, at AI-positionen "
+            "er mere stabil end den reelt er."
+        ),
+        "{{MODEL_SUMMARY}}": (
+            "Nailster er st&#230;rkest positioneret i Gemini, solidt placeret i Claude og Perplexity, "
+            "og svagest i ChatGPT. Den systemspecifikke variation er en strukturel risikofaktor: "
+            "en st&#230;rk position i &#233;t system maskerer svaghederne i de &#248;vrige "
+            "&#8212; og forbrugere er spredt p&#229; alle fire platforme."
         ),
         # ── Page 11: Strukturelle huller ───────────────────────────────
         "{{STRUCTURAL_GAPS_HEADLINE}}": (
