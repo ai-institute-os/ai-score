@@ -149,42 +149,43 @@ app = SimpleNamespace(
             "Tre tilbagevendende mønstre blokerer Nailsters konvertering "
             "fra omtale til valg &#8212; på tværs af alle AI-systemer"
         ),
-        "{{GAP_1_TITLE}}": "Professionel autoritetskløft",
+        "{{GAP_1_TITLE}}": "Professionel autoritetskl&#248;ft",
         "{{GAP_1_BODY}}": (
-            "I alle fire systemer falder Nailster konsistent ud af AI's primære valg, "
-            "når prompten indeholder professionelle markører: &ldquo;salonstandard&rdquo;. "
-            "&ldquo;professionel kvalitet&rdquo;. &ldquo;bruges af nagleteknikere&rdquo;.<br>"
-            "<strong>AI forbinder Nailster med hjemmebrug &#8212; ikke med professionelle valg.</strong>"
+            "I alle fire systemer falder Nailster ud af AI&#39;s prim&#230;re valg, n&#229;r prompten "
+            "indeholder professionelle mark&#248;rer: &ldquo;salonstandard&rdquo;, "
+            "&ldquo;professionel kvalitet&rdquo;, &ldquo;bruges af negleteknikere&rdquo;. "
+            "Positionen hjemme-professionel aktiverer ikke den dimension, AI knytter til "
+            "professionel autoritet."
         ),
         "{{GAP_1_CALLOUT}}": (
-            "Det er ikke realistisk at erobre den professionelle position fra CND og OPI "
-            "&#8212; den kæmpes der ikke om. Men hjemme-professionel-positionen er heller "
-            "ikke fuldt konsolideret endnu. Den kan mistes. Og går den tabt, overtages den "
-            "af en konkurrent der endnu ikke har sat sig fast."
+            "Det er ikke en fejl i Nailsters kommunikation. Det er en rolebegr&#230;nsning. "
+            "AI har placeret Nailster i hjemmekategorien med en pr&#230;cision, der er "
+            "sv&#230;rere at flytte end en marketingmessage."
         ),
-        "{{GAP_2_TITLE}}": "System-afhængig stabilitet",
+        "{{GAP_2_TITLE}}": "System-afh&#230;ngig stabilitet",
         "{{GAP_2_BODY}}": (
-            "Nailsters stærkeste position &#8212; i Google Gemini &#8212; er reel, men kan "
-            "ikke oversættes direkte til samlet AI-styrke. Gemini-brugere finder Nailster; "
-            "ChatGPT-brugere gør det markant sjældnere. Brandets samlede AI-eksponering er "
-            "uforudsigelig og systemafhængig."
+            "Nailsters st&#230;rkeste position &#8212; i Google Gemini &#8212; er reel, men kan "
+            "ikke overs&#230;ttes direkte til samlet AI-styrke. Gemini-brugere finder Nailster "
+            "konsistent; ChatGPT-brugere g&#248;r det markant sj&#230;ldnere. "
+            "Fordi Nailster ikke har en konsistent position p&#229; tv&#230;rs af alle fire "
+            "systemer, er brandets samlede AI-eksponering uforudsigelig."
         ),
         "{{GAP_2_CALLOUT}}": (
-            "Det er et strukturelt hul med direkte konsekvens for salget: Når Nailster "
-            "ikke bliver fundet i ChatGPT, går salget til andre. Det kræver en anden type "
-            "autoritetssignal."
+            "Det l&#248;ses ikke ved at opdatere websites eller sociale medier. "
+            "De to typer systemer v&#230;gter forskellige signaler."
         ),
-        "{{GAP_3_TITLE}}": "Kategori-ejerskab mangler konsolidering",
+        "{{GAP_3_TITLE}}": "Kategori-ejerskab ikke konsolideret",
         "{{GAP_3_BODY}}": (
-            "Nailster er det naturlige svar på &ldquo;bedste gel polish til hjemmebrug "
-            "i Danmark&rdquo; &#8212; men er det ikke enerådende. Perplexity og Claude "
-            "nævner konkurrerende brands i samme kontekst. Der er ingen prompt-type, der "
-            "konsistent producerer Nailster som det eneste relevante svar."
+            "Nailster er det naturlige svar p&#229; &ldquo;bedste gel polish til hjemmebrug "
+            "i Danmark&rdquo; &#8212; men er det ikke ener&#229;dende. Perplexity og Claude "
+            "n&#230;vner konkurrerende brands i den samme kontekst. "
+            "Der er ingen prompttype der konsistent producerer Nailster som det eneste "
+            "relevante svar."
         ),
         "{{GAP_3_CALLOUT}}": (
-            "Så længe konkurrerende brands nævnes i samme svar som Nailster, er positionen "
-            "ikke enerådende. Det er ikke et fremtidigt problem &#8212; det er den aktuelle "
-            "tilstand. Den koster salg nu."
+            "Kategori-ejerskab kr&#230;ver, at AI-systemerne ikke blot kender brandet &#8212; "
+            "de skal forbinde det med kategorien p&#229; en m&#229;de, der g&#248;r andre "
+            "akt&#248;rer sekund&#230;re. Den forbindelse er endnu ikke fuldt etableret."
         ),
         # ── Page 12: AIScore-opdeling ───────────────────────────────────
         "{{SCORE_DESCRIPTION}}": (
