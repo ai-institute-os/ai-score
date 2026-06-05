@@ -3615,21 +3615,30 @@ def _render_report_html(app: "CustomerApplication") -> str:
             f"indhold til at positionere {name} frem for bredere alternativer.</span>"
         ),
         "{{BRAND_STRENGTHS_LIST}}": (
-            f"<li>Brand genkendes i {sector}-kontekster på tværs af alle fire systemer</li>"
-            f"<li>Kategorisering er korrekt — AI-systemerne forbinder {name} med det rette segment</li>"
-            f"<li>Eksisterende synlighed giver et etableret udgangspunkt at bygge videre på</li>"
+            f"<div class='brand-match-item'>Brand genkendes i {sector}-kontekster på tværs af alle fire systemer</div>"
+            f"<div class='brand-match-item'>Kategorisering er korrekt — AI-systemerne forbinder {name} med det rette segment</div>"
+            f"<div class='brand-match-item'>Eksisterende synlighed giver et etableret udgangspunkt at bygge videre på</div>"
         ),
         "{{BRAND_GAPS_LIST}}": (
             (
-                f"<li>Manglende differentiering fra {', '.join(competitors[:2])} i AI-svar</li>"
+                f"<div class='brand-gap-item'>Manglende differentiering fra {', '.join(competitors[:2])} i AI-svar</div>"
                 if competitors else
-                "<li>Manglende differentiering fra generiske alternativer i AI-svar</li>"
+                "<div class='brand-gap-item'>Manglende differentiering fra generiske alternativer i AI-svar</div>"
             )
-            + "<li>Kundeudtalelser og ROI-dokumentation fraværende i AI-citérbar form</li>"
-            + "<li>Dybde og autoritet i AI-citérbart indhold er ikke tilstrækkeligt etableret</li>"
+            + "<div class='brand-gap-item'>Kundeudtalelser og ROI-dokumentation fraværende i AI-citérbar form</div>"
+            + "<div class='brand-gap-item'>Dybde og autoritet i AI-citérbart indhold er ikke tilstrækkeligt etableret</div>"
         ),
         "{{BRAND_QUOTE}}": (
             f"Den position {name} bygger og den position AI vælger er ikke identiske"
+        ),
+        "{{BRAND_QUOTE_SUB}}": (
+            f"I {sector}-kontekster er overensstemmelsen stærk. "
+            f"Kløften er ikke bred — men den er systematisk og kontekstspecifik."
+        ),
+        "{{BRAND_STRUCTURAL_SIGNAL}}": (
+            f"{name}s brand er anerkendt, men ikke differentieret. AI-systemerne placerer "
+            f"virksomheden i den rette kategori — men mangler grunden til at foretrække den "
+            f"frem for {primary_competitor} og andre alternativer."
         ),
         "{{BRAND_POSITION_CONCLUSION}}": (
             f"{name}s brand er anerkendt, men ikke differentieret. AI-systemerne placerer "
@@ -3817,6 +3826,9 @@ def _render_report_html(app: "CustomerApplication") -> str:
             f"<li>Markedskendskab er en fordel konkurrenterne ikke let kan kopiere</li>"
         ),
     }
+    # Apply text_overrides first so they take precedence over generated substitutions
+    for k, v in getattr(app, "text_overrides", {}).items():
+        template = template.replace(k, str(v))
     for placeholder, value in substitutions.items():
         template = template.replace(placeholder, str(value))
     return template
