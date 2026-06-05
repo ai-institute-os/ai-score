@@ -3038,6 +3038,8 @@ async def set_scoring_data(
     app.overall_score = body.overall_score
     app.queries_run = body.queries_run
     app.rank = body.rank
+    if body.industry is not None:
+        app.industry = body.industry
     app.updated_at = datetime.now(timezone.utc)
     await db.commit()
 
@@ -3534,7 +3536,7 @@ def _render_report_html(app: "CustomerApplication") -> str:
 
     substitutions = {
         "{{COMPANY_NAME}}": name,
-        "{{COMPANY_SUBTITLE}}": app.detected_company_type or app.industry or "",
+        "{{COMPANY_SUBTITLE}}": app.industry or app.detected_company_type or "",
         "{{CONTACT_EMAIL}}": app.email,
         "{{ANALYSIS_DATE}}": analysis_date,
         "{{ANALYSIS_PERIOD}}": f"Q2 {date.today().year}",
@@ -3564,12 +3566,15 @@ def _render_report_html(app: "CustomerApplication") -> str:
         ),
         # Section 01 Executive Summary
         "{{EXEC_SUMMARY_HEADLINE}}": (
-            f"{name} er synlig på tværs af AI-systemer — men konverterer endnu ikke til "
-            f"primært valg i tilstrækkelig grad"
+            f"{name} er Danmarks mest synlige {sector}-brand i AI — "
+            f"men synlighed konverterer endnu ikke til valg"
         ),
-        "{{STRONGEST_DIMENSION}}": f"Entity Authority — AI-systemerne genkender {name} som etableret aktør",
-        "{{KEY_LIMITATION}}": "Decision Relevance — fremstår som alternativ, sjældent som primær anbefaling",
-        "{{STRATEGIC_TENSION}}": f"Bred synlighed ({mention_rate}) vs. lav konvertering til valg ({selection_rate})",
+        "{{STRONGEST_DIMENSION}}": f"Entity & Authority — {d_entity}/100. AI-systemerne kender og stoler på {name}.",
+        "{{KEY_LIMITATION}}": f"Decision Relevance — {d_decision}/100. {name} omtales, men vælges ikke altid.",
+        "{{STRATEGIC_TENSION}}": (
+            f"{name} er anerkendt, ikke dominerende. Brandet er synligt nok til at blive nævnt — "
+            f"men endnu ikke stærkt nok til at blive valgt konsistent."
+        ),
         "{{EXEC_BODY_1}}": (
             f"{name} er placeret i den øverste del af kategorien med en AIScore™ på {overall}/100. "
             f"Brandet nævnes i næsten {mention_rate} af prompts på tværs af alle testede AI-systemer — et stærkt udgangspunkt."
@@ -3581,19 +3586,23 @@ def _render_report_html(app: "CustomerApplication") -> str:
         ),
         # Section 02
         "{{METHODOLOGY_TEXT}}": (
-            f"<span class='sec-intro-line'>Analysen er baseret på {queries} strukturerede testprompts fordelt ligeligt over "
-            f"ChatGPT (GPT-4o), Claude (Anthropic), Perplexity AI og Google Gemini.</span>"
-            f"<span class='sec-intro-line'>Prompterne dækker virksomhedens specifikke synlighedskriterier inden for {sector}: "
-            f"kategorisøgning, problembaserede spørgsmål, sammenligning og professionel beslutningsstøtte.</span>"
+            f"<span class='sec-intro-line'>AIScore™ er gennemført via strukturerede tests af fire AI-systemer "
+            f"med identiske promptsæt fordelt over fire kategorier: kategoriprompter, problembaserede prompts, "
+            f"sammenligningsprompts og professionelle kvalitetsprompts.</span>"
+            f"<span class='sec-intro-line'>For hvert prompt er registreret: om {name} nævnes, om brandet vælges "
+            f"som primær anbefaling, og hvilken framing der anvendes. Claude (Anthropic)-sektionen er baseret på "
+            f"direkte output fra Claude. De øvrige systemer er testet med identiske prompts og metodologi. "
+            f"Alle fire systemer er behandlet som ligeværdige analyseobjekter.</span>"
         ),
-        "{{PROMPT_CAT_1_EXAMPLE}}": f'"Hvad er de bedste løsninger inden for {sector}?"',
-        "{{PROMPT_CAT_2_EXAMPLE}}": f'"Jeg har brug for en løsning til {sector} — hvad anbefaler du?"',
+        "{{PROMPT_CAT_1_TITLE}}": f"Generel {sector}",
+        "{{PROMPT_CAT_1_EXAMPLE}}": f'"Hvad er de bedste {sector}-brands?"',
+        "{{PROMPT_CAT_2_EXAMPLE}}": '"Jeg er nybegynder — hvad anbefaler du?"',
         "{{PROMPT_CAT_3_EXAMPLE}}": (
-            f'"Sammenlign {name} med {primary_competitor}"'
+            f'"{name} vs. {primary_competitor} — hvad er bedst?"'
             if primary_competitor != "de globale alternativer"
             else f'"Hvad adskiller {name} fra konkurrenterne?"'
         ),
-        "{{PROMPT_CAT_4_EXAMPLE}}": f'"Hvilken {sector}-løsning har den bedste kundeoplevelse?"',
+        "{{PROMPT_CAT_4_EXAMPLE}}": f'"Hvad bruger professionelle {sector}-brugere?"',
         # Section 03
         "{{BRAND_POSITION_HEADLINE}}": (
             f"{name} er etableret i sin kategori — men AI-systemerne mangler differentierende indhold "

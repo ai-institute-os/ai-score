@@ -333,6 +333,7 @@ class ScoringDataUpdate(BaseModel):
     overall_score: int = Field(..., ge=0, le=100, description="Weighted aggregate AIScore (0–100)")
     queries_run: int = Field(..., ge=0, description="Total LLM queries run for this analysis")
     rank: int = Field(..., ge=1, description="Brand position in LLM responses")
+    industry: Optional[str] = Field(default=None, description="Cover subtitle / niche description (e.g. 'Gel polish — Hjemmebrug & Professionelt')")
 
 
 class BookCallRequest(BaseModel):

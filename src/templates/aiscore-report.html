@@ -587,6 +587,10 @@
     border-radius: 0 5px 5px 0;
   }
 
+  h1.sec-title {
+    font-size: 14pt;
+  }
+
   .sec-intro {
     font-size: 11pt;
     color: var(--text-mid);
@@ -2009,24 +2013,29 @@
     <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:10px;">Datagrundlag</div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
-        <div style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">36</div>
-        <div style="font-size:8.5pt; font-weight:600; color:var(--text); margin-top:3px;">testprompts</div>
-        <div style="font-size:8pt; color:var(--text-mid); margin-top:2px;">9 prompts per AI-system</div>
+        <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:2px;">
+          <span style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">{{QUERIES_RUN}}</span>
+          <span style="font-size:8.5pt; font-weight:600; color:var(--text);">testprompts</span>
+        </div>
+        <div style="font-size:8pt; color:var(--text-mid);">{{QUERIES_PER_SYSTEM}} prompts per AI-system</div>
       </div>
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
-        <div style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">4</div>
-        <div style="font-size:8.5pt; font-weight:600; color:var(--text); margin-top:3px;">AI-systemer</div>
-        <div style="font-size:8pt; color:var(--text-mid); margin-top:2px;">ChatGPT, Claude, Perplexity, Gemini</div>
+        <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:2px;">
+          <span style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">4</span>
+          <span style="font-size:8.5pt; font-weight:600; color:var(--text);">AI-systemer</span>
+        </div>
+        <div style="font-size:8pt; color:var(--text-mid);">ChatGPT, Claude, Perplexity, Gemini</div>
       </div>
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
-        <div style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">4</div>
-        <div style="font-size:8.5pt; font-weight:600; color:var(--text); margin-top:3px;">promptkategorier</div>
-        <div style="font-size:8pt; color:var(--text-mid); margin-top:2px;">Generel, problembaseret, sammenligning, professionel</div>
+        <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:2px;">
+          <span style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">4</span>
+          <span style="font-size:8.5pt; font-weight:600; color:var(--text);">promptkategorier</span>
+        </div>
+        <div style="font-size:8pt; color:var(--text-mid);">Generel, problembaseret, sammenligning, professionel</div>
       </div>
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
-        <div style="font-size:12pt; font-weight:800; color:var(--navy); line-height:1;">Q2 2026</div>
-        <div style="font-size:8.5pt; font-weight:600; color:var(--text); margin-top:3px;">Periode</div>
-        <div style="font-size:8pt; color:var(--text-mid); margin-top:2px;">Analysen er gennemført i Q2 2026</div>
+        <div style="font-size:8.5pt; font-weight:600; color:var(--text); margin-bottom:2px;">Periode</div>
+        <div style="font-size:12pt; font-weight:800; color:var(--navy); line-height:1;">{{ANALYSIS_PERIOD}}</div>
       </div>
     </div>
   </div>
@@ -2166,7 +2175,7 @@
     <div class="prompt-cat-card">
       <div class="prompt-cat-num">01</div>
       <div>
-        <div class="prompt-cat-title">Generel kategori</div>
+        <div class="prompt-cat-title">{{PROMPT_CAT_1_TITLE}}</div>
         <div class="prompt-cat-desc"><div>3 prompts pr. system</div><div>{{PROMPT_CAT_1_EXAMPLE}}</div></div>
       </div>
     </div>
