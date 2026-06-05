@@ -3396,7 +3396,8 @@ def _render_report_html(app: "CustomerApplication") -> str:
 
     overall = app.overall_score if app.overall_score is not None else 74
     queries = app.queries_run if app.queries_run is not None else 36
-    name = app.firmanavn
+    import re as _re
+    name = _re.sub(r'\s+(A/S|ApS|IVS|K/S|I/S|P/S)\s*$', '', app.firmanavn, flags=_re.IGNORECASE).strip()
     sector = app.industry or app.detected_company_type or "tech"
     competitors = _extract_competitors(app)
     primary_competitor = competitors[0] if competitors else "de globale alternativer"
