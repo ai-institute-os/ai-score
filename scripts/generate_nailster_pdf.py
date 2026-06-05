@@ -247,6 +247,19 @@ app = SimpleNamespace(
             "AI har placeret Nailster i en bestemt kategori-rolle, "
             "og rollen er sn&#230;vrere end brandets reelle bredde."
         ),
+        # ── AI-synlighedsmatrix ─────────────────────────────────────────
+        "{{MATRIX_HEADLINE}}": (
+            "Nailster n&#230;vnes i 78% af alle prompts &#8212; men v&#230;lges kun i 44%. "
+            "Den 34-procentpoint kl&#248;ft er analysens mest handlingsrelevante tal"
+        ),
+        "{{MATRIX_CALLOUT}}": (
+            "<strong>Synlighed er ikke det samme som udv&#230;lgelse</strong><br>"
+            "Nailster n&#230;vnes i n&#230;sten 4 ud af 5 foresp&#248;rgsler p&#229; tv&#230;rs af alle systemer. "
+            "Med en samlet konverteringsrate p&#229; 44% efterlader Nailster mere end halvdelen af sine "
+            "synlighedsmomenter uden aktiv udv&#230;lgelse. Kl&#248;ften p&#229; 34 procentpoint er analysens "
+            "mest handlingsrelevante tal &#8212; ikke fordi det er det laveste, men fordi det "
+            "repr&#230;senterer den mest direkte vej til forbedret AI-position."
+        ),
         # ── Page 4: Hvorfor denne analyse ──────────────────────────────
         "{{WHY_ANALYSIS_TEXT}}": (
             "<span class='sec-intro-line'>AI-systemer er ikke søgemaskiner. De returnerer ikke lister "

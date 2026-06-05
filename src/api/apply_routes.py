@@ -3729,6 +3729,11 @@ def _render_report_html(app: "CustomerApplication") -> str:
         ),
         # Section 07 matrix
         "{{MATRIX_HEADLINE}}": f"Synlighedsmatrix — {name} på tværs af alle fire AI-systemer",
+        "{{MATRIX_CALLOUT}}": (
+            f"<strong>{selection_gap} procentpoint</strong> er kløften mellem {name}s "
+            f"omtalefrekvens ({mention_rate}) og udvælgelsesfrekvens ({selection_rate}). "
+            f"De øjeblikke ender hos andre brands."
+        ),
         "{{CHATGPT_MENTION_PCT}}": str(og["mp"]),
         "{{CHATGPT_SELECT_PCT}}": str(og["sp"]),
         "{{CHATGPT_RATING}}": cg_r,
