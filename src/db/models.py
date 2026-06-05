@@ -50,13 +50,13 @@ class CustomerApplicationStatus(str, Enum):
 VALID_TRANSITIONS: dict[CustomerApplicationStatus, set[CustomerApplicationStatus]] = {
     CustomerApplicationStatus.APPLIED: {CustomerApplicationStatus.UNDER_REVIEW, CustomerApplicationStatus.REJECTED},
     CustomerApplicationStatus.UNDER_REVIEW: {CustomerApplicationStatus.APPROVED, CustomerApplicationStatus.REJECTED},
-    CustomerApplicationStatus.APPROVED: {CustomerApplicationStatus.CALLED},
+    CustomerApplicationStatus.APPROVED: {CustomerApplicationStatus.CALLED, CustomerApplicationStatus.UNDER_REVIEW},
     # CALLED → AWAITING_PAYMENT (normal flow) or APPROVED (Calendly cancellation)
     CustomerApplicationStatus.CALLED: {CustomerApplicationStatus.AWAITING_PAYMENT, CustomerApplicationStatus.APPROVED},
     # AWAITING_PAYMENT → PAID (Stripe webhook) or IN_PRODUCTION (admin manual confirmation)
     CustomerApplicationStatus.AWAITING_PAYMENT: {CustomerApplicationStatus.PAID, CustomerApplicationStatus.IN_PRODUCTION},
     CustomerApplicationStatus.PAID: {CustomerApplicationStatus.IN_PRODUCTION},
-    CustomerApplicationStatus.IN_PRODUCTION: {CustomerApplicationStatus.QC_REVIEW},
+    CustomerApplicationStatus.IN_PRODUCTION: {CustomerApplicationStatus.QC_REVIEW, CustomerApplicationStatus.PAID},
     # QC_REVIEW: admin can pass to QC_PASSED, fail, or move directly to review call
     CustomerApplicationStatus.QC_REVIEW: {CustomerApplicationStatus.QC_PASSED, CustomerApplicationStatus.QC_FAILED, CustomerApplicationStatus.READY_FOR_REVIEW_CALL, CustomerApplicationStatus.IN_PRODUCTION},
     CustomerApplicationStatus.QC_PASSED: {CustomerApplicationStatus.READY_FOR_REVIEW_CALL, CustomerApplicationStatus.QC_REVIEW},
@@ -77,6 +77,9 @@ BACKWARD_TRANSITIONS: set[tuple[CustomerApplicationStatus, CustomerApplicationSt
     (CustomerApplicationStatus.QC_REVIEW, CustomerApplicationStatus.IN_PRODUCTION),
     (CustomerApplicationStatus.QC_PASSED, CustomerApplicationStatus.QC_REVIEW),
     (CustomerApplicationStatus.READY_FOR_REVIEW_CALL, CustomerApplicationStatus.QC_REVIEW),
+    (CustomerApplicationStatus.IN_PRODUCTION, CustomerApplicationStatus.PAID),
+    (CustomerApplicationStatus.CALLED, CustomerApplicationStatus.APPROVED),
+    (CustomerApplicationStatus.APPROVED, CustomerApplicationStatus.UNDER_REVIEW),
 }
 
 

@@ -943,6 +943,9 @@ const BACKWARD_TRANSITIONS = new Set([
   'QC_REVIEW->IN_PRODUCTION',
   'QC_PASSED->QC_REVIEW',
   'READY_FOR_REVIEW_CALL->QC_REVIEW',
+  'IN_PRODUCTION->PAID',
+  'CALLED->APPROVED',
+  'APPROVED->UNDER_REVIEW',
 ]);
 
 // Map: current status → { wizardStepId: backwardTargetStatus }
@@ -951,6 +954,9 @@ const WIZARD_STEP_BACKWARD = {
   QC_REVIEW:             { PDF_REPORT: 'IN_PRODUCTION' },
   QC_PASSED:             { QC_REVIEW: 'QC_REVIEW' },
   READY_FOR_REVIEW_CALL: { QC_REVIEW: 'QC_REVIEW' },
+  IN_PRODUCTION:         { AWAITING_PAYMENT: 'PAID' },
+  CALLED:                { APPROVED: 'APPROVED' },
+  APPROVED:              { UNDER_REVIEW: 'UNDER_REVIEW' },
 };
 
 // ─── Wizard ───────────────────────────────────────
@@ -1514,7 +1520,7 @@ function renderActionPanel(app) {
   const titleEl = document.getElementById('actionTitle');
   const descEl = document.getElementById('actionDesc');
 
-  if (panelEl) panelEl.style.display = status === 'CALLED' ? 'none' : '';
+  if (panelEl) panelEl.style.display = '';
 
   if (status === 'APPLIED') {
     titleEl.textContent = 'Verification & Review';
@@ -1692,6 +1698,13 @@ function renderActionPanel(app) {
           Book Meeting
         </button>
         <div id="bookCallError" style="display:none;margin-top:0.5rem;font-size:0.8rem;color:var(--error);"></div>
+      </div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost" onclick="openBackwardMoveModal('UNDER_REVIEW')"
+           style="font-size:0.82rem;padding:0.4rem 0.9rem;color:var(--text-muted);">
+          <i data-lucide="arrow-left-circle" style="width:13px;height:13px;margin-right:0.3rem;"></i>
+          Tilbage til Under Review
+        </button>
       </div>`;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
@@ -1717,7 +1730,17 @@ function renderActionPanel(app) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
   } else if (status === 'CALLED') {
-    // Action panel is hidden for CALLED stage; buttons live in the transcription card.
+    titleEl.textContent = 'Called';
+    descEl.textContent = 'Interview call stage. Use the transcription card below to move forward.';
+    container.innerHTML = `
+      <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost" onclick="openBackwardMoveModal('APPROVED')"
+           style="font-size:0.82rem;padding:0.4rem 0.9rem;color:var(--text-muted);">
+          <i data-lucide="arrow-left-circle" style="width:13px;height:13px;margin-right:0.3rem;"></i>
+          Tilbage til Book a call
+        </button>
+      </div>`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
   } else if (status === 'AWAITING_PAYMENT' || status === 'PAID') {
     titleEl.textContent = 'Payment';
@@ -1857,6 +1880,13 @@ function renderActionPanel(app) {
             Generate Report
           </button>`}
         </div>
+      </div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost" onclick="openBackwardMoveModal('PAID')"
+           style="font-size:0.82rem;padding:0.4rem 0.9rem;color:var(--text-muted);">
+          <i data-lucide="arrow-left-circle" style="width:13px;height:13px;margin-right:0.3rem;"></i>
+          Tilbage til betaling
+        </button>
       </div>`;
 
   } else if (status === 'QC_REVIEW') {
