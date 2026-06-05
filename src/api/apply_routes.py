@@ -3534,7 +3534,7 @@ def _render_report_html(app: "CustomerApplication") -> str:
 
     substitutions = {
         "{{COMPANY_NAME}}": name,
-        "{{COMPANY_SUBTITLE}}": app.industry or "",
+        "{{COMPANY_SUBTITLE}}": app.detected_company_type or app.industry or "",
         "{{CONTACT_EMAIL}}": app.email,
         "{{ANALYSIS_DATE}}": analysis_date,
         "{{ANALYSIS_PERIOD}}": f"Q2 {date.today().year}",
@@ -3552,11 +3552,15 @@ def _render_report_html(app: "CustomerApplication") -> str:
         "{{SELECTION_GAP}}": str(selection_gap),
         # Section 00
         "{{WHY_ANALYSIS_TEXT}}": (
-            f"<span class='sec-intro-line'>Når en potentiel kunde spørger ChatGPT, Gemini, Perplexity eller Claude "
-            f"efter en løsning inden for {sector}, sker der noget afgørende: AI-systemet vælger.</span>"
-            f"<span class='sec-intro-line'>Det er ikke en søgerangering — det er en anbefaling.</span>"
-            f"<span>Denne analyse kortlægger præcist, hvordan {name} fremstår i de fire primære AI-systemer, "
-            f"og hvad der skal til for at flytte positionen fra 'nævnt' til 'valgt som primær'.</span>"
+            f"<span class='sec-intro-line'>AI-systemer er ikke søgemaskiner. De returnerer ikke lister — de vælger. "
+            f"Når en forbruger spørger ChatGPT, Claude, Perplexity eller Gemini om {sector}, modtager de et svar "
+            f"der allerede er truffet. Et brand er enten med i det svar, eller det er ikke.</span>"
+            f"<span class='sec-intro-line'>Denne analyse måler {name}s position i de fire primære AI-systemer, "
+            f"der i dag former forbrugernes {sector}-valg. Analysen er gennemført med {queries} strukturerede "
+            f"testprompts — {queries_per_system} per system — fordelt over kategoriørgsmål, problembaserede "
+            f"forespørgsler, sammenligninger og professionelle kontekster.</span>"
+            f"<span>Analysen svarer ikke på, om {name} er synlig. Det er brandet. Analysen svarer på, om {name} "
+            f"vælges — hvornår, i hvilke kontekster, og på hvilke betingelser.</span>"
         ),
         # Section 01 Executive Summary
         "{{EXEC_SUMMARY_HEADLINE}}": (
