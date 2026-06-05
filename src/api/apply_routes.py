@@ -3040,6 +3040,8 @@ async def set_scoring_data(
     app.rank = body.rank
     if body.industry is not None:
         app.industry = body.industry
+    if body.scoring_results is not None:
+        app.scoring_results = body.scoring_results
     app.updated_at = datetime.now(timezone.utc)
     await db.commit()
 
