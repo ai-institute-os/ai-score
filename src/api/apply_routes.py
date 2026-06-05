@@ -3650,6 +3650,11 @@ def _render_report_html(app: "CustomerApplication") -> str:
             f"frem for {primary_competitor} og andre alternativer."
         ),
         # Section 04 AI descriptions
+        "{{AI_DESCRIPTIONS_INTRO}}": (
+            "Nedenstående er repræsentative direkte beskrivelser fra de fire testede AI-systemer. "
+            "De er ikke redigerede — de afspejler, hvad modellerne aktuelt producerer "
+            "som svar på relevante forespørgsler."
+        ),
         "{{AI_DESCRIPTIONS_HEADLINE}}": f"Hvad de fire AI-systemer siger om {name} i dag",
         "{{CHATGPT_MENTIONED}}": f"{og['m']}/{og['n']}",
         "{{CHATGPT_SELECTED}}": f"{og['s']}/{og['n']}",

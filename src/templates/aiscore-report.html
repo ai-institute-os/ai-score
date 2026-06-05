@@ -955,7 +955,7 @@
     background: #f1f5f9;
     border: none;
     border-radius: 4px;
-    margin-bottom: 10px;
+    margin-bottom: 7px;
     overflow: hidden;
   }
 
@@ -963,7 +963,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px 10px;
+    padding: 8px 14px 7px;
     background: transparent;
     border-bottom: 1px solid var(--border);
   }
@@ -997,10 +997,10 @@
   }
 
   .ai-desc-body {
-    padding: 10px 16px 14px;
-    font-size: 9.5pt;
+    padding: 8px 14px 10px;
+    font-size: 9pt;
     color: var(--text-mid);
-    line-height: 1.65;
+    line-height: 1.6;
     font-style: normal;
   }
 
@@ -2313,15 +2313,15 @@
 
   <div class="sec-num">05 &nbsp; Observerede AI-beskrivelser</div>
   <h2 class="sec-title">{{AI_DESCRIPTIONS_HEADLINE}}</h2>
-  <p class="sec-intro">Nedenstående er repræsentative direkte beskrivelser fra de fire testede AI-systemer. De er ikke redigerede — de afspejler, hvad modellerne aktuelt producerer som svar på relevante forespørgsler.</p>
+  <p class="sec-intro">{{AI_DESCRIPTIONS_INTRO}}</p>
 
   <div class="ai-desc-card adc-chatgpt no-break">
     <div class="ai-desc-header">
       <div class="ai-desc-header-left">
         <div class="system-icon sys-chatgpt" style="width:24px;height:24px;font-size:9.5pt;">C</div>
-        <div>
-          <div class="ai-desc-name">ChatGPT</div>
-          <div class="ai-desc-vendor">GPT-4o · OpenAI</div>
+        <div style="display:flex;align-items:baseline;gap:0.4em;">
+          <span class="ai-desc-name">ChatGPT</span>
+          <span class="ai-desc-vendor">GPT-4o</span>
         </div>
       </div>
       <div class="ai-desc-stats">
@@ -2336,9 +2336,9 @@
     <div class="ai-desc-header">
       <div class="ai-desc-header-left">
         <div class="system-icon sys-claude" style="width:24px;height:24px;font-size:9.5pt;">A</div>
-        <div>
-          <div class="ai-desc-name">Claude</div>
-          <div class="ai-desc-vendor">Anthropic</div>
+        <div style="display:flex;align-items:baseline;gap:0.4em;">
+          <span class="ai-desc-name">Claude</span>
+          <span class="ai-desc-vendor">Anthropic</span>
         </div>
       </div>
       <div class="ai-desc-stats">
@@ -2353,9 +2353,9 @@
     <div class="ai-desc-header">
       <div class="ai-desc-header-left">
         <div class="system-icon sys-gemini" style="width:24px;height:24px;font-size:9.5pt;">G</div>
-        <div>
-          <div class="ai-desc-name">Google Gemini</div>
-          <div class="ai-desc-vendor">Google</div>
+        <div style="display:flex;align-items:baseline;gap:0.4em;">
+          <span class="ai-desc-name">Google Gemini</span>
+          <span class="ai-desc-vendor">Google</span>
         </div>
       </div>
       <div class="ai-desc-stats">
@@ -2370,9 +2370,9 @@
     <div class="ai-desc-header">
       <div class="ai-desc-header-left">
         <div class="system-icon sys-perplexity" style="width:24px;height:24px;font-size:9.5pt;">P</div>
-        <div>
-          <div class="ai-desc-name">Perplexity AI</div>
-          <div class="ai-desc-vendor">Perplexity AI</div>
+        <div style="display:flex;align-items:baseline;gap:0.4em;">
+          <span class="ai-desc-name">Perplexity AI</span>
+          <span class="ai-desc-vendor">Perplexity</span>
         </div>
       </div>
       <div class="ai-desc-stats">

@@ -196,6 +196,11 @@ app = SimpleNamespace(
         "{{DIM_CONTEXT_DESC}}": "Positionen varierer på tværs af systemer",
         "{{DIM_DECISION_DESC}}": "Nailster nævnes, men vælges ikke altid",
         # ── Page 9: Observerede AI-beskrivelser ────────────────────────
+        "{{AI_DESCRIPTIONS_INTRO}}": (
+            "Nedenst&#229;ende er repr&#230;sentative direkte beskrivelser fra de fire testede AI-systemer. "
+            "De er ikke redigerede. "
+            "Framing-m&#248;nsteret er konsistent: hjemme, begynder, dansk, tilg&#230;ngeligt."
+        ),
         "{{AI_DESCRIPTIONS_HEADLINE}}": (
             "Alle fire AI-systemer beskriver Nailster positivt "
             "&#8212; ingen forbinder brandet med professionel autoritet p&#229; saloniveau"
@@ -212,13 +217,13 @@ app = SimpleNamespace(
             "for ikke-professionelle med komplette startkits og et bredt farveudvalg. "
             "Internationalt er der ogs&#229; brands som CND, OPI og Gelish der bruges meget."
         ),
-        "{{PERPLEXITY_QUOTE}}": (
+        "{{GEMINI_QUOTE}}": (
             "For hjemme gel polish i Danmark anbefales Nailster som et solidt dansk valg "
             "&#8212; s&#230;rligt for begyndere og dem der &#248;nsker et professionelt resultat derhjemme. "
             "Nailster har et bredt produktsortiment og er let tilg&#230;ngeligt via webshop "
             "og udvalgte forhandlere."
         ),
-        "{{GEMINI_QUOTE}}": (
+        "{{PERPLEXITY_QUOTE}}": (
             "Nailster er et etableret dansk brand inden for gel polish. "
             "Brandet n&#230;vnes konsistent i forbindelse med hjemme-manicure "
             "og er velkendt for kvalitet, farveudvalg og begyndervenlige systemer."
