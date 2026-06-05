@@ -3762,6 +3762,15 @@ def _render_report_html(app: "CustomerApplication") -> str:
         ),
         "{{GAP_3_CALLOUT}}": "Løsning: Schema-markup på testimonials og publicerede case studies med tal.",
         # Section 09 score dimensions
+        "{{SCORE_DESCRIPTION}}": (
+            f"{overall}/100 placerer {name} i den øverste del af kategorien. "
+            f"Scoren afspejler reel synlighed — men ikke fuldt konsolideret til at drive systematisk valg."
+        ),
+        "{{SCORE_INSIGHTS_HEADLINE}}": "Ubalancen er vigtigere end gennemsnittet",
+        "{{SCORE_INSIGHTS_BODY}}": (
+            f"Decision Relevance ({d_decision}/100) er den dimension, der koster mest. "
+            f"Synlighed er etableret — men den konverterer endnu ikke til valg i den grad, der er mulig."
+        ),
         "{{SCORE_CONTEXT_NOTE}}": f"Baseret på {queries} testprompts",
         "{{DIM_ENTITY_DESC}}": "Genkendelse af brand og virksomhed på tværs af systemer",
         "{{ENTITY_AUTHORITY_SCORE}}": str(d_entity),
