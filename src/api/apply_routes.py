@@ -3668,6 +3668,7 @@ def _render_report_html(app: "CustomerApplication") -> str:
         "{{PERPLEXITY_MENTIONED}}": f"{pe['m']}/{pe['n']}",
         "{{PERPLEXITY_SELECTED}}": f"{pe['s']}/{pe['n']}",
         "{{PERPLEXITY_QUOTE}}": _quote(pe, "Perplexity"),
+        "{{AI_DESCRIPTIONS_INTERPRETATION_TITLE}}": "Fortolkning",
         "{{AI_DESCRIPTIONS_INTERPRETATION}}": (
             f"Alle fire systemer genkender {name} som aktør inden for {sector}. "
             f"Udfordringen er konsekvent: AI-systemerne tilbyder altid ét eller flere alternativer "
