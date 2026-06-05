@@ -3042,6 +3042,8 @@ async def set_scoring_data(
         app.industry = body.industry
     if body.scoring_results is not None:
         app.scoring_results = body.scoring_results
+    if body.text_overrides is not None:
+        app.text_overrides = body.text_overrides
     app.updated_at = datetime.now(timezone.utc)
     await db.commit()
 

@@ -335,6 +335,7 @@ class ScoringDataUpdate(BaseModel):
     rank: int = Field(..., ge=1, description="Brand position in LLM responses")
     industry: Optional[str] = Field(default=None, description="Cover subtitle / niche description (e.g. 'Gel polish — Hjemmebrug & Professionelt')")
     scoring_results: Optional[dict] = Field(default=None, description="Per-provider scoring data (avg_naevnt, avg_valgt, mentioned_count, selected_count, total_queries, …)")
+    text_overrides: Optional[dict] = Field(default=None, description="Placeholder overrides applied before standard substitutions in PDF render, e.g. {\"{{BRAND_POSITION_HEADLINE}}\": \"...\"}")
 
 
 class BookCallRequest(BaseModel):
