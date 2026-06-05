@@ -1321,7 +1321,7 @@
 
   .gap-card-num {
     font-size: 34pt;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1;
     color: var(--accent);
   }
@@ -2824,74 +2824,75 @@
   <div class="sec-num">10 &nbsp; AIScore-opdeling</div>
   <h2 class="sec-title">AIScore™ {{OVERALL_SCORE}}/100 dækker over fem dimensioner — styrker og svagheder, der tilsammen afspejler {{COMPANY_NAME}}s samlede AI-position</h2>
 
+  <p style="font-size:9.5pt; line-height:1.65; color:var(--text); margin:0 0 14px;">{{SCORE_DESCRIPTION}}</p>
+
   <div class="no-break">
-    <div class="score-layout" style="margin-bottom:16px; align-items:flex-start;">
+    <div style="display:flex; gap:18px; align-items:flex-start; margin-bottom:14px;">
       <div class="score-big-block" style="min-width:130px; padding:16px 18px;">
         <div class="score-big-num">{{OVERALL_SCORE}}</div>
         <div class="score-big-denom">/100</div>
         <div class="score-big-label">AIScore™</div>
       </div>
-      <div style="flex:1; padding-top:4px;">
-        <p style="font-size:9.5pt; line-height:1.65; color:var(--text); margin:0;">{{SCORE_DESCRIPTION}}</p>
-      </div>
-    </div>
-    <div class="score-dims-label">Fem dimensioner</div>
-    <div class="dimensions-list" style="margin-bottom:14px;">
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Entity &amp; Authority</div>
-          <div class="dim-desc">{{DIM_ENTITY_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{ENTITY_AUTHORITY_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{ENTITY_AUTHORITY_SCORE}}/100</div>
-        </div>
-      </div>
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Category Relevance</div>
-          <div class="dim-desc">{{DIM_CATEGORY_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{CATEGORY_RELEVANCE_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{CATEGORY_RELEVANCE_SCORE}}/100</div>
-        </div>
-      </div>
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Competitive Positioning</div>
-          <div class="dim-desc">{{DIM_COMPETITIVE_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{COMPETITIVE_POSITIONING_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{COMPETITIVE_POSITIONING_SCORE}}/100</div>
-        </div>
-      </div>
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Context Consistency</div>
-          <div class="dim-desc">{{DIM_CONTEXT_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{CONTEXT_CONSISTENCY_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{CONTEXT_CONSISTENCY_SCORE}}/100</div>
-        </div>
-      </div>
-      <div class="dim-row">
-        <div class="dim-body">
-          <div class="dim-name">Decision Relevance</div>
-          <div class="dim-desc">{{DIM_DECISION_DESC}}</div>
-        </div>
-        <div class="dim-score-wrap">
-          <div class="dim-bar"><div class="dim-bar-fill" style="width:{{DECISION_RELEVANCE_SCORE}}%"></div></div>
-          <div class="dim-score-num">{{DECISION_RELEVANCE_SCORE}}/100</div>
+      <div style="flex:1;">
+        <div class="score-dims-label">Fem dimensioner</div>
+        <div class="dimensions-list">
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Entity &amp; Authority</div>
+              <div class="dim-desc">{{DIM_ENTITY_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{ENTITY_AUTHORITY_SCORE}}%"></div></div>
+              <div class="dim-score-num">{{ENTITY_AUTHORITY_SCORE}}/100</div>
+            </div>
+          </div>
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Category Relevance</div>
+              <div class="dim-desc">{{DIM_CATEGORY_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{CATEGORY_RELEVANCE_SCORE}}%"></div></div>
+              <div class="dim-score-num">{{CATEGORY_RELEVANCE_SCORE}}/100</div>
+            </div>
+          </div>
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Context Consistency</div>
+              <div class="dim-desc">{{DIM_CONTEXT_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{CONTEXT_CONSISTENCY_SCORE}}%; background:var(--accent)"></div></div>
+              <div class="dim-score-num" style="color:var(--accent)">{{CONTEXT_CONSISTENCY_SCORE}}/100</div>
+            </div>
+          </div>
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Competitive Positioning</div>
+              <div class="dim-desc">{{DIM_COMPETITIVE_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{COMPETITIVE_POSITIONING_SCORE}}%; background:var(--accent)"></div></div>
+              <div class="dim-score-num" style="color:var(--accent)">{{COMPETITIVE_POSITIONING_SCORE}}/100</div>
+            </div>
+          </div>
+          <div class="dim-row">
+            <div class="dim-body">
+              <div class="dim-name">Decision Relevance</div>
+              <div class="dim-desc">{{DIM_DECISION_DESC}}</div>
+            </div>
+            <div class="dim-score-wrap">
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:{{DECISION_RELEVANCE_SCORE}}%; background:var(--accent)"></div></div>
+              <div class="dim-score-num" style="color:var(--accent)">{{DECISION_RELEVANCE_SCORE}}/100</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="callout callout-dark no-break">
-    <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:6px;">{{SCORE_INSIGHTS_HEADLINE}}</div>
+  <div class="callout callout-key no-break">
+    <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--navy); margin-bottom:6px;">{{SCORE_INSIGHTS_HEADLINE}}</div>
     {{SCORE_INSIGHTS_BODY}}
   </div>
 

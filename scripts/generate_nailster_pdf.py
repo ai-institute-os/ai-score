@@ -195,10 +195,10 @@ app = SimpleNamespace(
         ),
         "{{SCORE_INSIGHTS_HEADLINE}}": "Ubalancen er vigtigere end gennemsnittet",
         "{{SCORE_INSIGHTS_BODY}}": (
-            "Decision Relevance (68/100) er den dimension, der koster mest. "
-            "Synlighed er etableret &#8212; men den konverterer endnu ikke til valg i den "
-            "grad, der er mulig. Entity &amp; Authority (79/100) og Category Relevance (77/100) "
-            "er et stærkt fundament. Men et fundament, der ikke automatisk driver salg."
+            "Decision Relevance p&#229; 68/100 &#8212; analysens laveste dimension &#8212; "
+            "fort&#230;ller, at synlighed ikke har konverteret til valg i den grad, der er mulig. "
+            "Entity &amp; Authority p&#229; 79/100 fort&#230;ller, at fundamentet er til stede. "
+            "Kl&#248;ften mellem disse to tal er analysens operationelle sp&#230;nding."
         ),
         "{{CATEGORY_RELEVANCE_SCORE}}": "77",
         "{{CONTEXT_CONSISTENCY_SCORE}}": "71",
