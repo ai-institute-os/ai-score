@@ -195,6 +195,41 @@ app = SimpleNamespace(
         "{{DIM_COMPETITIVE_DESC}}": "Nailster differentierer, men ejer ikke kategorien",
         "{{DIM_CONTEXT_DESC}}": "Positionen varierer på tværs af systemer",
         "{{DIM_DECISION_DESC}}": "Nailster nævnes, men vælges ikke altid",
+        # ── Page 9: Observerede AI-beskrivelser ────────────────────────
+        "{{AI_DESCRIPTIONS_HEADLINE}}": (
+            "Alle fire AI-systemer beskriver Nailster positivt "
+            "&#8212; ingen forbinder brandet med professionel autoritet p&#229; saloniveau"
+        ),
+        "{{CHATGPT_QUOTE}}": (
+            "Nailster er et popul&#230;rt dansk brand for gel polish til hjemmebrug. "
+            "De tilbyder et bredt udvalg af farver og er kendt for brugervenlige starterkits "
+            "til dem, der &#248;nsker at lave gel manicure derhjemme. "
+            "Brandet er veletableret p&#229; det danske marked."
+        ),
+        "{{CLAUDE_QUOTE}}": (
+            "Til hjemme-manicure i Danmark er Nailster et af de mest kendte valg "
+            "&#8212; de fokuserer specifikt p&#229; at g&#248;re gel-teknologi tilg&#230;ngelig "
+            "for ikke-professionelle med komplette startkits og et bredt farveudvalg. "
+            "Internationalt er der ogs&#229; brands som CND, OPI og Gelish der bruges meget."
+        ),
+        "{{PERPLEXITY_QUOTE}}": (
+            "For hjemme gel polish i Danmark anbefales Nailster som et solidt dansk valg "
+            "&#8212; s&#230;rligt for begyndere og dem der &#248;nsker et professionelt resultat derhjemme. "
+            "Nailster har et bredt produktsortiment og er let tilg&#230;ngeligt via webshop "
+            "og udvalgte forhandlere."
+        ),
+        "{{GEMINI_QUOTE}}": (
+            "Nailster er et etableret dansk brand inden for gel polish. "
+            "Brandet n&#230;vnes konsistent i forbindelse med hjemme-manicure "
+            "og er velkendt for kvalitet, farveudvalg og begyndervenlige systemer."
+        ),
+        "{{AI_DESCRIPTIONS_INTERPRETATION}}": (
+            "Alle fire systemer forbinder Nailster med hjemmebrug, begyndervenlighed og det danske marked. "
+            "Professionel autoritet er frav&#230;rende i alle fire svar. "
+            "Det er ikke et kommunikationsproblem &#8212; det er en rolletildeling. "
+            "AI har placeret Nailster i en bestemt kategori-rolle, "
+            "og rollen er sn&#230;vrere end brandets reelle bredde."
+        ),
         # ── Page 4: Hvorfor denne analyse ──────────────────────────────
         "{{WHY_ANALYSIS_TEXT}}": (
             "<span class='sec-intro-line'>AI-systemer er ikke søgemaskiner. De returnerer ikke lister "
