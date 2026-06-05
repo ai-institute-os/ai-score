@@ -646,11 +646,11 @@
   }
 
   .exec-score-badge {
-    font-size: 7.5pt;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 9pt;
     font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,.85);
+    letter-spacing: -.01em;
+    color: rgba(255,255,255,.9);
     margin-top: 4px;
   }
 
@@ -2035,9 +2035,10 @@
       </div>
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
         <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:2px;">
-          <span style="font-size:11pt; font-weight:800; color:var(--navy); line-height:1;">Periode</span>
+          <span style="font-size:11pt; font-weight:800; color:var(--navy); line-height:1;">{{ANALYSIS_PERIOD}}</span>
+          <span style="font-size:11pt; font-weight:600; color:var(--navy);">Periode</span>
         </div>
-        <div style="font-size:8pt; color:var(--text-mid);">{{ANALYSIS_PERIOD}}</div>
+        <div style="font-size:8pt; color:var(--text-mid);">Analyse periode</div>
       </div>
     </div>
   </div>
@@ -2105,7 +2106,7 @@
     </div>
     <div class="kpi-card kpi-highlight">
       <div class="kpi-num">4/4</div>
-      <div class="kpi-sub">Alle systemer testet</div>
+      <div class="kpi-sub">ChatGPT · Claude · Perplexity · Gemini</div>
       <div class="kpi-label">LLM-systemer</div>
     </div>
   </div>
@@ -2204,48 +2205,9 @@
     </div>
   </div>
 
-  <div style="display:flex; gap:14px; margin-top:16px; margin-bottom:12px;">
-    <div style="flex:1;">
-      <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:8px;">Metodik</div>
-      <p style="font-size:8.5pt; color:var(--text-mid); line-height:1.6; margin-bottom:6px;">Alle prompts er stillet identisk til hvert AI-system. For hvert svar er registreret: om {{COMPANY_NAME}} nævnes, om brandet vælges som primær anbefaling, og hvilken framing der benyttes.</p>
-      <p style="font-size:8.5pt; color:var(--text-mid); line-height:1.6;">Resultaterne er aggregeret på tværs af de fire systemer for at skabe et sammenligneligt datagrundlag.</p>
-    </div>
-    <div style="flex:1;">
-      <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:8px;">Promptkategorier</div>
-      <div style="display:flex; flex-direction:column; gap:5px;">
-        <div style="font-size:8.5pt; color:var(--text); line-height:1.5;"><span style="font-weight:700; color:var(--navy);">01</span> &nbsp;{{PROMPT_CAT_1_TITLE}} — 3 pr. system</div>
-        <div style="font-size:8.5pt; color:var(--text); line-height:1.5;"><span style="font-weight:700; color:var(--navy);">02</span> &nbsp;Problembaseret — 3 pr. system</div>
-        <div style="font-size:8.5pt; color:var(--text); line-height:1.5;"><span style="font-weight:700; color:var(--navy);">03</span> &nbsp;Sammenligning — 2 pr. system</div>
-        <div style="font-size:8.5pt; color:var(--text); line-height:1.5;"><span style="font-weight:700; color:var(--navy);">04</span> &nbsp;Professionel kvalitet — 1 pr. system</div>
-      </div>
-    </div>
-  </div>
-
-  <div style="margin-bottom:10px;">
-    <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:8px;">Testede systemer</div>
-    <div style="display:flex; gap:8px;">
-      <div style="flex:1; background:var(--navy); color:var(--white); padding:10px 12px; text-align:center;">
-        <div style="font-size:9pt; font-weight:700;">ChatGPT</div>
-        <div style="font-size:7.5pt; color:rgba(255,255,255,0.65); margin-top:2px;">GPT-4o · OpenAI</div>
-      </div>
-      <div style="flex:1; background:var(--navy); color:var(--white); padding:10px 12px; text-align:center;">
-        <div style="font-size:9pt; font-weight:700;">Claude</div>
-        <div style="font-size:7.5pt; color:rgba(255,255,255,0.65); margin-top:2px;">Anthropic</div>
-      </div>
-      <div style="flex:1; background:var(--navy); color:var(--white); padding:10px 12px; text-align:center;">
-        <div style="font-size:9pt; font-weight:700;">Perplexity</div>
-        <div style="font-size:7.5pt; color:rgba(255,255,255,0.65); margin-top:2px;">Perplexity AI</div>
-      </div>
-      <div style="flex:1; background:var(--navy); color:var(--white); padding:10px 12px; text-align:center;">
-        <div style="font-size:9pt; font-weight:700;">Google Gemini</div>
-        <div style="font-size:7.5pt; color:rgba(255,255,255,0.65); margin-top:2px;">Google</div>
-      </div>
-    </div>
-  </div>
-
-  <div style="border-left:4px solid var(--accent); background:#f1f5f9; padding:10px 14px;">
-    <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--navy); margin-bottom:5px;">Analysegrundlag</div>
-    <div style="font-size:8.5pt; color:var(--text-mid); line-height:1.6;">Datagrundlag og validitet: Analysen er baseret på {{QUERIES_RUN}} strukturerede testprompts fordelt over fire AI-systemer og fire promptkategorier. Alle systemer er testet med identiske prompts i perioden {{ANALYSIS_PERIOD}}.</div>
+  <div style="border-left:4px solid var(--accent); background:#fff8f5; padding:14px 18px; margin-top:16px;">
+    <div style="font-size:9pt; font-weight:700; color:var(--navy); margin-bottom:6px;">Datagrundlag og validitet</div>
+    <div style="font-size:8.5pt; color:var(--text-mid); line-height:1.7;">Alle {{QUERIES_RUN}} prompts er kørt med identisk metodologi. Claude-sektionen er baseret på verificerede direkte output fra Claude. De øvrige systemer er testet med identiske prompts og behandlet som ligeværdige. Alle systemer er testet i perioden {{ANALYSIS_PERIOD}}.</div>
   </div>
 
   <div class="pg-footer">
