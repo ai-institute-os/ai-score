@@ -94,11 +94,15 @@ app = SimpleNamespace(
             "<td>Position under dannelse, ikke ejet</td>"
             "</tr>"
         ),
+        "{{AI_LANDSCAPE_KEY_OBS_TITLE}}": "NAILSTERS ROLLE I AI-KATEGORISERINGEN",
         "{{AI_LANDSCAPE_KEY_OBS}}": (
-            "Nailster er det naturlige svar på &ldquo;bedste gel polish til hjemmebrug i Danmark&rdquo; "
-            "&#8212; men er det ikke enerådende. Ingen prompt-type producerer konsistent Nailster "
-            "som det eneste relevante svar. Så længe andre brands nævnes i samme svar, "
-            "deler Nailster salget med dem."
+            "Nailsters position som hjemme-professionel standard i Danmark er meningsfuld. "
+            "Den er delvist anerkendt. Den er endnu ikke fuldt ejet &#8212; ingen prompt producerer "
+            "konsistent Nailster som det eneste relevante svar i kategorien. "
+            "De internationale professionelle akt&#248;rer &#8212; CND, OPI, The GelBottle &#8212; "
+            "ejer et andet segment. Problemet er ikke, at Nailster mister til dem. "
+            "Problemet er, at overgangen fra hjemme-professionel til professionel i AI&apos;s "
+            "kategorisering er skarpere end Nailsters kommunikation antyder."
         ),
         # ── Page 10: Modelanalyse ───────────────────────────────────────
         "{{MODEL_ANALYSIS_HEADLINE}}": (

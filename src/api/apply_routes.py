@@ -3682,6 +3682,7 @@ def _render_report_html(app: "CustomerApplication") -> str:
             f"potentiel differentiator som ikke udnyttes tilstrækkeligt.</span>"
         ),
         "{{CATEGORY_ROLE_ROWS}}": _competitor_rows(),
+        "{{AI_LANDSCAPE_KEY_OBS_TITLE}}": "Nøgleobservation",
         "{{AI_LANDSCAPE_KEY_OBS}}": (
             f"{name}s position i kategorien er meningsfuld og delvist anerkendt af AI-systemerne. "
             f"Den er endnu ikke fuldt ejet — ingen prompt producerer konsistent {name} som det eneste relevante svar. "
