@@ -3628,6 +3628,9 @@ def _render_report_html(app: "CustomerApplication") -> str:
             + "<li>Kundeudtalelser og ROI-dokumentation fraværende i AI-citérbar form</li>"
             + "<li>Dybde og autoritet i AI-citérbart indhold er ikke tilstrækkeligt etableret</li>"
         ),
+        "{{BRAND_QUOTE}}": (
+            f"Den position {name} bygger og den position AI vælger er ikke identiske"
+        ),
         "{{BRAND_POSITION_CONCLUSION}}": (
             f"{name}s brand er anerkendt, men ikke differentieret. AI-systemerne placerer "
             f"virksomheden i den rette kategori — men mangler grunden til at foretrække den "

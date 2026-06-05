@@ -642,7 +642,7 @@
 
   .exec-score-denom {
     font-size: 14pt;
-    color: var(--accent-2);
+    color: var(--white);
   }
 
   .exec-score-badge {
@@ -670,8 +670,8 @@
 
   .exec-strategic-block {
     background: #f1f5f9;
-    border-left: 3px solid var(--accent);
-    border-radius: 4px;
+    border-left: 5px solid var(--accent);
+    border-radius: 0;
     padding: 12px 14px;
     margin-bottom: 18px;
   }
@@ -2014,28 +2014,28 @@
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
         <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:2px;">
-          <span style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">{{QUERIES_RUN}}</span>
-          <span style="font-size:8.5pt; font-weight:600; color:var(--text);">testprompts</span>
+          <span style="font-size:11pt; font-weight:800; color:var(--navy); line-height:1;">{{QUERIES_RUN}}</span>
+          <span style="font-size:11pt; font-weight:600; color:var(--navy);">testprompts</span>
         </div>
         <div style="font-size:8pt; color:var(--text-mid);">{{QUERIES_PER_SYSTEM}} prompts per AI-system</div>
       </div>
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
         <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:2px;">
-          <span style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">4</span>
-          <span style="font-size:8.5pt; font-weight:600; color:var(--text);">AI-systemer</span>
+          <span style="font-size:11pt; font-weight:800; color:var(--navy); line-height:1;">4</span>
+          <span style="font-size:11pt; font-weight:600; color:var(--navy);">AI-systemer</span>
         </div>
         <div style="font-size:8pt; color:var(--text-mid);">ChatGPT, Claude, Perplexity, Gemini</div>
       </div>
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
         <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:2px;">
-          <span style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">4</span>
-          <span style="font-size:8.5pt; font-weight:600; color:var(--text);">promptkategorier</span>
+          <span style="font-size:11pt; font-weight:800; color:var(--navy); line-height:1;">4</span>
+          <span style="font-size:11pt; font-weight:600; color:var(--navy);">promptkategorier</span>
         </div>
         <div style="font-size:8pt; color:var(--text-mid);">Generel, problembaseret, sammenligning, professionel</div>
       </div>
       <div style="background:#f1f5f9; border-radius:4px; padding:10px 12px;">
         <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:2px;">
-          <span style="font-size:16pt; font-weight:800; color:var(--navy); line-height:1;">Periode</span>
+          <span style="font-size:11pt; font-weight:800; color:var(--navy); line-height:1;">Periode</span>
         </div>
         <div style="font-size:8pt; color:var(--text-mid);">{{ANALYSIS_PERIOD}}</div>
       </div>
@@ -2174,39 +2174,78 @@
 
   <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:10px;">Promptkategorier</div>
   <div class="prompt-cat-list no-break">
-    <div class="prompt-cat-card">
-      <div class="prompt-cat-num">01</div>
-      <div>
+    <div class="prompt-cat-card" style="flex-direction:column; gap:4px;">
+      <div style="display:flex; align-items:baseline; gap:6px;">
+        <div class="prompt-cat-num">1</div>
         <div class="prompt-cat-title">{{PROMPT_CAT_1_TITLE}}</div>
-        <div class="prompt-cat-desc"><div>3 prompts pr. system</div><div>{{PROMPT_CAT_1_EXAMPLE}}</div></div>
       </div>
+      <div class="prompt-cat-desc"><div>3 prompts pr. system</div><div>Fx: {{PROMPT_CAT_1_EXAMPLE}}</div></div>
     </div>
-    <div class="prompt-cat-card">
-      <div class="prompt-cat-num">02</div>
-      <div>
+    <div class="prompt-cat-card" style="flex-direction:column; gap:4px;">
+      <div style="display:flex; align-items:baseline; gap:6px;">
+        <div class="prompt-cat-num">2</div>
         <div class="prompt-cat-title">Problembaseret</div>
-        <div class="prompt-cat-desc"><div>3 prompts pr. system</div><div>{{PROMPT_CAT_2_EXAMPLE}}</div></div>
       </div>
+      <div class="prompt-cat-desc"><div>3 prompts pr. system</div><div>Fx: {{PROMPT_CAT_2_EXAMPLE}}</div></div>
     </div>
-    <div class="prompt-cat-card">
-      <div class="prompt-cat-num">03</div>
-      <div>
+    <div class="prompt-cat-card" style="flex-direction:column; gap:4px;">
+      <div style="display:flex; align-items:baseline; gap:6px;">
+        <div class="prompt-cat-num">3</div>
         <div class="prompt-cat-title">Sammenligning</div>
-        <div class="prompt-cat-desc"><div>2 prompts pr. system</div><div>{{PROMPT_CAT_3_EXAMPLE}}</div></div>
       </div>
+      <div class="prompt-cat-desc"><div>2 prompts pr. system</div><div>Fx: {{PROMPT_CAT_3_EXAMPLE}}</div></div>
     </div>
-    <div class="prompt-cat-card">
-      <div class="prompt-cat-num">04</div>
-      <div>
+    <div class="prompt-cat-card" style="flex-direction:column; gap:4px;">
+      <div style="display:flex; align-items:baseline; gap:6px;">
+        <div class="prompt-cat-num">4</div>
         <div class="prompt-cat-title">Professionel kvalitet</div>
-        <div class="prompt-cat-desc"><div>1 prompt pr. system</div><div>{{PROMPT_CAT_4_EXAMPLE}}</div></div>
+      </div>
+      <div class="prompt-cat-desc"><div>1 prompt pr. system</div><div>Fx: {{PROMPT_CAT_4_EXAMPLE}}</div></div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:14px; margin-top:16px; margin-bottom:12px;">
+    <div style="flex:1;">
+      <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:8px;">Metodik</div>
+      <p style="font-size:8.5pt; color:var(--text-mid); line-height:1.6; margin-bottom:6px;">Alle prompts er stillet identisk til hvert AI-system. For hvert svar er registreret: om {{COMPANY_NAME}} nævnes, om brandet vælges som primær anbefaling, og hvilken framing der benyttes.</p>
+      <p style="font-size:8.5pt; color:var(--text-mid); line-height:1.6;">Resultaterne er aggregeret på tværs af de fire systemer for at skabe et sammenligneligt datagrundlag.</p>
+    </div>
+    <div style="flex:1;">
+      <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:8px;">Promptkategorier</div>
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <div style="font-size:8.5pt; color:var(--text); line-height:1.5;"><span style="font-weight:700; color:var(--navy);">01</span> &nbsp;{{PROMPT_CAT_1_TITLE}} — 3 pr. system</div>
+        <div style="font-size:8.5pt; color:var(--text); line-height:1.5;"><span style="font-weight:700; color:var(--navy);">02</span> &nbsp;Problembaseret — 3 pr. system</div>
+        <div style="font-size:8.5pt; color:var(--text); line-height:1.5;"><span style="font-weight:700; color:var(--navy);">03</span> &nbsp;Sammenligning — 2 pr. system</div>
+        <div style="font-size:8.5pt; color:var(--text); line-height:1.5;"><span style="font-weight:700; color:var(--navy);">04</span> &nbsp;Professionel kvalitet — 1 pr. system</div>
       </div>
     </div>
   </div>
 
-  <div class="callout callout-navy no-break" style="margin-top:16px; margin-bottom:14px;">
-    <div style="font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:7px;">Analysegrundlag</div>
-    Analysen er gennemført med fire LLM'er for en bred og repræsentativ kortlægning. De fire systemer repræsenterer de dominerende AI-platforme, som forbrugere anvender til produktrådgivning i 2026.
+  <div style="margin-bottom:10px;">
+    <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:8px;">Testede systemer</div>
+    <div style="display:flex; gap:8px;">
+      <div style="flex:1; background:var(--navy); color:var(--white); padding:10px 12px; text-align:center;">
+        <div style="font-size:9pt; font-weight:700;">ChatGPT</div>
+        <div style="font-size:7.5pt; color:rgba(255,255,255,0.65); margin-top:2px;">GPT-4o · OpenAI</div>
+      </div>
+      <div style="flex:1; background:var(--navy); color:var(--white); padding:10px 12px; text-align:center;">
+        <div style="font-size:9pt; font-weight:700;">Claude</div>
+        <div style="font-size:7.5pt; color:rgba(255,255,255,0.65); margin-top:2px;">Anthropic</div>
+      </div>
+      <div style="flex:1; background:var(--navy); color:var(--white); padding:10px 12px; text-align:center;">
+        <div style="font-size:9pt; font-weight:700;">Perplexity</div>
+        <div style="font-size:7.5pt; color:rgba(255,255,255,0.65); margin-top:2px;">Perplexity AI</div>
+      </div>
+      <div style="flex:1; background:var(--navy); color:var(--white); padding:10px 12px; text-align:center;">
+        <div style="font-size:9pt; font-weight:700;">Google Gemini</div>
+        <div style="font-size:7.5pt; color:rgba(255,255,255,0.65); margin-top:2px;">Google</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-left:4px solid var(--accent); background:#f1f5f9; padding:10px 14px;">
+    <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--navy); margin-bottom:5px;">Analysegrundlag</div>
+    <div style="font-size:8.5pt; color:var(--text-mid); line-height:1.6;">Datagrundlag og validitet: Analysen er baseret på {{QUERIES_RUN}} strukturerede testprompts fordelt over fire AI-systemer og fire promptkategorier. Alle systemer er testet med identiske prompts i perioden {{ANALYSIS_PERIOD}}.</div>
   </div>
 
   <div class="pg-footer">
@@ -2258,23 +2297,31 @@
   <div class="sec-num">04 &nbsp; Offentlig brandposition</div>
   <h2 class="sec-title">{{BRAND_POSITION_HEADLINE}}</h2>
 
-  <p class="sec-intro">{{BRAND_POSITION_INTRO}}</p>
-
-  <div class="check-block check-block--success no-break">
-    <div class="check-block-title">✓ &nbsp; Stærk overensstemmelse</div>
-    <ul class="check-list">
-      {{BRAND_STRENGTHS_LIST}}
-    </ul>
+  <div style="margin-bottom:14px;">
+    <div style="font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-mid); margin-bottom:8px;">Hvad AI konstruerer fra offentlig data</div>
+    <p class="sec-intro" style="margin-bottom:0;">{{BRAND_POSITION_INTRO}}</p>
   </div>
 
-  <div class="check-block check-block--warn no-break">
-    <div class="check-block-title warn">↗ &nbsp; Systematisk kløft</div>
-    <ul class="check-list">
-      {{BRAND_GAPS_LIST}}
-    </ul>
+  <div style="border-left:4px solid var(--accent); background:#f1f5f9; padding:12px 16px; margin-bottom:16px;">
+    <div style="font-size:9.5pt; font-style:italic; color:var(--navy); line-height:1.6;">{{BRAND_QUOTE}}</div>
   </div>
 
-  <p style="font-size:9.5pt; color:var(--text-mid); line-height:1.65; margin-top:14px;">{{BRAND_POSITION_CONCLUSION}}</p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+    <div class="check-block check-block--success no-break" style="margin-bottom:0;">
+      <div class="check-block-title">✓ &nbsp; Hvad stemmer overens</div>
+      <ul class="check-list">
+        {{BRAND_STRENGTHS_LIST}}
+      </ul>
+    </div>
+    <div class="check-block check-block--warn no-break" style="margin-bottom:0;">
+      <div class="check-block-title warn">↗ &nbsp; Hvad stemmer ikke overens</div>
+      <ul class="check-list">
+        {{BRAND_GAPS_LIST}}
+      </ul>
+    </div>
+  </div>
+
+  <p style="font-size:9pt; font-weight:600; color:var(--navy); line-height:1.65; margin-top:4px;">Det vigtigste strukturelle signal: {{BRAND_POSITION_CONCLUSION}}</p>
 
   <div class="pg-footer">
     <span>AIScore™ by AI Institute ApS &nbsp;·&nbsp; Fortroligt</span>
