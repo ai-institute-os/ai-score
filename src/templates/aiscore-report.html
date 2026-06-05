@@ -117,6 +117,15 @@
     z-index: 1;
   }
 
+  .cover-brand::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 3px;
+    background: var(--accent);
+    margin-bottom: 10px;
+  }
+
   .cover-brand {
     font-family: Georgia, "Times New Roman", Times, serif;
     font-size: 18pt;
@@ -172,8 +181,16 @@
     line-height: 1.05;
     letter-spacing: -.02em;
     color: var(--white);
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     word-break: break-word;
+  }
+
+  .cover-company-subtitle {
+    font-size: 13pt;
+    font-weight: 400;
+    color: rgba(255,255,255,.75);
+    margin-bottom: 12px;
+    letter-spacing: -.01em;
   }
 
   .cover-divider {
@@ -1758,7 +1775,7 @@
       </clipPath>
     </defs>
     <!-- Top-right sickle: outer arc → right-edge segment → inner arc → Z -->
-    <path d="M 189,0 A 75,75 0 0,0 242,80 L 242,40 A 75,75 0 0,1 189,0 Z"
+    <path d="M 189,0 A 75,75 0 0,0 242,80 L 242,40 A 55,55 0 0,1 189,0 Z"
           fill="#313B9C"/>
     <!-- Bottom-left quarter-disc — cx=0, cy=324, r=63: start y=261, footer x≈60 -->
     <circle cx="0" cy="324" r="63" fill="#252C86" clip-path="url(#bl-clip)"/>
@@ -1772,8 +1789,9 @@
   </div>
 
   <div class="cover-body">
-    <div class="cover-label">AIScore™ Position Report</div>
+    <div class="cover-label">AIScore™ Strategisk Analyse</div>
     <div class="cover-company">{{COMPANY_NAME}}</div>
+    <div class="cover-company-subtitle">{{COMPANY_SUBTITLE}}</div>
     <div class="cover-divider"></div>
 
     <span class="cover-score-label">AIScore™</span>
@@ -1801,7 +1819,7 @@
       {{ANALYSIS_PERIOD}} &nbsp;·&nbsp; Fortroligt &nbsp;·&nbsp; Udarbejdet af AI Institute ApS &nbsp;·&nbsp; aiscore.dk
     </div>
     <div class="cover-footer-right">
-      aiscore.dk
+      research@aiscore.dk
     </div>
   </div>
 </div>

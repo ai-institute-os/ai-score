@@ -3533,6 +3533,7 @@ def _render_report_html(app: "CustomerApplication") -> str:
 
     substitutions = {
         "{{COMPANY_NAME}}": name,
+        "{{COMPANY_SUBTITLE}}": app.industry or app.detected_company_type or "",
         "{{CONTACT_EMAIL}}": app.email,
         "{{ANALYSIS_DATE}}": analysis_date,
         "{{ANALYSIS_PERIOD}}": f"Q2 {date.today().year}",
