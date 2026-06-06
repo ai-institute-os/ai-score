@@ -158,7 +158,7 @@ app = SimpleNamespace(
             "professionel autoritet."
         ),
         "{{GAP_1_CALLOUT}}": (
-            "Det er ikke en fejl i Nailsters kommunikation. Det er en rolebegr&#230;nsning. "
+            "Det er ikke en fejl i Nailsters kommunikation. Det er en rollebegr&#230;nsning. "
             "AI har placeret Nailster i hjemmekategorien med en pr&#230;cision, der er "
             "sv&#230;rere at flytte end en marketingmessage."
         ),
@@ -269,7 +269,7 @@ app = SimpleNamespace(
             "eller det er ikke.</span>"
             "<span class='sec-intro-line'>Denne analyse måler Nailsters position i de fire primære "
             "AI-systemer, der i dag former forbrugernes gel polish-valg. Analysen er gennemført med "
-            "36 strukturerede testprompts — 9 per system — fordelt over kategorisnørgsmål, "
+            "36 strukturerede testprompts — 9 per system — fordelt over kategorispørgsmål, "
             "problembaserede forespørgsler, sammenligninger og professionelle kontekster.</span>"
             "<span class='sec-intro-line'>Analysen svarer ikke på, om Nailster er synlig. Det er brandet. "
             "Analysen svarer på, om Nailster vælges — hvornår, i hvilke kontekster, "

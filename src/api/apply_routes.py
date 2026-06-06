@@ -3563,7 +3563,7 @@ def _render_report_html(app: "CustomerApplication") -> str:
             f"der allerede er truffet. Et brand er enten med i det svar, eller det er ikke.</span>"
             f"<span class='sec-intro-line'>Denne analyse måler {name}s position i de fire primære AI-systemer, "
             f"der i dag former forbrugernes {sector}-valg. Analysen er gennemført med {queries} strukturerede "
-            f"testprompts — {queries_per_system} per system — fordelt over kategoriørgsmål, problembaserede "
+            f"testprompts — {queries_per_system} per system — fordelt over kategorispørgsmål, problembaserede "
             f"forespørgsler, sammenligninger og professionelle kontekster.</span>"
             f"<span>Analysen svarer ikke på, om {name} er synlig. Det er brandet. Analysen svarer på, om {name} "
             f"vælges — hvornår, i hvilke kontekster, og på hvilke betingelser.</span>"
