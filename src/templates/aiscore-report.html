@@ -1258,8 +1258,15 @@
     gap: 8px;
   }
 
-  .gap-bar {
+  .gap-bar-track {
+    flex: 1;
     height: 16px;
+    background: rgba(13,31,78,0.08);
+    overflow: hidden;
+  }
+
+  .gap-bar {
+    height: 100%;
     border-radius: 0;
   }
 
@@ -2663,11 +2670,11 @@
       <div class="gap-row-label">ChatGPT</div>
       <div class="gap-bars">
         <div class="gap-bar-wrap">
-          <div class="gap-bar mention" style="width:{{CHATGPT_MENTION_PCT}}%"></div>
+          <div class="gap-bar-track"><div class="gap-bar mention" style="width:{{CHATGPT_MENTION_PCT}}%"></div></div>
           <span class="gap-bar-pct">{{CHATGPT_MENTION_PCT}}%</span>
         </div>
         <div class="gap-bar-wrap">
-          <div class="gap-bar select" style="width:{{CHATGPT_SELECT_PCT}}%"></div>
+          <div class="gap-bar-track"><div class="gap-bar select" style="width:{{CHATGPT_SELECT_PCT}}%"></div></div>
           <span class="gap-bar-pct">{{CHATGPT_SELECT_PCT}}%</span>
         </div>
       </div>
@@ -2676,11 +2683,11 @@
       <div class="gap-row-label">Claude</div>
       <div class="gap-bars">
         <div class="gap-bar-wrap">
-          <div class="gap-bar mention" style="width:{{CLAUDE_MENTION_PCT}}%"></div>
+          <div class="gap-bar-track"><div class="gap-bar mention" style="width:{{CLAUDE_MENTION_PCT}}%"></div></div>
           <span class="gap-bar-pct">{{CLAUDE_MENTION_PCT}}%</span>
         </div>
         <div class="gap-bar-wrap">
-          <div class="gap-bar select" style="width:{{CLAUDE_SELECT_PCT}}%"></div>
+          <div class="gap-bar-track"><div class="gap-bar select" style="width:{{CLAUDE_SELECT_PCT}}%"></div></div>
           <span class="gap-bar-pct">{{CLAUDE_SELECT_PCT}}%</span>
         </div>
       </div>
@@ -2689,11 +2696,11 @@
       <div class="gap-row-label">Perplexity</div>
       <div class="gap-bars">
         <div class="gap-bar-wrap">
-          <div class="gap-bar mention" style="width:{{PERPLEXITY_MENTION_PCT}}%"></div>
+          <div class="gap-bar-track"><div class="gap-bar mention" style="width:{{PERPLEXITY_MENTION_PCT}}%"></div></div>
           <span class="gap-bar-pct">{{PERPLEXITY_MENTION_PCT}}%</span>
         </div>
         <div class="gap-bar-wrap">
-          <div class="gap-bar select" style="width:{{PERPLEXITY_SELECT_PCT}}%"></div>
+          <div class="gap-bar-track"><div class="gap-bar select" style="width:{{PERPLEXITY_SELECT_PCT}}%"></div></div>
           <span class="gap-bar-pct">{{PERPLEXITY_SELECT_PCT}}%</span>
         </div>
       </div>
@@ -2702,11 +2709,11 @@
       <div class="gap-row-label">Gemini</div>
       <div class="gap-bars">
         <div class="gap-bar-wrap">
-          <div class="gap-bar mention" style="width:{{GEMINI_MENTION_PCT}}%"></div>
+          <div class="gap-bar-track"><div class="gap-bar mention" style="width:{{GEMINI_MENTION_PCT}}%"></div></div>
           <span class="gap-bar-pct">{{GEMINI_MENTION_PCT}}%</span>
         </div>
         <div class="gap-bar-wrap">
-          <div class="gap-bar select" style="width:{{GEMINI_SELECT_PCT}}%"></div>
+          <div class="gap-bar-track"><div class="gap-bar select" style="width:{{GEMINI_SELECT_PCT}}%"></div></div>
           <span class="gap-bar-pct">{{GEMINI_SELECT_PCT}}%</span>
         </div>
       </div>
