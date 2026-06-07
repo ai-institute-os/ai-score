@@ -160,7 +160,7 @@ app = SimpleNamespace(
         "{{GAP_1_CALLOUT}}": (
             "Det er ikke en fejl i Nailsters kommunikation. Det er en rollebegr&#230;nsning. "
             "AI har placeret Nailster i hjemmekategorien med en pr&#230;cision, der er "
-            "sv&#230;rere at flytte end en marketingmessage."
+            "sv&#230;rere at flytte end en marketingbudskab."
         ),
         "{{GAP_2_TITLE}}": "System-afh&#230;ngig stabilitet",
         "{{GAP_2_BODY}}": (
