@@ -352,93 +352,125 @@ _NAILSTER_APP_ID = "4c25e701-8541-44e4-9102-efc2ed41421d"
 
 _PRESENTATION_WRAPPER_CSS = """
 <style>
-  /* ── presentation viewer shell ── */
-  body.presentation-viewer {
-    margin: 0;
-    background: #e8eaed;
-    font-family: Inter, sans-serif;
-  }
+  /* ══════════════════════════════════════════════════════
+     PRESENTATION VIEWER — web reading overrides
+     Injected after template CSS so these win on specificity
+     ══════════════════════════════════════════════════════ */
+
+  /* Topbar */
   .pv-topbar {
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 200;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 32px;
-    height: 56px;
-    background: #0d1f4e;
-    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    padding: 0 40px;
+    height: 60px;
+    background: #0d1267;
+    box-shadow: 0 2px 12px rgba(0,0,0,.28);
   }
   .pv-topbar-brand {
     font-family: "Playfair Display", Georgia, serif;
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
     color: #fff;
     letter-spacing: -.01em;
     text-decoration: none;
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
   }
-  .pv-topbar-brand .pv-o {
-    display: inline-block;
-    transform: scaleX(1.2);
-  }
+  .pv-topbar-brand .pv-wordmark { display: flex; align-items: baseline; }
+  .pv-topbar-brand .pv-o { display: inline-block; transform: scaleX(1.2); }
   .pv-topbar-brand sup {
-    font-size: 0.45em;
-    vertical-align: super;
-    font-weight: 400;
+    font-size: 0.44em; vertical-align: super; font-weight: 400;
     font-family: "Playfair Display", Georgia, serif;
   }
   .pv-topbar-sub {
-    font-size: 12px;
-    color: rgba(255,255,255,.6);
-    margin-left: 8px;
-    font-family: Inter, sans-serif;
-    font-weight: 400;
+    font-size: 12px; color: rgba(255,255,255,.55);
+    font-family: Inter, sans-serif; font-weight: 400;
   }
-  .pv-topbar-left { display: flex; align-items: baseline; gap: 6px; }
   .pv-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #f97316;
-    color: #fff;
-    font-family: Inter, sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 8px 20px;
-    border-radius: 6px;
-    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f97316; color: #fff;
+    font-family: Inter, sans-serif; font-size: 14px; font-weight: 600;
+    padding: 9px 22px; border-radius: 6px; text-decoration: none;
     transition: background .15s;
   }
   .pv-cta:hover { background: #ea6b0e; }
-  .pv-pages {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
+
+  /* Body: clean white, remove template gray */
+  body.presentation-viewer {
+    background: #f4f6fb !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  /* override print/pdf page styles for web reading */
-  .pv-pages .page {
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 16px rgba(0,0,0,.12);
-    page-break-after: unset;
-    break-after: unset;
+
+  /* Centered reading column */
+  .pv-body {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 0 80px;
+  }
+
+  /* ── Pages: strip A4 box model, become web sections ── */
+  body.presentation-viewer .page {
     width: 100% !important;
+    max-width: 100% !important;
     min-height: unset !important;
-    /* let content breathe */
-    overflow: hidden;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 52px 56px !important;
+    border-bottom: 1.5px solid #e4e8f0;
+    background: #ffffff;
+  }
+  body.presentation-viewer .page:last-child { border-bottom: none !important; }
+  body.presentation-viewer .page.dark { background: #0d1267 !important; }
+
+  /* Cover: full-bleed hero, reduce excessive height */
+  body.presentation-viewer .page.cover {
+    padding: 0 !important;
+    min-height: 520px !important;
+    max-width: 100% !important;
+    border-bottom: none !important;
+  }
+
+  /* Back cover */
+  body.presentation-viewer .page.back-cover {
+    padding: 0 !important;
+    min-height: 360px !important;
+    border-bottom: none !important;
+  }
+
+  /* Section dividers: compact */
+  body.presentation-viewer .page.section-divider {
+    padding: 36px 56px !important;
+    min-height: unset !important;
+  }
+
+  /* Page headers: reduce top weight */
+  body.presentation-viewer .page-header {
+    margin-bottom: 28px;
+  }
+
+  /* Responsive */
+  @media (max-width: 720px) {
+    .pv-topbar { padding: 0 20px; }
+    .pv-topbar-sub { display: none; }
+    .pv-cta { padding: 7px 14px; font-size: 13px; }
+    body.presentation-viewer .page { padding: 36px 24px !important; }
+    body.presentation-viewer .page.section-divider { padding: 24px 24px !important; }
   }
 </style>
 """
 
 _PRESENTATION_TOPBAR = """
 <div class="pv-topbar">
-  <div class="pv-topbar-left">
+  <div style="display:flex;align-items:baseline;gap:7px;">
     <a href="/" class="pv-topbar-brand">
-      AISc<span class="pv-o">o</span>re<sup>™</sup>
+      <span class="pv-wordmark">AISc<span class="pv-o">o</span>re<sup>™</sup></span>
     </a>
     <span class="pv-topbar-sub">by AI Institute ApS</span>
   </div>
@@ -447,10 +479,10 @@ _PRESENTATION_TOPBAR = """
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
   </a>
 </div>
-<div class="pv-pages">
+<div class="pv-body">
 """
 
-_PRESENTATION_FOOTER = "\n</div><!-- /pv-pages -->\n"
+_PRESENTATION_FOOTER = "\n</div><!-- /pv-body -->\n"
 
 
 @app.get("/aiscore/presentation", include_in_schema=False)
