@@ -352,7 +352,7 @@ _NAILSTER_APP_ID = "4c25e701-8541-44e4-9102-efc2ed41421d"
 
 _PRESENTATION_WRAPPER_CSS = """
 <style>
-  /* Presentation topbar — injected above template pages */
+  /* ── Presentation topbar ── */
   .pv-topbar {
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -392,6 +392,25 @@ _PRESENTATION_WRAPPER_CSS = """
   .pv-cta:hover { background: #ea6b0e; }
   /* Spacer so the fixed topbar doesn't overlap the first page */
   .pv-spacer { height: 56px; }
+
+  @media screen {
+    /* ── Fix: full-bleed pages lose the white parent padding ──
+       In print mode the template uses margin: -16mm to escape .page padding.
+       In screen mode we zero the parent padding via :has() instead. */
+    .page:has(> .cover),
+    .page:has(> .section-divider),
+    .page:has(> .back-cover) {
+      padding: 0 !important;
+    }
+
+    /* ── Fix: sec-title font-size for browser font metrics ──
+       Puppeteer (PDF) renders Inter slightly more condensed than browsers.
+       At 18pt the long title on p.18 wraps to 3 lines in browser vs 2 in PDF.
+       Reducing to 16.5pt aligns the wrapping. */
+    .sec-title {
+      font-size: 16.5pt !important;
+    }
+  }
 </style>
 """
 
