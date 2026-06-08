@@ -417,15 +417,11 @@ _PRESENTATION_WRAPPER_CSS = """
 _PRESENTATION_TOPBAR = """
 <div class="pv-topbar">
   <div style="display:flex;align-items:baseline;gap:8px;">
-    <a href="/" class="pv-topbar-brand">
+    <a href="https://www.aiscore.dk" class="pv-topbar-brand">
       AISc<span class="pv-o">o</span>re<sup>™</sup>
     </a>
     <span class="pv-topbar-sub">by AI Institute ApS</span>
   </div>
-  <a href="/apply" class="pv-cta">
-    Bestil din analyse
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-  </a>
 </div>
 <div class="pv-spacer"></div>
 """
