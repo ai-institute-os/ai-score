@@ -6,8 +6,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response as FastAPIResponse
+from fastapi import Depends, FastAPI, Request, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response as FastAPIResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -16,12 +16,17 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import httpx
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.config import get_settings
 from src.db.connection import run_migrations
+from src.db import get_db
+from src.db.models import CustomerApplication
 from src.llm import PromptRouter, PromptCache, RateLimiter
 from src.api.rate_limit import limiter
 from src.api.routes import router
-from src.api.apply_routes import router as apply_router
+from src.api.apply_routes import router as apply_router, _render_report_html
 
 log = structlog.get_logger()
 
@@ -339,6 +344,142 @@ async def terms_of_service_page():
 @app.get("/privacy-policy", include_in_schema=False)
 async def privacy_policy_page():
     return FileResponse(str(_static_dir / "privacy-policy.html"))
+
+
+# ── Public presentation page ───────────────────────────────────────────────────
+
+_NAILSTER_APP_ID = "4c25e701-8541-44e4-9102-efc2ed41421d"
+
+_PRESENTATION_WRAPPER_CSS = """
+<style>
+  /* ── presentation viewer shell ── */
+  body.presentation-viewer {
+    margin: 0;
+    background: #e8eaed;
+    font-family: Inter, sans-serif;
+  }
+  .pv-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 56px;
+    background: #0d1f4e;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  .pv-topbar-brand {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -.01em;
+    text-decoration: none;
+  }
+  .pv-topbar-brand .pv-o {
+    display: inline-block;
+    transform: scaleX(1.2);
+  }
+  .pv-topbar-brand sup {
+    font-size: 0.45em;
+    vertical-align: super;
+    font-weight: 400;
+    font-family: "Playfair Display", Georgia, serif;
+  }
+  .pv-topbar-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,.6);
+    margin-left: 8px;
+    font-family: Inter, sans-serif;
+    font-weight: 400;
+  }
+  .pv-topbar-left { display: flex; align-items: baseline; gap: 6px; }
+  .pv-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f97316;
+    color: #fff;
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background .15s;
+  }
+  .pv-cta:hover { background: #ea6b0e; }
+  .pv-pages {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  /* override print/pdf page styles for web reading */
+  .pv-pages .page {
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.12);
+    page-break-after: unset;
+    break-after: unset;
+    width: 100% !important;
+    min-height: unset !important;
+    /* let content breathe */
+    overflow: hidden;
+  }
+</style>
+"""
+
+_PRESENTATION_TOPBAR = """
+<div class="pv-topbar">
+  <div class="pv-topbar-left">
+    <a href="/" class="pv-topbar-brand">
+      AISc<span class="pv-o">o</span>re<sup>™</sup>
+    </a>
+    <span class="pv-topbar-sub">by AI Institute ApS</span>
+  </div>
+  <a href="/apply" class="pv-cta">
+    Bestil din analyse
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</div>
+<div class="pv-pages">
+"""
+
+_PRESENTATION_FOOTER = "\n</div><!-- /pv-pages -->\n"
+
+
+@app.get("/aiscore/presentation", include_in_schema=False)
+async def aiscore_presentation(db: AsyncSession = Depends(get_db)):
+    """Public presentation page — shows the Nailster AIScore report without confidentiality markers."""
+    result = await db.execute(
+        select(CustomerApplication).where(CustomerApplication.id == _NAILSTER_APP_ID)
+    )
+    app_obj = result.scalar_one_or_none()
+    if app_obj is None:
+        return HTMLResponse("<h1>Report not available</h1>", status_code=404)
+
+    html = _render_report_html(app_obj)
+
+    # Strip confidentiality markers (order matters — longest match first)
+    html = html.replace("&nbsp;·&nbsp; Fortroligt — må ikke videredeles", "")
+    html = html.replace("AIScore™ · Fortroligt", "AIScore™ by AI Institute ApS")
+    html = html.replace("&nbsp;·&nbsp; Fortroligt", "")
+    html = html.replace("Fortroligt — MÅ IKKE VIDEREDELES", "")
+    html = html.replace("FORTROLIGT — MÅ IKKE VIDEREDELES", "")
+    html = html.replace("Fortroligt", "")
+
+    # Inject web-viewer shell: add CSS before </head>, add topbar + wrapper after <body>
+    html = html.replace("</head>", _PRESENTATION_WRAPPER_CSS + "</head>", 1)
+    html = html.replace("<body>", '<body class="presentation-viewer">' + _PRESENTATION_TOPBAR, 1)
+    # Close the pv-pages wrapper before </body>
+    html = html.replace("</body>", _PRESENTATION_FOOTER + "</body>", 1)
+
+    return HTMLResponse(html)
 
 
 # ── Admin: PDF preview with dummy data ────────────────────────────────────────
