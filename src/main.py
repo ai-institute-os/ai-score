@@ -352,43 +352,34 @@ _NAILSTER_APP_ID = "4c25e701-8541-44e4-9102-efc2ed41421d"
 
 _PRESENTATION_WRAPPER_CSS = """
 <style>
-  /* ══════════════════════════════════════════════════════
-     PRESENTATION VIEWER — web reading overrides
-     Injected after template CSS so these win on specificity
-     ══════════════════════════════════════════════════════ */
-
-  /* Topbar */
+  /* Presentation topbar — injected above template pages */
   .pv-topbar {
-    position: sticky;
-    top: 0;
+    position: fixed;
+    top: 0; left: 0; right: 0;
     z-index: 200;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 40px;
-    height: 60px;
+    padding: 0 32px;
+    height: 56px;
     background: #0d1267;
-    box-shadow: 0 2px 12px rgba(0,0,0,.28);
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
   }
   .pv-topbar-brand {
     font-family: "Playfair Display", Georgia, serif;
-    font-size: 19px;
+    font-size: 18px;
     font-weight: 700;
     color: #fff;
     letter-spacing: -.01em;
     text-decoration: none;
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
   }
-  .pv-topbar-brand .pv-wordmark { display: flex; align-items: baseline; }
   .pv-topbar-brand .pv-o { display: inline-block; transform: scaleX(1.2); }
   .pv-topbar-brand sup {
     font-size: 0.44em; vertical-align: super; font-weight: 400;
     font-family: "Playfair Display", Georgia, serif;
   }
   .pv-topbar-sub {
-    font-size: 12px; color: rgba(255,255,255,.55);
+    font-size: 12px; color: rgba(255,255,255,.55); margin-left: 8px;
     font-family: Inter, sans-serif; font-weight: 400;
   }
   .pv-cta {
@@ -399,78 +390,16 @@ _PRESENTATION_WRAPPER_CSS = """
     transition: background .15s;
   }
   .pv-cta:hover { background: #ea6b0e; }
-
-  /* Body: clean white, remove template gray */
-  body.presentation-viewer {
-    background: #f4f6fb !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  /* Centered reading column */
-  .pv-body {
-    max-width: 980px;
-    margin: 0 auto;
-    padding: 0 0 80px;
-  }
-
-  /* ── Pages: strip A4 box model, become web sections ── */
-  body.presentation-viewer .page {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: unset !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    padding: 52px 56px !important;
-    border-bottom: 1.5px solid #e4e8f0;
-    background: #ffffff;
-  }
-  body.presentation-viewer .page:last-child { border-bottom: none !important; }
-  body.presentation-viewer .page.dark { background: #0d1267 !important; }
-
-  /* Cover: full-bleed hero, reduce excessive height */
-  body.presentation-viewer .page.cover {
-    padding: 0 !important;
-    min-height: 520px !important;
-    max-width: 100% !important;
-    border-bottom: none !important;
-  }
-
-  /* Back cover */
-  body.presentation-viewer .page.back-cover {
-    padding: 0 !important;
-    min-height: 360px !important;
-    border-bottom: none !important;
-  }
-
-  /* Section dividers: compact */
-  body.presentation-viewer .page.section-divider {
-    padding: 36px 56px !important;
-    min-height: unset !important;
-  }
-
-  /* Page headers: reduce top weight */
-  body.presentation-viewer .page-header {
-    margin-bottom: 28px;
-  }
-
-  /* Responsive */
-  @media (max-width: 720px) {
-    .pv-topbar { padding: 0 20px; }
-    .pv-topbar-sub { display: none; }
-    .pv-cta { padding: 7px 14px; font-size: 13px; }
-    body.presentation-viewer .page { padding: 36px 24px !important; }
-    body.presentation-viewer .page.section-divider { padding: 24px 24px !important; }
-  }
+  /* Spacer so the fixed topbar doesn't overlap the first page */
+  .pv-spacer { height: 56px; }
 </style>
 """
 
 _PRESENTATION_TOPBAR = """
 <div class="pv-topbar">
-  <div style="display:flex;align-items:baseline;gap:7px;">
+  <div style="display:flex;align-items:baseline;gap:8px;">
     <a href="/" class="pv-topbar-brand">
-      <span class="pv-wordmark">AISc<span class="pv-o">o</span>re<sup>™</sup></span>
+      AISc<span class="pv-o">o</span>re<sup>™</sup>
     </a>
     <span class="pv-topbar-sub">by AI Institute ApS</span>
   </div>
@@ -479,10 +408,10 @@ _PRESENTATION_TOPBAR = """
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
   </a>
 </div>
-<div class="pv-body">
+<div class="pv-spacer"></div>
 """
 
-_PRESENTATION_FOOTER = "\n</div><!-- /pv-body -->\n"
+_PRESENTATION_FOOTER = ""
 
 
 @app.get("/aiscore/presentation", include_in_schema=False)
@@ -505,11 +434,9 @@ async def aiscore_presentation(db: AsyncSession = Depends(get_db)):
     html = html.replace("FORTROLIGT — MÅ IKKE VIDEREDELES", "")
     html = html.replace("Fortroligt", "")
 
-    # Inject web-viewer shell: add CSS before </head>, add topbar + wrapper after <body>
+    # Inject topbar CSS + fixed topbar element; leave all page CSS to the template
     html = html.replace("</head>", _PRESENTATION_WRAPPER_CSS + "</head>", 1)
-    html = html.replace("<body>", '<body class="presentation-viewer">' + _PRESENTATION_TOPBAR, 1)
-    # Close the pv-pages wrapper before </body>
-    html = html.replace("</body>", _PRESENTATION_FOOTER + "</body>", 1)
+    html = html.replace("<body>", "<body>" + _PRESENTATION_TOPBAR, 1)
 
     return HTMLResponse(html)
 
