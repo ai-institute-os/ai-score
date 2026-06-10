@@ -348,8 +348,20 @@ async def privacy_policy_page():
 
 @app.get("/aiscore/pitch", include_in_schema=False)
 async def ai_institute_deck():
-    """AI Institute strategic deck — 13 slides for partner meetings."""
+    """AI Institute strategic deck — 13 slides for partner meetings (web view)."""
     return FileResponse(str(_static_dir / "ai-institute-deck.html"))
+
+
+@app.get("/aiscore/pitch/download", include_in_schema=False)
+async def ai_institute_deck_download():
+    """Download the AI Institute deck as a .pptx file."""
+    from scripts.generate_ai_institute_pptx import build_pptx
+    pptx_bytes = build_pptx()
+    return FastAPIResponse(
+        content=pptx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": 'attachment; filename="AI-Institute-Præsentation.pptx"'},
+    )
 
 
 # ── Public presentation page ───────────────────────────────────────────────────
