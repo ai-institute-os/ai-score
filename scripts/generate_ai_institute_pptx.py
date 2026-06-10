@@ -477,10 +477,9 @@ def _s09_aiscore(prs):
     # Report preview box
     rx = LM + Inches(6.8)
     rw = Inches(4.5)
-    _rect(slide, rx, Inches(2.3), rw, Inches(0.55), NAVY)
     _txt(slide, "AIScore Rapport — Nailster A/S",
-         rx + Inches(0.2), Inches(2.38), rw - Inches(0.4), Inches(0.35),
-         size=11, color=WHITE, font="Inter")
+         rx + Inches(0.2), Inches(2.3), rw - Inches(0.4), Inches(0.45),
+         size=11, bold=True, color=NAVY, font="Inter")
 
     pages = [
         ("Side 1", "Forside"),
@@ -515,21 +514,20 @@ def _s10_flow(prs):
          size=34, bold=True, color=NAVY, font="Inter")
 
     steps = [
-        ("AIScore",  "DIAGNOSE",    "Kortlægger AI-positioner og identificerer strukturelle svagheder"),
+        ("AIScore",  "DIAGNOSE",    "Kortlægger AI-positioner og identificerer svagheder"),
         ("InsideAI", "OVERVÅGNING", "Tracker løbende ændringer og observerer udviklingen"),
         ("AISelect", "LØSNING",     "Arbejder med AI-positionering og påvirker AI-valg"),
     ]
     sy = Inches(2.65)
     for i, (name, tag, desc) in enumerate(steps):
-        border_col = ACCENT if i == 0 else BORDER
         _rect(slide, LM, sy, Inches(5.5), Inches(1.15), WHITE)
-        _rect(slide, LM, sy, Inches(0.06), Inches(1.15), border_col)
+        _rect(slide, LM, sy, Inches(0.06), Inches(1.15), ACCENT)
         _txt(slide, tag, LM + Inches(0.2), sy + Inches(0.1), Inches(5), Inches(0.32),
              size=9, bold=True, color=ACCENT, font="Inter")
         _txt(slide, name, LM + Inches(0.2), sy + Inches(0.42), Inches(5), Inches(0.38),
              size=15, bold=True, color=NAVY, font="Inter")
         _txt(slide, desc, LM + Inches(0.2), sy + Inches(0.78), Inches(5), Inches(0.35),
-             size=11, color=TEXT_LIGHT, font="Inter")
+             size=10, color=TEXT_LIGHT, font="Inter", wrap=False)
         if i < 2:
             _txt(slide, "↓", LM + Inches(2.5), sy + Inches(1.2), Inches(0.5), Inches(0.45),
                  size=16, color=TEXT_LIGHT, font="Inter", align=PP_ALIGN.CENTER)
@@ -584,9 +582,9 @@ def _s11_ecosystem(prs):
         _rect(slide, cx - ew / 2, ey, ew, Inches(0.65), fill)
         nc = NAVY if is_hub else WHITE
         tc = NAVY if is_hub else ACCENT
-        _txt(slide, name, cx - ew / 2 + Inches(0.2), ey + Inches(0.05), ew, Inches(0.35),
+        _txt(slide, name, cx - ew / 2, ey + Inches(0.05), ew, Inches(0.35),
              size=15, bold=True, color=nc, font="Inter", align=PP_ALIGN.CENTER)
-        _txt(slide, tag, cx - ew / 2 + Inches(0.2), ey + Inches(0.38), ew, Inches(0.22),
+        _txt(slide, tag, cx - ew / 2, ey + Inches(0.38), ew, Inches(0.22),
              size=9, bold=True, color=tc, font="Inter", align=PP_ALIGN.CENTER)
         ey += Inches(0.65)
         if i < 4:
@@ -616,8 +614,8 @@ def _s12_moat(prs):
     ]
     sy = Inches(3.0)
     for s in steps:
-        _rect(slide, LM, sy + Inches(0.12), Inches(0.1), Inches(0.1), ACCENT)
-        _txt(slide, s, LM + Inches(0.3), sy, Inches(5.5), Inches(0.4),
+        _rect(slide, LM + Inches(0.15), sy, Inches(0.04), Inches(0.38), ACCENT)
+        _txt(slide, s, LM + Inches(0.33), sy, Inches(5.5), Inches(0.4),
              size=14, bold=True, color=WHITE, font="Inter")
         sy += Inches(0.52)
 
