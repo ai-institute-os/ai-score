@@ -236,7 +236,7 @@ def _s03_shift(prs):
     # Left card (past / passive) — navy left border only, no top/bottom
     card_w = Inches(5.5)
     _rect(slide, LM, Inches(2.5), card_w, Inches(4.0), WHITE)
-    _rect(slide, LM, Inches(2.5), Inches(0.04), Inches(4.0), NAVY)
+    _rect(slide, LM, Inches(2.5), Inches(0.025), Inches(4.0), NAVY)
     _txt(slide, "FORTID", LM + Inches(0.2), Inches(2.6), card_w, Inches(0.35),
          size=9, bold=True, color=TEXT_LIGHT, font="Inter")
     _txt(slide, "Google rangerede virksomheder.",
@@ -291,7 +291,7 @@ def _s04_sentence(prs):
     gy = Inches(5.0)
     for i, (name, verb, desc) in enumerate(products):
         _rect(slide, gx, gy, cell_w - Inches(0.05), Inches(1.9), BG_LIGHT)
-        _rect(slide, gx, gy, Inches(0.04), Inches(1.9), NAVY)
+        _rect(slide, gx, gy, Inches(0.025), Inches(1.9), NAVY)
         _txt(slide, verb, gx + Inches(0.2), gy + Inches(0.15), cell_w - Inches(0.3), Inches(0.35),
              size=9, bold=True, color=ACCENT, font="Inter")
         _txt(slide, name, gx + Inches(0.2), gy + Inches(0.5), cell_w - Inches(0.3), Inches(0.4),
@@ -374,10 +374,10 @@ def _s06_problem(prs):
     ]
     y = Inches(3.1)
     for item in items:
-        _rect(slide, LM, y + Inches(0.06), Inches(0.06), Inches(0.28), ACCENT)
-        _txt(slide, item, LM + Inches(0.25), y, Inches(9), Inches(0.45),
+        _rect(slide, LM, y + Inches(0.14), Inches(0.09), Inches(0.09), ACCENT)
+        _txt(slide, item, LM + Inches(0.22), y, Inches(9), Inches(0.42),
              size=15, color=RGBColor(0xCC, 0xCC, 0xEE), font="Inter")
-        y += Inches(0.55)
+        y += Inches(0.52)
 
     return slide
 
