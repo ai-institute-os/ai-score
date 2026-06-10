@@ -9,22 +9,24 @@ Usage:
 from __future__ import annotations
 
 import io
+from lxml import etree
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
+from pptx.oxml.ns import qn
 
 # ── Palette ────────────────────────────────────────────────────────────────────
-NAVY      = RGBColor(0x0D, 0x12, 0x67)
-NAVY_MID  = RGBColor(0x0F, 0x14, 0x70)
-ACCENT    = RGBColor(0xFF, 0x6B, 0x35)
-WHITE     = RGBColor(0xFF, 0xFF, 0xFF)
-TEXT      = RGBColor(0x1A, 0x1A, 0x2E)
-TEXT_MID  = RGBColor(0x33, 0x41, 0x55)
-TEXT_LIGHT= RGBColor(0x64, 0x74, 0x8B)
-BORDER    = RGBColor(0xE2, 0xE8, 0xF0)
-BG_LIGHT  = RGBColor(0xF8, 0xF9, 0xFC)
-ACCENT_DIM= RGBColor(0xCC, 0x55, 0x28)
+NAVY       = RGBColor(0x0D, 0x12, 0x67)
+NAVY_MID   = RGBColor(0x0F, 0x14, 0x70)
+ACCENT     = RGBColor(0xFF, 0x6B, 0x35)
+WHITE      = RGBColor(0xFF, 0xFF, 0xFF)
+TEXT       = RGBColor(0x1A, 0x1A, 0x2E)
+TEXT_MID   = RGBColor(0x33, 0x41, 0x55)
+TEXT_LIGHT = RGBColor(0x64, 0x74, 0x8B)
+BORDER     = RGBColor(0xE2, 0xE8, 0xF0)
+BG_LIGHT   = RGBColor(0xF8, 0xF9, 0xFC)
+DARK_GREEN = RGBColor(0x16, 0x65, 0x34)  # dark forest green for accent borders
 
 # ── Slide dimensions (16:9 widescreen) ─────────────────────────────────────────
 SW = Inches(13.333)
@@ -50,9 +52,21 @@ def _bg(slide, color: RGBColor) -> None:
     fill.fore_color.rgb = color
 
 
-def _rect(slide, left, top, width, height, fill_color: RGBColor, *, alpha=None):
-    shape = slide.shapes.add_shape(1, left, top, width, height)  # 1 = rectangle
-    shape.line.fill.background()
+def _no_line(shape) -> None:
+    """Remove the border/outline from a shape via direct XML manipulation."""
+    sp = shape._element
+    spPr = sp.find(qn('p:spPr'))
+    if spPr is None:
+        return
+    for existing in spPr.findall(qn('a:ln')):
+        spPr.remove(existing)
+    ln = etree.SubElement(spPr, qn('a:ln'))
+    etree.SubElement(ln, qn('a:noFill'))
+
+
+def _rect(slide, left, top, width, height, fill_color: RGBColor):
+    shape = slide.shapes.add_shape(1, left, top, width, height)
+    _no_line(shape)
     f = shape.fill
     f.solid()
     f.fore_color.rgb = fill_color
@@ -214,10 +228,10 @@ def _s03_shift(prs):
          LM, Inches(1.3), CW, Inches(0.9),
          size=34, bold=True, color=NAVY, font="Inter")
 
-    # Left card (past / passive)
+    # Left card (past / passive) — dark green left border only, no top/bottom
     card_w = Inches(5.5)
     _rect(slide, LM, Inches(2.5), card_w, Inches(4.0), WHITE)
-    _rect(slide, LM, Inches(2.5), card_w, Inches(0.03), BORDER)
+    _rect(slide, LM, Inches(2.5), Inches(0.06), Inches(4.0), DARK_GREEN)  # dark green left border
     _txt(slide, "FORTID", LM + Inches(0.2), Inches(2.6), card_w, Inches(0.35),
          size=9, bold=True, color=TEXT_LIGHT, font="Inter")
     _txt(slide, "Google rangerede virksomheder.",
@@ -227,10 +241,10 @@ def _s03_shift(prs):
          LM + Inches(0.2), Inches(4.0), card_w - Inches(0.4), Inches(0.9),
          size=13, color=TEXT_LIGHT, font="Inter")
 
-    # Right card (now / active)
+    # Right card (now / active) — orange left border only, no top/bottom
     rx = LM + card_w + Inches(0.2)
     _rect(slide, rx, Inches(2.5), card_w, Inches(4.0), WHITE)
-    _rect(slide, rx, Inches(2.5), Inches(0.06), Inches(4.0), ACCENT)  # accent border
+    _rect(slide, rx, Inches(2.5), Inches(0.06), Inches(4.0), ACCENT)  # orange left border
     _txt(slide, "NU", rx + Inches(0.25), Inches(2.6), card_w, Inches(0.35),
          size=9, bold=True, color=ACCENT, font="Inter")
     _txt(slide, "AI-systemer vælger virksomheder.",
@@ -261,23 +275,26 @@ def _s04_sentence(prs):
          LM, Inches(3.3), CW, Inches(1.3),
          size=28, bold=True, color=NAVY, font="Inter")
 
-    # Product grid
+    # Product grid — no outlines; last cell (RunAI) gets dark green left border
     products = [
-        ("AIScore", "MÅLER", "Kortlægger AI-positioner"),
+        ("AIScore",  "MÅLER",     "Kortlægger AI-positioner"),
         ("InsideAI", "OVERVÅGER", "Tracker ændringer over tid"),
-        ("AISelect", "PÅVIRKER", "Arbejder med positionering"),
-        ("RunAI", "UDFØRER", "Implementerer i organisationen"),
+        ("AISelect", "PÅVIRKER",  "Arbejder med positionering"),
+        ("RunAI",    "UDFØRER",   "Implementerer i organisationen"),
     ]
     cell_w = CW / 4
     gx = LM
     gy = Inches(5.0)
-    for name, verb, desc in products:
+    for i, (name, verb, desc) in enumerate(products):
+        is_last = (i == 3)
         _rect(slide, gx, gy, cell_w - Inches(0.05), Inches(1.9), BG_LIGHT)
-        _txt(slide, verb, gx + Inches(0.15), gy + Inches(0.15), cell_w - Inches(0.3), Inches(0.35),
+        if is_last:
+            _rect(slide, gx, gy, Inches(0.06), Inches(1.9), DARK_GREEN)
+        _txt(slide, verb, gx + Inches(0.2), gy + Inches(0.15), cell_w - Inches(0.3), Inches(0.35),
              size=9, bold=True, color=ACCENT, font="Inter")
-        _txt(slide, name, gx + Inches(0.15), gy + Inches(0.5), cell_w - Inches(0.3), Inches(0.4),
+        _txt(slide, name, gx + Inches(0.2), gy + Inches(0.5), cell_w - Inches(0.3), Inches(0.4),
              size=14, bold=True, color=NAVY, font="Inter")
-        _txt(slide, desc, gx + Inches(0.15), gy + Inches(0.9), cell_w - Inches(0.3), Inches(0.8),
+        _txt(slide, desc, gx + Inches(0.2), gy + Inches(0.9), cell_w - Inches(0.3), Inches(0.8),
              size=11, color=TEXT_LIGHT, font="Inter")
         gx += cell_w
 
@@ -297,7 +314,7 @@ def _s05_comparison(prs):
     col_w = Inches(5.3)
     cy = Inches(2.4)
     _rect(slide, LM, cy, col_w, Inches(4.0), WHITE)
-    _rect(slide, LM, cy, col_w, Inches(0.06), BORDER)
+    _rect(slide, LM, cy, Inches(0.06), Inches(4.0), DARK_GREEN)
     _txt(slide, "GEO / AI SEO", LM + Inches(0.2), cy + Inches(0.15), col_w, Inches(0.4),
          size=14, bold=True, color=TEXT_LIGHT, font="Inter")
     _txt(slide, "Fokus: At blive nævnt", LM + Inches(0.2), cy + Inches(0.65), col_w, Inches(0.35),
