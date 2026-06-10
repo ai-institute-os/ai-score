@@ -61,6 +61,7 @@ def _no_line(shape) -> None:
     for existing in spPr.findall(qn('a:ln')):
         spPr.remove(existing)
     ln = etree.SubElement(spPr, qn('a:ln'))
+    ln.set('w', '0')
     etree.SubElement(ln, qn('a:noFill'))
 
 
@@ -191,7 +192,6 @@ def _s02_purpose(prs):
     _txt(slide, "Hvorfor viser jeg dig det her?",
          LM, Inches(1.3), CW, Inches(1.0),
          size=36, bold=True, color=NAVY, font="Inter")
-    _accent_rule(slide, Inches(2.5))
 
     lines = [
         "Jeg leder ikke efter feedback på idéen.",
@@ -228,22 +228,24 @@ def _s03_shift(prs):
          LM, Inches(1.3), CW, Inches(0.9),
          size=34, bold=True, color=NAVY, font="Inter")
 
-    # Left card (past / passive) — dark green left border only, no top/bottom
+    # Left card (past / passive) — navy left border + thin bottom bar
     card_w = Inches(5.5)
     _rect(slide, LM, Inches(2.5), card_w, Inches(4.0), WHITE)
-    _rect(slide, LM, Inches(2.5), Inches(0.06), Inches(4.0), DARK_GREEN)  # dark green left border
+    _rect(slide, LM, Inches(2.5), Inches(0.06), Inches(4.0), NAVY)
+    _rect(slide, LM, Inches(6.47), card_w, Inches(0.03), NAVY)
     _txt(slide, "FORTID", LM + Inches(0.2), Inches(2.6), card_w, Inches(0.35),
          size=9, bold=True, color=TEXT_LIGHT, font="Inter")
     _txt(slide, "Google rangerede virksomheder.",
          LM + Inches(0.2), Inches(3.0), card_w - Inches(0.4), Inches(0.85),
-         size=22, bold=True, color=TEXT_LIGHT, font="Inter")
+         size=22, bold=True, color=NAVY, font="Inter")
     _txt(slide, "Virksomheder konkurrerede om placeringer.\nSynlighed var en rangliste.",
          LM + Inches(0.2), Inches(4.0), card_w - Inches(0.4), Inches(0.9),
-         size=13, color=TEXT_LIGHT, font="Inter")
+         size=13, color=TEXT, font="Inter")
 
-    # Right card (now / active) — orange left border only, no top/bottom
+    # Right card (now / active) — orange left border + thin bottom bar
     rx = LM + card_w + Inches(0.2)
     _rect(slide, rx, Inches(2.5), card_w, Inches(4.0), WHITE)
+    _rect(slide, rx, Inches(6.47), card_w, Inches(0.03), ACCENT)
     _rect(slide, rx, Inches(2.5), Inches(0.06), Inches(4.0), ACCENT)  # orange left border
     _txt(slide, "NU", rx + Inches(0.25), Inches(2.6), card_w, Inches(0.35),
          size=9, bold=True, color=ACCENT, font="Inter")
@@ -265,7 +267,6 @@ def _s04_sentence(prs):
     _txt(slide, "AI Institute på én sætning",
          LM, Inches(1.3), CW, Inches(0.9),
          size=32, bold=True, color=NAVY, font="Inter")
-    _accent_rule(slide, Inches(2.35))
 
     _txt(slide, "De fleste virksomheder forsøger at blive fundet.",
          LM, Inches(2.6), CW, Inches(0.7),
@@ -290,6 +291,8 @@ def _s04_sentence(prs):
         _rect(slide, gx, gy, cell_w - Inches(0.05), Inches(1.9), BG_LIGHT)
         if is_last:
             _rect(slide, gx, gy, Inches(0.06), Inches(1.9), DARK_GREEN)
+        else:
+            _rect(slide, gx, gy, Inches(0.06), Inches(1.9), NAVY)
         _txt(slide, verb, gx + Inches(0.2), gy + Inches(0.15), cell_w - Inches(0.3), Inches(0.35),
              size=9, bold=True, color=ACCENT, font="Inter")
         _txt(slide, name, gx + Inches(0.2), gy + Inches(0.5), cell_w - Inches(0.3), Inches(0.4),
@@ -358,7 +361,6 @@ def _s06_problem(prs):
     _txt(slide, "Hvorfor det betyder noget",
          LM, Inches(1.3), CW, Inches(0.85),
          size=34, bold=True, color=WHITE, font="Inter")
-    _accent_rule(slide, Inches(2.3))
 
     _txt(slide, "De fleste virksomheder ved ikke:",
          LM, Inches(2.6), CW, Inches(0.45),
@@ -393,7 +395,6 @@ def _s07_research(prs):
     _txt(slide, "FORSKNINGSMOTOREN",
          LM, Inches(3.0), CW, Inches(0.5),
          size=12, bold=True, color=ACCENT, font="Inter")
-    _accent_rule(slide, Inches(3.7))
 
     _txt(slide, "AI Institute eksisterer for at forstå, hvordan AI-systemer\nopfatter, kategoriserer og vælger virksomheder.",
          LM, Inches(4.0), Inches(9), Inches(1.0),
@@ -455,7 +456,6 @@ def _s09_aiscore(prs):
     _txt(slide, "AIScore — Diagnosen",
          LM, Inches(1.3), CW, Inches(0.85),
          size=34, bold=True, color=NAVY, font="Inter")
-    _accent_rule(slide, Inches(2.3))
 
     _txt(slide, "AIScore viser, hvordan AI-systemer aktuelt positionerer en virksomhed.",
          LM, Inches(2.6), Inches(6.5), Inches(0.55),
@@ -518,7 +518,6 @@ def _s10_flow(prs):
     _txt(slide, "Fra diagnose til implementering",
          LM, Inches(1.3), CW, Inches(0.85),
          size=34, bold=True, color=NAVY, font="Inter")
-    _accent_rule(slide, Inches(2.3))
 
     steps = [
         ("AIScore",  "DIAGNOSE",    "Kortlægger AI-positioner og identificerer strukturelle svagheder"),
@@ -647,7 +646,6 @@ def _s13_ask(prs):
     _txt(slide, "Hvor jeg sidder fast",
          LM, Inches(1.3), CW, Inches(0.85),
          size=34, bold=True, color=WHITE, font="Inter")
-    _accent_rule(slide, Inches(2.3))
 
     negatives = [
         "Jeg mangler ikke idéer.",
