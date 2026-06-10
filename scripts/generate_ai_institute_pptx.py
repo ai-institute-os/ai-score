@@ -236,7 +236,7 @@ def _s03_shift(prs):
     # Left card (past / passive) — navy left border only, no top/bottom
     card_w = Inches(5.5)
     _rect(slide, LM, Inches(2.5), card_w, Inches(4.0), WHITE)
-    _rect(slide, LM, Inches(2.5), Inches(0.025), Inches(4.0), NAVY)
+    _rect(slide, LM, Inches(2.5), Inches(0.035), Inches(4.0), NAVY)
     _txt(slide, "FORTID", LM + Inches(0.2), Inches(2.6), card_w, Inches(0.35),
          size=9, bold=True, color=TEXT_LIGHT, font="Inter")
     _txt(slide, "Google rangerede virksomheder.",
@@ -291,7 +291,7 @@ def _s04_sentence(prs):
     gy = Inches(5.0)
     for i, (name, verb, desc) in enumerate(products):
         _rect(slide, gx, gy, cell_w - Inches(0.05), Inches(1.9), BG_LIGHT)
-        _rect(slide, gx, gy, Inches(0.025), Inches(1.9), NAVY)
+        _rect(slide, gx, gy, Inches(0.04), Inches(1.9), NAVY)
         _txt(slide, verb, gx + Inches(0.2), gy + Inches(0.15), cell_w - Inches(0.3), Inches(0.35),
              size=9, bold=True, color=ACCENT, font="Inter")
         _txt(slide, name, gx + Inches(0.2), gy + Inches(0.5), cell_w - Inches(0.3), Inches(0.4),
@@ -318,17 +318,17 @@ def _s05_comparison(prs):
     _rect(slide, LM, cy, col_w, Inches(4.0), WHITE)
     _rect(slide, LM, cy, Inches(0.04), Inches(4.0), NAVY)
     _txt(slide, "GEO / AI SEO", LM + Inches(0.2), cy + Inches(0.15), col_w, Inches(0.4),
-         size=14, bold=True, color=TEXT_LIGHT, font="Inter")
+         size=14, bold=True, color=NAVY, font="Inter")
     _txt(slide, "Fokus: At blive nævnt", LM + Inches(0.2), cy + Inches(0.65), col_w, Inches(0.35),
-         size=12, color=TEXT_LIGHT, font="Inter")
+         size=12, color=TEXT, font="Inter")
     qs_l = ["Bliver vi nævnt?", "Bliver vi citeret?", "Er vi synlige?"]
     qy = cy + Inches(1.15)
     for q in qs_l:
         _txt(slide, "→  " + q, LM + Inches(0.2), qy, col_w, Inches(0.35),
-             size=12, color=TEXT_LIGHT, font="Inter")
+             size=12, color=TEXT, font="Inter")
         qy += Inches(0.38)
     _txt(slide, "Mål: Mere omtale", LM + Inches(0.2), cy + Inches(3.35), col_w, Inches(0.4),
-         size=12, bold=True, color=TEXT_LIGHT, font="Inter")
+         size=12, bold=True, color=NAVY, font="Inter")
 
     # Right col: AI Institute — orange left border only, no top/bottom
     rx = LM + col_w + Inches(0.3)
@@ -374,8 +374,8 @@ def _s06_problem(prs):
     ]
     y = Inches(3.1)
     for item in items:
-        _rect(slide, LM, y + Inches(0.14), Inches(0.09), Inches(0.09), ACCENT)
-        _txt(slide, item, LM + Inches(0.22), y, Inches(9), Inches(0.42),
+        _rect(slide, LM, y, Inches(0.04), Inches(0.38), ACCENT)
+        _txt(slide, item, LM + Inches(0.18), y, Inches(9), Inches(0.42),
              size=15, color=RGBColor(0xCC, 0xCC, 0xEE), font="Inter")
         y += Inches(0.52)
 
@@ -428,7 +428,7 @@ def _s08_timing(prs):
         bg_col = RGBColor(0x12, 0x18, 0x75) if not is_now else RGBColor(0x18, 0x1F, 0x85)
         _rect(slide, cx, cy, col_w - Inches(0.08), Inches(3.5), bg_col)
         if is_now:
-            _rect(slide, cx, cy, Inches(0.06), Inches(3.5), ACCENT)
+            _rect(slide, cx, cy, Inches(0.035), Inches(3.5), ACCENT)
         yr_color = ACCENT if is_now else WHITE
         _txt(slide, yr, cx + Inches(0.2), cy + Inches(0.2), col_w, Inches(0.6),
              size=28, bold=True, color=yr_color, font="Inter")
@@ -438,9 +438,8 @@ def _s08_timing(prs):
              size=12, color=RGBColor(0xAA, 0xAA, 0xCC), font="Inter")
         cx += col_w
 
-    _rect(slide, LM, Inches(6.1), CW, Inches(0.04), RGBColor(0xFF, 0x6B, 0x35))
     _txt(slide, "De virksomheder der etablerer stærke AI-positioner tidligt, får en strukturel fordel senere.",
-         LM, Inches(6.25), CW, Inches(0.7),
+         LM, Inches(6.1), CW, Inches(0.7),
          size=13, bold=True, color=RGBColor(0xCC, 0xCC, 0xEE), font="Inter")
 
     return slide
