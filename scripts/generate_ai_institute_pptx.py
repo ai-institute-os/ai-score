@@ -291,7 +291,6 @@ def _s04_sentence(prs):
     gy = Inches(5.0)
     for i, (name, verb, desc) in enumerate(products):
         _rect(slide, gx, gy, cell_w - Inches(0.05), Inches(1.9), BG_LIGHT)
-        _rect(slide, gx, gy, Inches(0.025), Inches(1.9), NAVY)
         _txt(slide, verb, gx + Inches(0.2), gy + Inches(0.15), cell_w - Inches(0.3), Inches(0.35),
              size=9, bold=True, color=ACCENT, font="Inter")
         _txt(slide, name, gx + Inches(0.2), gy + Inches(0.5), cell_w - Inches(0.3), Inches(0.4),
@@ -361,7 +360,7 @@ def _s06_problem(prs):
          size=34, bold=True, color=WHITE, font="Inter")
 
     _txt(slide, "De fleste virksomheder ved ikke:",
-         LM + Inches(0.33), Inches(2.6), CW, Inches(0.45),
+         LM + Inches(0.15), Inches(2.6), CW, Inches(0.45),
          size=15, color=RGBColor(0xCC, 0xCC, 0xEE), font="Inter")
 
     items = [
@@ -459,8 +458,8 @@ def _s09_aiscore(prs):
          size=14, color=TEXT_MID, font="Inter")
 
     _txt(slide, "Rapporten svarer på:",
-         LM + Inches(0.33), Inches(3.25), Inches(6.5), Inches(0.35),
-         size=13, color=TEXT_MID, font="Inter")
+         LM + Inches(0.15), Inches(3.25), Inches(6.5), Inches(0.35),
+         size=13, bold=True, color=NAVY, font="Inter")
 
     bullets = [
         "om virksomheden vælges",
