@@ -361,7 +361,7 @@ def _s06_problem(prs):
          size=34, bold=True, color=WHITE, font="Inter")
 
     _txt(slide, "De fleste virksomheder ved ikke:",
-         LM + Inches(0.18), Inches(2.6), CW, Inches(0.45),
+         LM + Inches(0.33), Inches(2.6), CW, Inches(0.45),
          size=15, color=RGBColor(0xCC, 0xCC, 0xEE), font="Inter")
 
     items = [
@@ -374,8 +374,8 @@ def _s06_problem(prs):
     ]
     y = Inches(3.1)
     for item in items:
-        _rect(slide, LM, y, Inches(0.04), Inches(0.38), ACCENT)
-        _txt(slide, item, LM + Inches(0.18), y, Inches(9), Inches(0.42),
+        _rect(slide, LM + Inches(0.15), y, Inches(0.04), Inches(0.38), ACCENT)
+        _txt(slide, item, LM + Inches(0.33), y, Inches(9), Inches(0.42),
              size=15, color=RGBColor(0xCC, 0xCC, 0xEE), font="Inter")
         y += Inches(0.52)
 
@@ -459,7 +459,7 @@ def _s09_aiscore(prs):
          size=14, color=TEXT_MID, font="Inter")
 
     _txt(slide, "Rapporten svarer på:",
-         LM, Inches(3.25), Inches(6.5), Inches(0.35),
+         LM + Inches(0.33), Inches(3.25), Inches(6.5), Inches(0.35),
          size=13, color=TEXT_MID, font="Inter")
 
     bullets = [
@@ -470,8 +470,8 @@ def _s09_aiscore(prs):
     ]
     by = Inches(3.7)
     for b in bullets:
-        _rect(slide, LM, by + Inches(0.1), Inches(0.06), Inches(0.22), ACCENT)
-        _txt(slide, b, LM + Inches(0.22), by, Inches(6.2), Inches(0.4),
+        _rect(slide, LM + Inches(0.15), by, Inches(0.04), Inches(0.38), ACCENT)
+        _txt(slide, b, LM + Inches(0.33), by, Inches(6.2), Inches(0.4),
              size=13, color=TEXT_MID, font="Inter")
         by += Inches(0.48)
 
@@ -502,7 +502,6 @@ def _s09_aiscore(prs):
              size=9, color=TEXT_LIGHT, font="Inter")
         _txt(slide, name, bx + Inches(0.1), by + Inches(0.5), pw, Inches(0.65),
              size=11, bold=True, color=NAVY, font="Inter")
-        _rect(slide, bx + Inches(0.1), by + Inches(1.55), Inches(0.4), Inches(0.04), ACCENT)
 
     return slide
 
