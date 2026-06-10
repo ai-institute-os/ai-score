@@ -291,7 +291,7 @@ def _s04_sentence(prs):
     gy = Inches(5.0)
     for i, (name, verb, desc) in enumerate(products):
         _rect(slide, gx, gy, cell_w - Inches(0.05), Inches(1.9), BG_LIGHT)
-        _rect(slide, gx, gy, Inches(0.04), Inches(1.9), NAVY)
+        _rect(slide, gx, gy, Inches(0.025), Inches(1.9), NAVY)
         _txt(slide, verb, gx + Inches(0.2), gy + Inches(0.15), cell_w - Inches(0.3), Inches(0.35),
              size=9, bold=True, color=ACCENT, font="Inter")
         _txt(slide, name, gx + Inches(0.2), gy + Inches(0.5), cell_w - Inches(0.3), Inches(0.4),
@@ -361,7 +361,7 @@ def _s06_problem(prs):
          size=34, bold=True, color=WHITE, font="Inter")
 
     _txt(slide, "De fleste virksomheder ved ikke:",
-         LM, Inches(2.6), CW, Inches(0.45),
+         LM + Inches(0.18), Inches(2.6), CW, Inches(0.45),
          size=15, color=RGBColor(0xCC, 0xCC, 0xEE), font="Inter")
 
     items = [
@@ -428,7 +428,7 @@ def _s08_timing(prs):
         bg_col = RGBColor(0x12, 0x18, 0x75) if not is_now else RGBColor(0x18, 0x1F, 0x85)
         _rect(slide, cx, cy, col_w - Inches(0.08), Inches(3.5), bg_col)
         if is_now:
-            _rect(slide, cx, cy, Inches(0.035), Inches(3.5), ACCENT)
+            _rect(slide, cx, cy + Inches(3.5) - Inches(0.04), col_w - Inches(0.08), Inches(0.04), ACCENT)
         yr_color = ACCENT if is_now else WHITE
         _txt(slide, yr, cx + Inches(0.2), cy + Inches(0.2), col_w, Inches(0.6),
              size=28, bold=True, color=yr_color, font="Inter")
