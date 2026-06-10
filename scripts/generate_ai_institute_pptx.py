@@ -53,7 +53,7 @@ def _bg(slide, color: RGBColor) -> None:
 
 
 def _no_line(shape) -> None:
-    """Remove the border/outline from a shape via direct XML manipulation."""
+    """Remove border and drop-shadow from a shape via direct XML manipulation."""
     sp = shape._element
     spPr = sp.find(qn('p:spPr'))
     if spPr is None:
@@ -63,14 +63,19 @@ def _no_line(shape) -> None:
     ln = etree.SubElement(spPr, qn('a:ln'))
     ln.set('w', '0')
     etree.SubElement(ln, qn('a:noFill'))
+    for existing in spPr.findall(qn('a:effectLst')):
+        spPr.remove(existing)
+    for existing in spPr.findall(qn('a:effectDag')):
+        spPr.remove(existing)
+    etree.SubElement(spPr, qn('a:effectLst'))
 
 
 def _rect(slide, left, top, width, height, fill_color: RGBColor):
     shape = slide.shapes.add_shape(1, left, top, width, height)
-    _no_line(shape)
     f = shape.fill
     f.solid()
     f.fore_color.rgb = fill_color
+    _no_line(shape)  # called after fill so a:ln/a:effectLst land after fill in spPr
     return shape
 
 
