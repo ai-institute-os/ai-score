@@ -1855,9 +1855,13 @@ function renderActionPanel(app) {
                 Download PDF Rapport
               </button>
               <div id="qcMoveSection" style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
-                <button class="btn btn-success" onclick="openMoveToQcModal()"
-                   style="font-size:0.85rem;padding:0.5rem 1.1rem;">
-                  <i data-lucide="arrow-right-circle" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+                <a href="/aiscore/pitch" target="_blank" class="btn btn-success"
+                   style="font-size:0.85rem;padding:0.5rem 1.1rem;text-decoration:none;display:inline-flex;align-items:center;">
+                  <i data-lucide="presentation" style="width:14px;height:14px;margin-right:0.35rem;"></i>
+                  Generer Præsentation
+                </a>
+                <button onclick="openMoveToQcModal()"
+                   style="font-size:0.78rem;padding:0.3rem 0.8rem;margin-left:8px;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);cursor:pointer;">
                   Flyt til QC Review
                 </button>
               </div>`;

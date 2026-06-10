@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Institute — Strategisk Præsentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #0d1267;
+      --navy-mid:  #1a237a;
+      --accent:    #FF6B35;
+      --white:     #ffffff;
+      --text:      #1a1a2e;
+      --text-mid:  #334155;
+      --text-light:#64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8f9fc;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.65;
+    }
+
+    /* ── Slide shell ── */
+    .slide {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px max(60px, 10vw);
+      position: relative;
+      border-bottom: 1px solid var(--border);
+    }
+    .slide.dark {
+      background: var(--navy);
+      color: var(--white);
+      border-bottom: none;
+    }
+    .slide.mid-dark {
+      background: #0f1470;
+      color: var(--white);
+      border-bottom: none;
+    }
+    .slide.light { background: var(--bg); }
+
+    /* Slide number */
+    .slide-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 32px;
+    }
+    .dark .slide-label, .mid-dark .slide-label { color: rgba(255,107,53,.9); }
+
+    /* Typography */
+    .slide-title {
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+      margin-bottom: 28px;
+    }
+    .slide-subtitle {
+      font-size: clamp(16px, 2vw, 22px);
+      font-weight: 400;
+      color: var(--text-mid);
+      line-height: 1.55;
+      max-width: 640px;
+    }
+    .dark .slide-subtitle, .mid-dark .slide-subtitle { color: rgba(255,255,255,.7); }
+
+    .slide-body {
+      font-size: clamp(15px, 1.6vw, 18px);
+      color: var(--text-mid);
+      max-width: 680px;
+      line-height: 1.75;
+    }
+    .dark .slide-body, .mid-dark .slide-body { color: rgba(255,255,255,.75); }
+
+    p + p { margin-top: 1em; }
+
+    /* Orange accent line under title */
+    .accent-rule {
+      width: 48px;
+      height: 3px;
+      background: var(--accent);
+      margin-bottom: 32px;
+      border-radius: 2px;
+    }
+
+    /* ── Slide 1 — Cover ── */
+    .cover-brand {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      color: var(--white);
+      margin-bottom: auto;
+      padding-bottom: 0;
+    }
+    .cover-brand .o { display: inline-block; transform: scaleX(1.2); }
+    .cover-brand sup { font-size: .45em; vertical-align: super; font-weight: 400; }
+
+    .cover-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 0;
+    }
+    .cover-eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: rgba(255,107,53,.9);
+      margin-bottom: 24px;
+    }
+    .cover-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(48px, 7vw, 88px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -.02em;
+      color: var(--white);
+      margin-bottom: 32px;
+    }
+    .cover-sub {
+      font-size: clamp(15px, 1.8vw, 20px);
+      font-weight: 300;
+      color: rgba(255,255,255,.7);
+      max-width: 560px;
+      line-height: 1.6;
+    }
+    .cover-products {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 56px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,.15);
+    }
+    .cover-chip {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      color: rgba(255,255,255,.55);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 100px;
+      padding: 4px 14px;
+    }
+
+    /* Decorative geometric background for cover */
+    .cover-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .cover-bg svg { position: absolute; right: -10%; top: 50%; transform: translateY(-50%); width: 55%; opacity: .06; }
+    .slide.dark > *:not(.cover-bg) { position: relative; z-index: 1; }
+
+    /* ── Slide 3 — Shift ── */
+    .shift-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      margin: 40px 0;
+    }
+    .shift-col {
+      padding: 40px;
+      border: 1px solid var(--border);
+    }
+    .shift-col:first-child { border-right: none; }
+    .shift-era {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 16px;
+    }
+    .shift-statement {
+      font-size: clamp(20px, 2.8vw, 34px);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -.015em;
+      margin-bottom: 20px;
+    }
+    .shift-col.active .shift-statement { color: var(--navy); }
+    .shift-col.active { border-left: 3px solid var(--accent); background: rgba(255,107,53,.03); }
+    .shift-col.passive .shift-statement { color: var(--text-light); }
+    .shift-col.passive { opacity: .7; }
+    .shift-body {
+      font-size: 14px;
+      color: var(--text-mid);
+      line-height: 1.7;
+    }
+
+    /* ── Slide 4 — One sentence ── */
+    .statement-block {
+      margin: 48px 0 40px;
+    }
+    .statement-a {
+      font-size: clamp(18px, 2.5vw, 28px);
+      font-weight: 400;
+      color: var(--text-light);
+      line-height: 1.4;
+      margin-bottom: 12px;
+      text-decoration: line-through;
+      text-decoration-color: rgba(100,116,139,.35);
+    }
+    .statement-b {
+      font-size: clamp(22px, 3.2vw, 38px);
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.25;
+      letter-spacing: -.02em;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      margin-top: 48px;
+      border: 1px solid var(--border);
+    }
+    .product-cell {
+      background: var(--white);
+      padding: 24px 20px;
+    }
+    .product-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .product-verb {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .product-desc {
+      font-size: 13px;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    /* ── Slide 5 — Comparison ── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      background: var(--border);
+      margin: 40px 0;
+    }
+    .compare-col {
+      background: var(--white);
+      padding: 36px 32px;
+    }
+    .compare-col.ours { background: rgba(13,18,103,.03); border-top: 3px solid var(--navy); }
+    .compare-col.theirs { border-top: 3px solid var(--border); }
+    .compare-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+    .compare-col.ours .compare-label { color: var(--accent); }
+    .compare-heading {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 20px;
+    }
+    .compare-col.theirs .compare-heading { color: var(--text-light); }
+    .compare-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin: 20px 0 8px;
+    }
+    .compare-col.ours .compare-section-title { color: var(--navy); }
+    .compare-qs { list-style: none; padding: 0; }
+    .compare-qs li {
+      font-size: 14px;
+      color: var(--text-mid);
+      padding: 4px 0 4px 18px;
+      position: relative;
+      line-height: 1.5;
+    }
+    .compare-qs li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--text-light);
+      font-size: 12px;
+    }
+    .compare-col.ours .compare-qs li::before { color: var(--accent); }
+    .compare-goal {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-mid);
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .compare-col.ours .compare-goal { color: var(--navy); }
+    .compare-bottom {
+      text-align: center;
+      font-size: clamp(14px, 1.8vw, 18px);
+      font-weight: 700;
+      color: var(--navy);
+      margin-top: 32px;
+      padding: 24px;
+      background: rgba(13,18,103,.04);
+      border-left: 3px solid var(--accent);
+    }
+
+    /* ── Slide 6 — Problem list ── */
+    .problem-list {
+      list-style: none;
+      margin: 32px 0;
+      max-width: 560px;
+    }
+    .problem-list li {
+      font-size: clamp(15px, 1.8vw, 20px);
+      color: rgba(255,255,255,.85);
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      line-height: 1.5;
+    }
+    .problem-list li:last-child { border-bottom: none; }
+    .problem-list li::before {
+      content: '—';
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Slide 8 — Timeline ── */
+    .timeline-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      background: rgba(255,255,255,.1);
+      margin: 40px 0;
+    }
+    .tl-col {
+      background: var(--navy);
+      padding: 28px 24px;
+    }
+    .tl-year {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -.02em;
+      margin-bottom: 6px;
+    }
+    .tl-status {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255,107,53,.85);
+      margin-bottom: 16px;
+    }
+    .tl-body {
+      font-size: 14px;
+      color: rgba(255,255,255,.7);
+      line-height: 1.6;
+    }
+    .tl-closer {
+      font-size: clamp(15px, 1.8vw, 20px);
+      font-weight: 600;
+      color: rgba(255,255,255,.8);
+      border-left: 3px solid var(--accent);
+      padding: 16px 20px;
+      background: rgba(255,255,255,.04);
+      margin-top: 8px;
+    }
+
+    /* ── Slide 9 — AIScore evidence ── */
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin: 40px 0;
+      align-items: start;
+    }
+    .evidence-text .slide-body { max-width: 100%; }
+    .evidence-bullets {
+      list-style: none;
+      margin-top: 20px;
+    }
+    .evidence-bullets li {
+      font-size: 14px;
+      color: var(--text-mid);
+      padding: 8px 0 8px 20px;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+      line-height: 1.5;
+    }
+    .evidence-bullets li:last-child { border-bottom: none; }
+    .evidence-bullets li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 12px;
+    }
+    .report-preview {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .report-preview-header {
+      background: var(--navy);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .report-preview-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,.8);
+      letter-spacing: .04em;
+    }
+    .report-preview-link {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .report-preview-link:hover { color: #ff8a5c; }
+    .report-preview-pages {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 12px;
+    }
+    .report-page-thumb {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      aspect-ratio: 210 / 297;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      text-align: center;
+    }
+    .thumb-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .thumb-name {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .thumb-stripe {
+      width: 32px;
+      height: 2px;
+      background: var(--accent);
+      margin: 8px auto 0;
+      border-radius: 1px;
+    }
+
+    /* ── Slide 10 — Flow ── */
+    .flow-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      margin: 40px 0;
+      max-width: 480px;
+    }
+    .flow-item {
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+    }
+    .flow-card {
+      border: 1px solid var(--border);
+      background: var(--white);
+      padding: 20px 24px;
+      flex: 1;
+    }
+    .flow-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 2px;
+    }
+    .flow-tagline {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .flow-desc {
+      font-size: 13px;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      color: var(--accent);
+      font-size: 20px;
+      font-weight: 300;
+    }
+    .flow-connector {
+      width: 1px;
+      background: var(--border);
+      margin: 0 24px;
+      height: 24px;
+      align-self: center;
+    }
+
+    /* ── Slide 11 — Ecosystem ── */
+    .eco-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .eco-hub {
+      background: var(--white);
+      border: 2px solid var(--white);
+      border-radius: 4px;
+      padding: 16px 40px;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -.01em;
+      margin-bottom: 0;
+    }
+    .eco-arrow {
+      width: 1px;
+      height: 32px;
+      background: rgba(255,255,255,.25);
+      position: relative;
+    }
+    .eco-arrow::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 7px solid rgba(255,255,255,.25);
+    }
+    .eco-product {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 4px;
+      padding: 14px 36px;
+      text-align: center;
+      width: 100%;
+    }
+    .eco-product-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .eco-product-tagline {
+      font-size: 11px;
+      color: rgba(255,107,53,.85);
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    /* ── Slide 12 — Flywheel ── */
+    .flywheel {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      max-width: 560px;
+      margin: 36px 0;
+    }
+    .fw-step {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .fw-step:last-child { border-bottom: none; }
+    .fw-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .fw-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--white);
+    }
+    .fw-down {
+      font-size: 16px;
+      color: rgba(255,107,53,.6);
+      margin-left: 24px;
+      line-height: 1;
+    }
+    .moat-box {
+      margin-top: 40px;
+      border-left: 3px solid var(--accent);
+      padding: 20px 24px;
+      background: rgba(255,255,255,.04);
+    }
+    .moat-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .moat-text {
+      font-size: clamp(15px, 1.8vw, 19px);
+      font-weight: 600;
+      color: var(--white);
+      line-height: 1.5;
+    }
+
+    /* ── Slide 13 — The Ask ── */
+    .ask-list {
+      list-style: none;
+      margin: 32px 0;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      max-width: 600px;
+    }
+    .ask-list li {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,.75);
+      padding: 14px 18px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ask-list li::before {
+      content: '→';
+      color: var(--accent);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .closing-statement {
+      font-size: clamp(16px, 2vw, 22px);
+      font-weight: 600;
+      color: rgba(255,255,255,.85);
+      line-height: 1.6;
+      max-width: 560px;
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,.15);
+    }
+    .ask-negatives {
+      list-style: none;
+      margin: 24px 0;
+      max-width: 480px;
+    }
+    .ask-negatives li {
+      font-size: clamp(15px, 1.8vw, 19px);
+      color: rgba(255,255,255,.7);
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      text-decoration: line-through;
+      text-decoration-color: rgba(255,107,53,.35);
+    }
+    .ask-negatives li:last-child { border-bottom: none; text-decoration: none; font-weight: 700; color: var(--white); }
+
+    /* Nav bar */
+    .deck-nav {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      z-index: 100;
+      background: rgba(13,18,103,.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 100px;
+      padding: 8px 16px;
+    }
+    .nav-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.3);
+      cursor: pointer;
+      transition: background .2s, transform .2s;
+    }
+    .nav-dot:hover, .nav-dot.active { background: var(--accent); transform: scale(1.3); }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SLIDE 1 — COVER
+══════════════════════════════════════ -->
+<section class="slide dark" id="slide-1" style="padding-top:60px;padding-bottom:60px;">
+  <div class="cover-bg">
+    <svg viewBox="0 0 600 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="300" cy="300" r="280" stroke="white" stroke-width="1.5"/>
+      <circle cx="300" cy="300" r="200" stroke="white" stroke-width="1"/>
+      <circle cx="300" cy="300" r="120" stroke="white" stroke-width=".75"/>
+      <line x1="20" y1="300" x2="580" y2="300" stroke="white" stroke-width=".5"/>
+      <line x1="300" y1="20" x2="300" y2="580" stroke="white" stroke-width=".5"/>
+      <line x1="102" y1="102" x2="498" y2="498" stroke="white" stroke-width=".5"/>
+      <line x1="498" y1="102" x2="102" y2="498" stroke="white" stroke-width=".5"/>
+    </svg>
+  </div>
+
+  <div class="cover-brand">
+    AISc<span class="o">o</span>re<sup>™</sup>&nbsp; <span style="font-size:.7em;font-weight:400;color:rgba(255,255,255,.5);font-family:'Inter',sans-serif;letter-spacing:.02em;">by AI Institute ApS</span>
+  </div>
+
+  <div class="cover-main">
+    <div class="cover-eyebrow">Strategisk møde — fortroligt</div>
+    <h1 class="cover-title">AI<br>Institute</h1>
+    <p class="cover-sub">Hvordan AI-systemer opfatter, kategoriserer og vælger virksomheder</p>
+  </div>
+
+  <div class="cover-products">
+    <span class="cover-chip">AIScore</span>
+    <span class="cover-chip">InsideAI</span>
+    <span class="cover-chip">AISelect</span>
+    <span class="cover-chip">RunAI</span>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 2 — HVORFOR VISER JEG DIG DET HER?
+══════════════════════════════════════ -->
+<section class="slide" id="slide-2">
+  <div class="slide-label">02 — Formål</div>
+  <h2 class="slide-title" style="max-width:600px;">Hvorfor viser<br>jeg dig det her?</h2>
+  <div class="accent-rule"></div>
+  <div class="slide-body" style="max-width:580px;">
+    <p>Jeg leder ikke efter feedback på idéen.</p>
+    <p>Jeg leder ikke efter en investor.</p>
+    <p>Jeg leder ikke efter en kunde.</p>
+    <p style="margin-top:28px;font-size:1.1em;font-weight:600;color:var(--navy);">Jeg forsøger at finde den rette tekniske arkitektur og de rette mennesker til at bygge dette korrekt.</p>
+    <p style="margin-top:24px;">Det kan være dig.</p>
+    <p>Det kan være nogen i dit netværk.</p>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 3 — DET SKIFTE DE FLESTE OVERSER
+══════════════════════════════════════ -->
+<section class="slide light" id="slide-3">
+  <div class="slide-label">03 — Kontekst</div>
+  <h2 class="slide-title">Det skifte de fleste overser</h2>
+  <div class="shift-grid">
+    <div class="shift-col passive">
+      <div class="shift-era">Fortid</div>
+      <div class="shift-statement">Google rangerede<br>virksomheder.</div>
+      <div class="shift-body">Virksomheder konkurrerede om placeringer. Synlighed var en rangliste.</div>
+    </div>
+    <div class="shift-col active">
+      <div class="shift-era">Nu</div>
+      <div class="shift-statement">AI-systemer<br>vælger virksomheder.</div>
+      <div class="shift-body">Når en kunde spørger ChatGPT, Gemini, Perplexity eller Claude, får kunden ikke blot en liste.<br><br>Kunden får et svar. Og i det svar er virksomheden enten <strong>valgt</strong> — eller fravalgt.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 4 — AI INSTITUTE PÅ ÉN SÆTNING
+══════════════════════════════════════ -->
+<section class="slide" id="slide-4">
+  <div class="slide-label">04 — Kernen</div>
+  <h2 class="slide-title">AI Institute<br>på én sætning</h2>
+  <div class="accent-rule"></div>
+  <div class="statement-block">
+    <div class="statement-a">De fleste virksomheder forsøger at blive fundet.</div>
+    <div class="statement-b">AI Institute forsøger at forstå,<br>hvorfor virksomheder bliver valgt.</div>
+  </div>
+  <div class="product-grid">
+    <div class="product-cell">
+      <div class="product-verb">Måler</div>
+      <div class="product-name">AIScore</div>
+      <div class="product-desc">Kortlægger AI-positioner på tværs af systemer</div>
+    </div>
+    <div class="product-cell">
+      <div class="product-verb">Overvåger</div>
+      <div class="product-name">InsideAI</div>
+      <div class="product-desc">Tracker løbende ændringer i AI-opfattelse</div>
+    </div>
+    <div class="product-cell">
+      <div class="product-verb">Påvirker</div>
+      <div class="product-name">AISelect</div>
+      <div class="product-desc">Arbejder strategisk med AI-positionering</div>
+    </div>
+    <div class="product-cell">
+      <div class="product-verb">Udfører</div>
+      <div class="product-name">RunAI</div>
+      <div class="product-desc">Implementerer i organisationen</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 5 — SYNLIGHED ER IKKE SLUTMÅLET
+══════════════════════════════════════ -->
+<section class="slide light" id="slide-5">
+  <div class="slide-label">05 — Differentiering</div>
+  <h2 class="slide-title">Synlighed er ikke slutmålet.<br>Udvælgelse er.</h2>
+  <div class="compare-grid">
+    <div class="compare-col theirs">
+      <div class="compare-label">Eksisterende tilgang</div>
+      <div class="compare-heading">GEO / AI SEO</div>
+      <div class="compare-section-title">Fokus</div>
+      <p style="font-size:14px;color:var(--text-mid);margin-bottom:16px;">At blive nævnt</p>
+      <div class="compare-section-title">Spørgsmål</div>
+      <ul class="compare-qs">
+        <li>Bliver vi nævnt?</li>
+        <li>Bliver vi citeret?</li>
+        <li>Er vi synlige?</li>
+      </ul>
+      <div class="compare-goal">Mål: Mere omtale</div>
+    </div>
+    <div class="compare-col ours">
+      <div class="compare-label">AI Institute</div>
+      <div class="compare-heading">AI Institute</div>
+      <div class="compare-section-title">Fokus</div>
+      <p style="font-size:14px;color:var(--text-mid);margin-bottom:16px;">At blive valgt</p>
+      <div class="compare-section-title">Spørgsmål</div>
+      <ul class="compare-qs">
+        <li>Hvorfor vælger AI én virksomhed?</li>
+        <li>Hvorfor fravælges en anden?</li>
+        <li>Hvilken rolle har AI tildelt virksomheden?</li>
+        <li>Hvad driver AI-udvælgelse?</li>
+      </ul>
+      <div class="compare-goal">Mål: Forstå og påvirke AI-valg</div>
+    </div>
+  </div>
+  <div class="compare-bottom">
+    Synlighed er et datapunkt. &nbsp;·&nbsp; Udvælgelse er forretningen.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 6 — HVORFOR DET BETYDER NOGET
+══════════════════════════════════════ -->
+<section class="slide dark" id="slide-6">
+  <div class="slide-label">06 — Problem</div>
+  <h2 class="slide-title" style="max-width:520px;">Hvorfor det<br>betyder noget</h2>
+  <div class="accent-rule"></div>
+  <p class="slide-body" style="margin-bottom:8px;">De fleste virksomheder ved ikke:</p>
+  <ul class="problem-list">
+    <li>hvordan AI ser dem</li>
+    <li>hvilken kategorirolle AI har givet dem</li>
+    <li>hvornår de vælges</li>
+    <li>hvornår de fravælges</li>
+    <li>hvorfor konkurrenter vælges i stedet</li>
+    <li>hvordan deres AI-position ændrer sig over tid</li>
+  </ul>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 7 — FORSKNINGSMOTOREN
+══════════════════════════════════════ -->
+<section class="slide mid-dark" id="slide-7">
+  <div class="slide-label">07 — Fundamentet</div>
+  <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(36px,5vw,64px);font-weight:700;line-height:1.1;color:var(--white);margin-bottom:28px;letter-spacing:-.02em;">AI Institute</div>
+  <div style="font-size:clamp(14px,1.8vw,18px);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:32px;">Forskningsmotoren</div>
+  <div class="accent-rule"></div>
+  <div class="slide-body" style="max-width:580px;">
+    <p>AI Institute eksisterer for at forstå, hvordan AI-systemer opfatter, kategoriserer og vælger virksomheder.</p>
+    <p style="margin-top:24px;">Produkterne er ikke separate idéer.</p>
+    <p>De er konsekvenser af den samme forskning.</p>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 8 — TIMING
+══════════════════════════════════════ -->
+<section class="slide dark" id="slide-8">
+  <div class="slide-label">08 — Timing</div>
+  <h2 class="slide-title">Hvorfor timing<br>betyder noget</h2>
+  <div class="timeline-row">
+    <div class="tl-col">
+      <div class="tl-year">2024</div>
+      <div class="tl-status">Begyndelsen</div>
+      <div class="tl-body">AI begynder at anbefale virksomheder. Positioner er plastiske.</div>
+    </div>
+    <div class="tl-col">
+      <div class="tl-year">2025</div>
+      <div class="tl-status">Opdagelse</div>
+      <div class="tl-body">Virksomheder opdager problemet. Tidligt vindue for at handle.</div>
+    </div>
+    <div class="tl-col" style="border-left:2px solid var(--accent);">
+      <div class="tl-year" style="color:var(--accent);">2026</div>
+      <div class="tl-status">Nu</div>
+      <div class="tl-body">AI-positioner formes aktivt. Den mest kritiske fase.</div>
+    </div>
+    <div class="tl-col">
+      <div class="tl-year">2027+</div>
+      <div class="tl-status">Konsolidering</div>
+      <div class="tl-body">Kategoriopfattelser sætter sig. Vanskeligere at ændre.</div>
+    </div>
+  </div>
+  <div class="tl-closer">
+    De virksomheder der etablerer stærke AI-positioner tidligt, får en strukturel fordel senere.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 9 — AISCORE — DIAGNOSEN
+══════════════════════════════════════ -->
+<section class="slide" id="slide-9">
+  <div class="slide-label">09 — Bevis</div>
+  <h2 class="slide-title">AIScore — Diagnosen</h2>
+  <div class="evidence-grid">
+    <div class="evidence-text">
+      <div class="accent-rule"></div>
+      <p class="slide-body">AIScore viser, hvordan AI-systemer aktuelt positionerer en virksomhed.</p>
+      <p class="slide-body" style="margin-top:16px;">Rapporten svarer ikke kun på, om virksomheden er synlig. Den svarer på:</p>
+      <ul class="evidence-bullets">
+        <li>om virksomheden vælges</li>
+        <li>hvornår den vælges</li>
+        <li>hvornår den fravælges</li>
+        <li>hvilken rolle AI har givet virksomheden</li>
+        <li>hvilke strukturelle mønstre der begrænser udvælgelse</li>
+      </ul>
+    </div>
+    <div>
+      <div class="report-preview">
+        <div class="report-preview-header">
+          <span class="report-preview-title">AIScore Rapport — Nailster A/S</span>
+          <a href="/aiscore/presentation" target="_blank" class="report-preview-link">Åbn rapport →</a>
+        </div>
+        <div class="report-preview-pages">
+          <div class="report-page-thumb">
+            <div class="thumb-label">Side 1</div>
+            <div class="thumb-name">Forside</div>
+            <div class="thumb-stripe"></div>
+          </div>
+          <div class="report-page-thumb">
+            <div class="thumb-label">Side 5</div>
+            <div class="thumb-name">Executive Summary</div>
+            <div class="thumb-stripe"></div>
+          </div>
+          <div class="report-page-thumb">
+            <div class="thumb-label">Side 9</div>
+            <div class="thumb-name">Strukturelle svagheder</div>
+            <div class="thumb-stripe"></div>
+          </div>
+          <div class="report-page-thumb">
+            <div class="thumb-label">Side 12</div>
+            <div class="thumb-name">Strategisk position</div>
+            <div class="thumb-stripe"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 10 — FRA DIAGNOSE TIL IMPLEMENTERING
+══════════════════════════════════════ -->
+<section class="slide light" id="slide-10">
+  <div class="slide-label">10 — Systemet</div>
+  <h2 class="slide-title" style="max-width:520px;">Fra diagnose<br>til implementering</h2>
+  <div class="accent-rule"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;margin-top:8px;">
+    <div class="flow-stack">
+      <div class="flow-item">
+        <div class="flow-card" style="border-top:3px solid var(--accent);">
+          <div class="flow-tagline">Diagnose</div>
+          <div class="flow-name">AIScore</div>
+          <div class="flow-desc">Kortlægger AI-positioner og identificerer strukturelle svagheder</div>
+        </div>
+      </div>
+      <div style="width:1px;height:28px;background:var(--border);margin-left:24px;"></div>
+      <div class="flow-item">
+        <div class="flow-card">
+          <div class="flow-tagline">Overvågning</div>
+          <div class="flow-name">InsideAI</div>
+          <div class="flow-desc">Tracker løbende ændringer og observerer udviklingen</div>
+        </div>
+      </div>
+      <div style="width:1px;height:28px;background:var(--border);margin-left:24px;"></div>
+      <div class="flow-item">
+        <div class="flow-card">
+          <div class="flow-tagline">Løsning</div>
+          <div class="flow-name">AISelect</div>
+          <div class="flow-desc">Arbejder med AI-positionering og påvirker AI-valg</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding-top:8px;">
+      <p class="slide-body">AIScore identificerer problemet.</p>
+      <p class="slide-body" style="margin-top:12px;">InsideAI overvåger udviklingen.</p>
+      <p class="slide-body" style="margin-top:12px;">AISelect arbejder med løsningen.</p>
+      <div style="margin-top:32px;padding:20px 24px;border-left:3px solid var(--accent);background:rgba(13,18,103,.03);">
+        <p style="font-size:14px;font-weight:600;color:var(--navy);">Produkterne er ikke siloer. De er faser i det samme system.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 11 — ØKOSYSTEMET
+══════════════════════════════════════ -->
+<section class="slide dark" id="slide-11">
+  <div class="slide-label">11 — Strukturen</div>
+  <h2 class="slide-title" style="margin-bottom:48px;">Økosystemet</h2>
+  <div class="eco-center">
+    <div class="eco-hub">AI Institute</div>
+    <div class="eco-arrow"></div>
+    <div class="eco-product">
+      <div class="eco-product-name">AIScore</div>
+      <div class="eco-product-tagline">Måler</div>
+    </div>
+    <div class="eco-arrow"></div>
+    <div class="eco-product">
+      <div class="eco-product-name">InsideAI</div>
+      <div class="eco-product-tagline">Overvåger</div>
+    </div>
+    <div class="eco-arrow"></div>
+    <div class="eco-product">
+      <div class="eco-product-name">AISelect</div>
+      <div class="eco-product-tagline">Påvirker</div>
+    </div>
+    <div class="eco-arrow"></div>
+    <div class="eco-product">
+      <div class="eco-product-name">RunAI</div>
+      <div class="eco-product-tagline">Udfører</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 12 — MOAT
+══════════════════════════════════════ -->
+<section class="slide mid-dark" id="slide-12">
+  <div class="slide-label">12 — Moat</div>
+  <h2 class="slide-title" style="max-width:520px;">Hvorfor økosystemet<br>bliver stærkere over tid</h2>
+  <div class="flywheel">
+    <div class="fw-step"><div class="fw-dot"></div><div class="fw-label">AI Institute forsker</div></div>
+    <div class="fw-down">↓</div>
+    <div class="fw-step"><div class="fw-dot"></div><div class="fw-label">AIScore producerer rapporter</div></div>
+    <div class="fw-down">↓</div>
+    <div class="fw-step"><div class="fw-dot"></div><div class="fw-label">InsideAI akkumulerer data</div></div>
+    <div class="fw-down">↓</div>
+    <div class="fw-step"><div class="fw-dot"></div><div class="fw-label">AISelect leverer resultater</div></div>
+    <div class="fw-down">↓</div>
+    <div class="fw-step"><div class="fw-dot"></div><div class="fw-label">Mere data → bedre forståelse</div></div>
+    <div class="fw-down">↓</div>
+    <div class="fw-step"><div class="fw-dot"></div><div class="fw-label">Bedre forståelse → bedre produkter</div></div>
+  </div>
+  <div class="moat-box">
+    <div class="moat-label">Moat</div>
+    <div class="moat-text">Moat'en er ikke én rapport.<br>Moat'en er den akkumulerede forståelse af,<br>hvorfor AI vælger.</div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SLIDE 13 — HVOR JEG SIDDER FAST
+══════════════════════════════════════ -->
+<section class="slide dark" id="slide-13" style="border-bottom:none;">
+  <div class="slide-label">13 — Anmodningen</div>
+  <h2 class="slide-title" style="max-width:520px;">Hvor jeg<br>sidder fast</h2>
+  <div class="accent-rule"></div>
+  <ul class="ask-negatives">
+    <li>Jeg mangler ikke idéer.</li>
+    <li>Jeg mangler ikke produkter.</li>
+    <li>Jeg mangler ikke salg.</li>
+    <li style="text-decoration:none;font-weight:700;color:var(--white);">Jeg mangler den tekniske arkitektur og de rette mennesker til at bygge systemet korrekt.</li>
+  </ul>
+  <ul class="ask-list">
+    <li>Systemarkitektur</li>
+    <li>Agent orchestration</li>
+    <li>Data infrastructure</li>
+    <li>Teknisk lederskab</li>
+    <li>QA og governance</li>
+    <li>Langsigtet technical ownership</li>
+  </ul>
+  <div class="closing-statement">
+    Det er derfor jeg gerne vil tale med dig.<br><br>
+    Måske er du den rigtige person.<br>
+    Måske kender du den rigtige person.
+  </div>
+</section>
+
+
+<!-- Slide nav dots -->
+<nav class="deck-nav" id="deckNav">
+  <div class="nav-dot active" onclick="scrollToSlide(1)" title="01 Cover"></div>
+  <div class="nav-dot" onclick="scrollToSlide(2)" title="02 Formål"></div>
+  <div class="nav-dot" onclick="scrollToSlide(3)" title="03 Skifte"></div>
+  <div class="nav-dot" onclick="scrollToSlide(4)" title="04 Kerne"></div>
+  <div class="nav-dot" onclick="scrollToSlide(5)" title="05 Differentiering"></div>
+  <div class="nav-dot" onclick="scrollToSlide(6)" title="06 Problem"></div>
+  <div class="nav-dot" onclick="scrollToSlide(7)" title="07 Fundament"></div>
+  <div class="nav-dot" onclick="scrollToSlide(8)" title="08 Timing"></div>
+  <div class="nav-dot" onclick="scrollToSlide(9)" title="09 Bevis"></div>
+  <div class="nav-dot" onclick="scrollToSlide(10)" title="10 System"></div>
+  <div class="nav-dot" onclick="scrollToSlide(11)" title="11 Struktur"></div>
+  <div class="nav-dot" onclick="scrollToSlide(12)" title="12 Moat"></div>
+  <div class="nav-dot" onclick="scrollToSlide(13)" title="13 Anmodning"></div>
+</nav>
+
+<script>
+  function scrollToSlide(n) {
+    document.getElementById('slide-' + n).scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Update active dot on scroll
+  const slides = Array.from({ length: 13 }, (_, i) => document.getElementById('slide-' + (i + 1)));
+  const dots = document.querySelectorAll('.nav-dot');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const idx = slides.indexOf(entry.target);
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(s => observer.observe(s));
+
+  // Keyboard navigation
+  let current = 0;
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      current = Math.min(current + 1, 12);
+      scrollToSlide(current + 1);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      current = Math.max(current - 1, 0);
+      scrollToSlide(current + 1);
+    }
+  });
+</script>
+</body>
+</html>

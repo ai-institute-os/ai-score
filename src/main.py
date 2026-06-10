@@ -346,6 +346,12 @@ async def privacy_policy_page():
     return FileResponse(str(_static_dir / "privacy-policy.html"))
 
 
+@app.get("/aiscore/pitch", include_in_schema=False)
+async def ai_institute_deck():
+    """AI Institute strategic deck — 13 slides for partner meetings."""
+    return FileResponse(str(_static_dir / "ai-institute-deck.html"))
+
+
 # ── Public presentation page ───────────────────────────────────────────────────
 
 _NAILSTER_APP_ID = "4c25e701-8541-44e4-9102-efc2ed41421d"
