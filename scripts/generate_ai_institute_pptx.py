@@ -228,11 +228,10 @@ def _s03_shift(prs):
          LM, Inches(1.3), CW, Inches(0.9),
          size=34, bold=True, color=NAVY, font="Inter")
 
-    # Left card (past / passive) — navy left border + thin bottom bar
+    # Left card (past / passive) — navy left border only, no top/bottom
     card_w = Inches(5.5)
     _rect(slide, LM, Inches(2.5), card_w, Inches(4.0), WHITE)
-    _rect(slide, LM, Inches(2.5), Inches(0.06), Inches(4.0), NAVY)
-    _rect(slide, LM, Inches(6.47), card_w, Inches(0.03), NAVY)
+    _rect(slide, LM, Inches(2.5), Inches(0.04), Inches(4.0), NAVY)
     _txt(slide, "FORTID", LM + Inches(0.2), Inches(2.6), card_w, Inches(0.35),
          size=9, bold=True, color=TEXT_LIGHT, font="Inter")
     _txt(slide, "Google rangerede virksomheder.",
@@ -242,11 +241,10 @@ def _s03_shift(prs):
          LM + Inches(0.2), Inches(4.0), card_w - Inches(0.4), Inches(0.9),
          size=13, color=TEXT, font="Inter")
 
-    # Right card (now / active) — orange left border + thin bottom bar
+    # Right card (now / active) — orange left border only, no top/bottom
     rx = LM + card_w + Inches(0.2)
     _rect(slide, rx, Inches(2.5), card_w, Inches(4.0), WHITE)
-    _rect(slide, rx, Inches(6.47), card_w, Inches(0.03), ACCENT)
-    _rect(slide, rx, Inches(2.5), Inches(0.06), Inches(4.0), ACCENT)  # orange left border
+    _rect(slide, rx, Inches(2.5), Inches(0.04), Inches(4.0), ACCENT)  # orange left border
     _txt(slide, "NU", rx + Inches(0.25), Inches(2.6), card_w, Inches(0.35),
          size=9, bold=True, color=ACCENT, font="Inter")
     _txt(slide, "AI-systemer vælger virksomheder.",
@@ -276,7 +274,7 @@ def _s04_sentence(prs):
          LM, Inches(3.3), CW, Inches(1.3),
          size=28, bold=True, color=NAVY, font="Inter")
 
-    # Product grid — no outlines; last cell (RunAI) gets dark green left border
+    # Product grid — all cells get thin NAVY left border
     products = [
         ("AIScore",  "MÅLER",     "Kortlægger AI-positioner"),
         ("InsideAI", "OVERVÅGER", "Tracker ændringer over tid"),
@@ -287,12 +285,8 @@ def _s04_sentence(prs):
     gx = LM
     gy = Inches(5.0)
     for i, (name, verb, desc) in enumerate(products):
-        is_last = (i == 3)
         _rect(slide, gx, gy, cell_w - Inches(0.05), Inches(1.9), BG_LIGHT)
-        if is_last:
-            _rect(slide, gx, gy, Inches(0.06), Inches(1.9), DARK_GREEN)
-        else:
-            _rect(slide, gx, gy, Inches(0.06), Inches(1.9), NAVY)
+        _rect(slide, gx, gy, Inches(0.04), Inches(1.9), NAVY)
         _txt(slide, verb, gx + Inches(0.2), gy + Inches(0.15), cell_w - Inches(0.3), Inches(0.35),
              size=9, bold=True, color=ACCENT, font="Inter")
         _txt(slide, name, gx + Inches(0.2), gy + Inches(0.5), cell_w - Inches(0.3), Inches(0.4),
@@ -313,11 +307,11 @@ def _s05_comparison(prs):
          LM, Inches(1.3), CW, Inches(0.85),
          size=30, bold=True, color=NAVY, font="Inter")
 
-    # Left col: GEO
+    # Left col: GEO — navy left border only, no top/bottom
     col_w = Inches(5.3)
     cy = Inches(2.4)
     _rect(slide, LM, cy, col_w, Inches(4.0), WHITE)
-    _rect(slide, LM, cy, Inches(0.06), Inches(4.0), DARK_GREEN)
+    _rect(slide, LM, cy, Inches(0.04), Inches(4.0), NAVY)
     _txt(slide, "GEO / AI SEO", LM + Inches(0.2), cy + Inches(0.15), col_w, Inches(0.4),
          size=14, bold=True, color=TEXT_LIGHT, font="Inter")
     _txt(slide, "Fokus: At blive nævnt", LM + Inches(0.2), cy + Inches(0.65), col_w, Inches(0.35),
@@ -331,11 +325,10 @@ def _s05_comparison(prs):
     _txt(slide, "Mål: Mere omtale", LM + Inches(0.2), cy + Inches(3.35), col_w, Inches(0.4),
          size=12, bold=True, color=TEXT_LIGHT, font="Inter")
 
-    # Right col: AI Institute
+    # Right col: AI Institute — orange left border only, no top/bottom
     rx = LM + col_w + Inches(0.3)
     _rect(slide, rx, cy, col_w, Inches(4.0), WHITE)
-    _rect(slide, rx, cy, col_w, Inches(0.06), NAVY)
-    _rect(slide, rx, cy, Inches(0.06), Inches(4.0), ACCENT)
+    _rect(slide, rx, cy, Inches(0.04), Inches(4.0), ACCENT)
     _txt(slide, "AI Institute", rx + Inches(0.25), cy + Inches(0.15), col_w, Inches(0.4),
          size=14, bold=True, color=NAVY, font="Inter")
     _txt(slide, "Fokus: At blive valgt", rx + Inches(0.25), cy + Inches(0.65), col_w, Inches(0.35),
