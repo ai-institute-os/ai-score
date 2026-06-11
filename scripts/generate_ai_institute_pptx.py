@@ -427,7 +427,6 @@ def _s08_timing(prs):
         bg_col = RGBColor(0x10, 0x16, 0x70) if not is_now else RGBColor(0x1C, 0x24, 0x90)
         _rect(slide, cx, cy, col_w - Inches(0.08), Inches(3.7), bg_col)
         if is_now:
-            _rect(slide, cx, cy, Inches(0.04), Inches(3.7), ACCENT)
             _rect(slide, cx, cy + Inches(3.7) - Inches(0.04), col_w - Inches(0.08), Inches(0.04), ACCENT)
         yr_color = ACCENT if is_now else WHITE
         _txt(slide, yr, cx + Inches(0.2), cy + Inches(0.2), col_w, Inches(0.6),
@@ -576,7 +575,7 @@ def _s11_ecosystem(prs):
     # Chain positioned left of center; causal explanations on the right
     chain_cx = SW * 0.3
     ew = Inches(3.6)
-    ey = Inches(2.0)
+    ey = Inches(2.4)
     rx = chain_cx + ew / 2 + Inches(0.5)
     rw = SW - rx - RM
     for i, (name, tag, why) in enumerate(items):
