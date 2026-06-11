@@ -659,7 +659,7 @@ def _s13_ask(prs):
              size=14, color=RGBColor(0x88, 0x88, 0xAA), font="Inter")
         ny += Inches(0.45)
 
-    _txt(slide, "Jeg mangler den tekniske arkitektur og de rette\nmennersker til at bygge systemet korrekt.",
+    _txt(slide, "Jeg mangler den tekniske arkitektur og de rette\nmennesker til at bygge systemet korrekt.",
          LM, Inches(4.05), Inches(6.0), Inches(1.0),
          size=16, bold=True, color=WHITE, font="Inter")
 
