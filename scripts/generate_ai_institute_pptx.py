@@ -414,32 +414,33 @@ def _s08_timing(prs):
          size=34, bold=True, color=WHITE, font="Inter")
 
     years = [
-        ("2024", "BEGYNDELSEN", "AI begynder at anbefale virksomheder. Positioner er plastiske."),
-        ("2025", "OPDAGELSE",   "Virksomheder opdager problemet. Tidligt vindue for at handle."),
-        ("2026", "NU",          "AI-positioner formes aktivt. Den mest kritiske fase."),
-        ("2027+", "KONSOLIDERING", "Kategoriopfattelser sætter sig. Vanskeligere at ændre."),
+        ("2024", "BEGYNDELSEN",    "AI begynder at anbefale virksomheder. Kategoripositioner er stadig åbne."),
+        ("2025", "OPDAGELSE",      "De første virksomheder opdager problemet. Tidligste aktørers fordel starter her."),
+        ("2026", "KRITISK VINDUE", "AI-positioner formes aktivt. Konventioner sættes. Dette er det afgørende år."),
+        ("2027+", "KONSOLIDERING", "Kategoriopfattelser sætter sig. Vinderne er valgt. Meget sværere at ændre."),
     ]
     col_w = CW / 4
     cx = LM
-    cy = Inches(2.4)
+    cy = Inches(2.2)
     for i, (yr, status, body) in enumerate(years):
         is_now = (i == 2)
-        bg_col = RGBColor(0x12, 0x18, 0x75) if not is_now else RGBColor(0x18, 0x1F, 0x85)
-        _rect(slide, cx, cy, col_w - Inches(0.08), Inches(3.5), bg_col)
+        bg_col = RGBColor(0x10, 0x16, 0x70) if not is_now else RGBColor(0x1C, 0x24, 0x90)
+        _rect(slide, cx, cy, col_w - Inches(0.08), Inches(3.7), bg_col)
         if is_now:
-            _rect(slide, cx, cy + Inches(3.5) - Inches(0.04), col_w - Inches(0.08), Inches(0.04), ACCENT)
+            _rect(slide, cx, cy, Inches(0.04), Inches(3.7), ACCENT)
+            _rect(slide, cx, cy + Inches(3.7) - Inches(0.04), col_w - Inches(0.08), Inches(0.04), ACCENT)
         yr_color = ACCENT if is_now else WHITE
         _txt(slide, yr, cx + Inches(0.2), cy + Inches(0.2), col_w, Inches(0.6),
-             size=28, bold=True, color=yr_color, font="Inter")
+             size=26, bold=True, color=yr_color, font="Inter")
         _txt(slide, status, cx + Inches(0.2), cy + Inches(0.85), col_w, Inches(0.35),
-             size=9, bold=True, color=ACCENT, font="Inter")
-        _txt(slide, body, cx + Inches(0.2), cy + Inches(1.3), col_w - Inches(0.35), Inches(1.9),
-             size=12, color=RGBColor(0xAA, 0xAA, 0xCC), font="Inter")
+             size=8, bold=True, color=ACCENT, font="Inter")
+        _txt(slide, body, cx + Inches(0.2), cy + Inches(1.25), col_w - Inches(0.3), Inches(2.2),
+             size=11, color=RGBColor(0xAA, 0xAA, 0xCC), font="Inter")
         cx += col_w
 
-    _txt(slide, "De virksomheder der etablerer stærke AI-positioner tidligt, får en strukturel fordel senere.",
+    _txt(slide, "Det strukturelle vindue lukker ikke med en overskrift. Det lukker stille — mens de fleste stadig venter.",
          LM, Inches(6.1), CW, Inches(0.7),
-         size=13, bold=True, color=RGBColor(0xCC, 0xCC, 0xEE), font="Inter")
+         size=13, bold=True, color=ACCENT, font="Inter")
 
     return slide
 
@@ -566,31 +567,36 @@ def _s11_ecosystem(prs):
          size=34, bold=True, color=WHITE, font="Inter")
 
     items = [
-        ("AI Institute", "KERNEN"),
-        ("AIScore",      "MÅLER"),
-        ("InsideAI",     "OVERVÅGER"),
-        ("AISelect",     "PÅVIRKER"),
-        ("RunAI",        "UDFØRER"),
+        ("AI Institute", "KERNEN",    "Forskning skaber den grundlæggende forståelse af AI-udvælgelse"),
+        ("AIScore",      "MÅLER",     "Forståelsen omsættes til diagnose — hvem vælges, og hvorfor"),
+        ("InsideAI",     "OVERVÅGER", "Diagnosen overvåges løbende og akkumuleres over tid"),
+        ("AISelect",     "PÅVIRKER",  "Akkumuleret indsigt bruges aktivt til at ændre AI-valg"),
+        ("RunAI",        "UDFØRER",   "Strategi implementeres i organisationen — forståelse bliver handling"),
     ]
-    cx = SW / 2
-    ew = Inches(4.0)
-    ey = Inches(2.2)
-    for i, (name, tag) in enumerate(items):
+    # Chain positioned left of center; causal explanations on the right
+    chain_cx = SW * 0.3
+    ew = Inches(3.6)
+    ey = Inches(2.0)
+    rx = chain_cx + ew / 2 + Inches(0.5)
+    rw = SW - rx - RM
+    for i, (name, tag, why) in enumerate(items):
         is_hub = (i == 0)
         fill = WHITE if is_hub else RGBColor(0x14, 0x1A, 0x78)
-        border = WHITE if is_hub else RGBColor(0x33, 0x38, 0x88)
-        _rect(slide, cx - ew / 2, ey, ew, Inches(0.65), fill)
         nc = NAVY if is_hub else WHITE
         tc = NAVY if is_hub else ACCENT
-        _txt(slide, name, cx - ew / 2, ey + Inches(0.05), ew, Inches(0.35),
-             size=15, bold=True, color=nc, font="Inter", align=PP_ALIGN.CENTER)
-        _txt(slide, tag, cx - ew / 2, ey + Inches(0.38), ew, Inches(0.22),
-             size=9, bold=True, color=tc, font="Inter", align=PP_ALIGN.CENTER)
-        ey += Inches(0.65)
+        _rect(slide, chain_cx - ew / 2, ey, ew, Inches(0.62), fill)
+        _txt(slide, name, chain_cx - ew / 2, ey + Inches(0.04), ew, Inches(0.32),
+             size=14, bold=True, color=nc, font="Inter", align=PP_ALIGN.CENTER)
+        _txt(slide, tag, chain_cx - ew / 2, ey + Inches(0.37), ew, Inches(0.22),
+             size=8, bold=True, color=tc, font="Inter", align=PP_ALIGN.CENTER)
+        # Causal explanation on right
+        _txt(slide, "→  " + why, rx, ey + Inches(0.12), rw, Inches(0.42),
+             size=11, color=RGBColor(0x88, 0x88, 0xCC), font="Inter")
+        ey += Inches(0.62)
         if i < 4:
-            _txt(slide, "↓", cx - Inches(0.15), ey + Inches(0.0), Inches(0.3), Inches(0.35),
-                 size=14, color=RGBColor(0x44, 0x49, 0x99), font="Inter", align=PP_ALIGN.CENTER)
-            ey += Inches(0.35)
+            _txt(slide, "↓", chain_cx - Inches(0.15), ey, Inches(0.3), Inches(0.3),
+                 size=12, color=RGBColor(0x44, 0x49, 0x99), font="Inter", align=PP_ALIGN.CENTER)
+            ey += Inches(0.3)
 
     return slide
 
@@ -605,28 +611,31 @@ def _s12_moat(prs):
          size=34, bold=True, color=WHITE, font="Inter")
 
     steps = [
-        "AI Institute forsker",
-        "AIScore producerer rapporter",
-        "InsideAI akkumulerer data",
-        "AISelect leverer resultater",
-        "Mere data → bedre forståelse",
-        "Bedre forståelse → bedre produkter",
+        "Hver virksomhed der analyseres, tilføjer et datapunkt",
+        "Hvert kvartal der overvåges, øger præcisionen",
+        "Hvert implementeret skridt validerer modellen",
+        "Forståelsen forbedres. Den kan ikke kopieres.",
+        "Software kan reproduceres på uger.",
+        "To år med indsigt i AI-udvælgelse kan ikke.",
     ]
-    sy = Inches(3.0)
+    sy = Inches(2.95)
     for s in steps:
         _rect(slide, LM + Inches(0.15), sy, Inches(0.04), Inches(0.38), ACCENT)
-        _txt(slide, s, LM + Inches(0.33), sy, Inches(5.5), Inches(0.4),
-             size=14, bold=True, color=WHITE, font="Inter")
-        sy += Inches(0.52)
+        _txt(slide, s, LM + Inches(0.33), sy, Inches(5.6), Inches(0.4),
+             size=13, bold=(s.endswith(".")), color=WHITE, font="Inter")
+        sy += Inches(0.50)
 
     # Moat box
-    _rect(slide, LM + Inches(6.5), Inches(2.5), Inches(5.5), Inches(2.8), RGBColor(0x0D, 0x10, 0x55))
-    _rect(slide, LM + Inches(6.5), Inches(2.5), Inches(0.08), Inches(2.8), ACCENT)
-    _txt(slide, "MOAT", LM + Inches(6.7), Inches(2.65), Inches(5.0), Inches(0.35),
-         size=9, bold=True, color=ACCENT, font="Inter")
-    _txt(slide, "Moat'en er ikke én rapport.\nMoat'en er den akkumulerede\nforståelse af, hvorfor AI vælger.",
-         LM + Inches(6.7), Inches(3.1), Inches(5.0), Inches(1.8),
+    _rect(slide, LM + Inches(6.5), Inches(2.5), Inches(5.5), Inches(3.5), RGBColor(0x0D, 0x10, 0x55))
+    _rect(slide, LM + Inches(6.5), Inches(2.5), Inches(0.06), Inches(3.5), ACCENT)
+    _txt(slide, "HVAD DER ER SVÆRT AT KOPIERE", LM + Inches(6.7), Inches(2.65), Inches(5.0), Inches(0.35),
+         size=8, bold=True, color=ACCENT, font="Inter")
+    _txt(slide, "Det svære er ikke\nat bygge produkterne.",
+         LM + Inches(6.7), Inches(3.1), Inches(5.0), Inches(0.8),
          size=15, bold=True, color=WHITE, font="Inter")
+    _txt(slide, "Det svære er at forstå, hvorfor\nAI-systemer vælger én virksomhed\nfrem for en anden.\n\nDen forståelse akkumuleres.\nDen kan ikke købes.",
+         LM + Inches(6.7), Inches(3.95), Inches(4.8), Inches(1.8),
+         size=13, color=RGBColor(0xBB, 0xBB, 0xDD), font="Inter")
 
     return slide
 
