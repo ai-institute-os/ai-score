@@ -381,7 +381,7 @@ _PRESENTATION_WRAPPER_CSS = """
     padding: 0 32px;
     height: 56px;
     background: #0d1267;
-    box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    box-shadow: 0 1px 0 rgba(255,255,255,.06), 0 2px 16px rgba(0,0,0,.35);
   }
   .pv-topbar-brand {
     font-family: "Playfair Display", Georgia, serif;
@@ -397,21 +397,34 @@ _PRESENTATION_WRAPPER_CSS = """
     font-family: "Playfair Display", Georgia, serif;
   }
   .pv-topbar-sub {
-    font-size: 12px; color: rgba(255,255,255,.55); margin-left: 8px;
+    font-size: 12px; color: rgba(255,255,255,.45); margin-left: 8px;
     font-family: Inter, sans-serif; font-weight: 400;
   }
-  .pv-cta {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #f97316; color: #fff;
-    font-family: Inter, sans-serif; font-size: 14px; font-weight: 600;
-    padding: 9px 22px; border-radius: 6px; text-decoration: none;
-    transition: background .15s;
-  }
-  .pv-cta:hover { background: #ea6b0e; }
   /* Spacer so the fixed topbar doesn't overlap the first page */
   .pv-spacer { height: 56px; }
 
+  /* ── End-of-document marker ── */
+  .pv-endmark {
+    text-align: center;
+    font-family: Inter, sans-serif;
+    font-size: 11px;
+    color: #c0bdb8;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 52px 0 80px;
+    user-select: none;
+  }
+
   @media screen {
+    /* ── Premium off-white document background ── */
+    body { background: #f5f4f2 !important; }
+
+    /* ── Subtle document elevation: pages feel like paper on a surface ── */
+    .page {
+      box-shadow: 0 1px 18px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
+      margin-bottom: 4px;
+    }
+
     /* ── Fix: full-bleed pages lose the white parent padding ──
        In print mode the template uses margin: -16mm to escape .page padding.
        In screen mode we zero the parent padding via :has() instead. */
@@ -444,7 +457,9 @@ _PRESENTATION_TOPBAR = """
 <div class="pv-spacer"></div>
 """
 
-_PRESENTATION_FOOTER = ""
+_PRESENTATION_FOOTER = """
+<div class="pv-endmark">AIScore-rapport &middot; Nailster A/S &middot; AI Institute ApS</div>
+"""
 
 
 @app.get("/aiscore/presentation", include_in_schema=False)
@@ -470,6 +485,7 @@ async def aiscore_presentation(db: AsyncSession = Depends(get_db)):
     # Inject topbar CSS + fixed topbar element; leave all page CSS to the template
     html = html.replace("</head>", _PRESENTATION_WRAPPER_CSS + "</head>", 1)
     html = html.replace("<body>", "<body>" + _PRESENTATION_TOPBAR, 1)
+    html = html.replace("</body>", _PRESENTATION_FOOTER + "</body>", 1)
 
     return HTMLResponse(html)
 
