@@ -403,6 +403,49 @@ _PRESENTATION_WRAPPER_CSS = """
   /* Spacer so the fixed topbar doesn't overlap the first page */
   .pv-spacer { height: 56px; }
 
+  /* ── Intro framing above the report ── */
+  .pv-intro {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 52px 24px 40px;
+    font-family: Inter, sans-serif;
+  }
+  .pv-intro-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0d1267;
+    letter-spacing: -.01em;
+    margin: 0 0 10px;
+  }
+  .pv-intro-body {
+    font-size: 14px;
+    line-height: 1.65;
+    color: #4a5568;
+    margin: 0;
+  }
+
+  /* ── Closing thought below the report ── */
+  .pv-closing {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 56px 24px 20px;
+    font-family: Inter, sans-serif;
+    border-top: 1px solid rgba(0,0,0,.06);
+  }
+  .pv-closing-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0d1267;
+    letter-spacing: -.01em;
+    margin: 0 0 8px;
+  }
+  .pv-closing-body {
+    font-size: 14px;
+    line-height: 1.65;
+    color: #4a5568;
+    margin: 0;
+  }
+
   /* ── End-of-document marker ── */
   .pv-endmark {
     text-align: center;
@@ -411,7 +454,7 @@ _PRESENTATION_WRAPPER_CSS = """
     color: #c0bdb8;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    padding: 52px 0 80px;
+    padding: 36px 0 72px;
     user-select: none;
   }
 
@@ -455,9 +498,17 @@ _PRESENTATION_TOPBAR = """
   </div>
 </div>
 <div class="pv-spacer"></div>
+<div class="pv-intro">
+  <p class="pv-intro-title">Sådan ser en AIScore-rapport ud</p>
+  <p class="pv-intro-body">Denne rapport er offentliggjort for at give fuld indsigt i den analyse, struktur og metodik virksomheder modtager gennem AIScore.</p>
+</div>
 """
 
 _PRESENTATION_FOOTER = """
+<div class="pv-closing">
+  <p class="pv-closing-title">Ingen virksomheder har samme AI-position.</p>
+  <p class="pv-closing-body">Derfor er ingen AIScore-rapporter ens.</p>
+</div>
 <div class="pv-endmark">AIScore-rapport &middot; Nailster A/S &middot; AI Institute ApS</div>
 """
 
