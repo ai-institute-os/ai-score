@@ -407,20 +407,22 @@ _PRESENTATION_WRAPPER_CSS = """
   .pv-intro {
     max-width: 680px;
     margin: 0 auto;
-    padding: 52px 24px 40px;
+    /* Top breathing room from topbar; tight bottom so the report is the first
+       major visual focus, not this text block */
+    padding: 44px 24px 24px;
     font-family: Inter, sans-serif;
   }
   .pv-intro-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #0d1267;
-    letter-spacing: -.01em;
-    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    letter-spacing: .01em;
+    margin: 0 0 8px;
   }
   .pv-intro-body {
-    font-size: 14px;
-    line-height: 1.65;
-    color: #4a5568;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #6b7280;
     margin: 0;
   }
 
@@ -428,21 +430,21 @@ _PRESENTATION_WRAPPER_CSS = """
   .pv-closing {
     max-width: 680px;
     margin: 0 auto;
-    padding: 56px 24px 20px;
+    padding: 48px 24px 24px;
     font-family: Inter, sans-serif;
     border-top: 1px solid rgba(0,0,0,.06);
   }
   .pv-closing-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #0d1267;
-    letter-spacing: -.01em;
-    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    letter-spacing: .01em;
+    margin: 0 0 6px;
   }
   .pv-closing-body {
-    font-size: 14px;
-    line-height: 1.65;
-    color: #4a5568;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #6b7280;
     margin: 0;
   }
 
